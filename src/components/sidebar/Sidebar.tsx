@@ -1,9 +1,10 @@
-import React from 'react';
+﻿import React from 'react';
 import { roleMenus } from '../../constants/menus'; 
 import type { UserRole, MenuItem } from '../../constants/menus'; 
 import { Link, useLocation } from 'react-router-dom';
 import { BsList } from 'react-icons/bs';
 import logoGoya from '../../assets/logo.png';
+import { useAuth } from '../../context/AuthContext';
 interface SidebarProps {
   userRole: UserRole;
 }
@@ -11,7 +12,7 @@ interface SidebarProps {
 export const Sidebar: React.FC<SidebarProps> = ({ userRole }) => {
   return (
     <>
-      {/* 1. Botón hamburguesa fijo superior para celulares (Modo Claro) */}
+      {/* 1. BotÃ³n hamburguesa fijo superior para celulares (Modo Claro) */}
       <nav className="navbar bg-light text-dark d-lg-none fixed-top px-3 shadow-sm border-bottom">
         <button 
           className="navbar-toggler border-0 text-dark" 
@@ -59,12 +60,13 @@ interface SidebarContentProps {
 
 const SidebarContent: React.FC<SidebarContentProps> = ({ userRole, isMobile = false }) => {
   const location = useLocation();
+  const { logout } = useAuth();
   const normalizedRole = userRole.toLowerCase() as UserRole;
   const menuItems: MenuItem[] = roleMenus[normalizedRole] || roleMenus['ADMIN'] || [];
 
   return (
     <div className="d-flex flex-column h-100 p-1">
-      {/* Título de la marca (solo en escritorio) */}
+      {/* TÃ­tulo de la marca (solo en escritorio) */}
       {!isMobile && (
     <div className="pb-3 mb-3 border-bottom border-dark border-opacity-25 text-center">
       <a className="navbar-brand d-flex align-items-center justify-content-center m-0" href="#">
@@ -78,7 +80,7 @@ const SidebarContent: React.FC<SidebarContentProps> = ({ userRole, isMobile = fa
     </div>
   )}
 
-      {/* Lista de Navegación Dinámica con React Router Link */}
+      {/* Lista de NavegaciÃ³n DinÃ¡mica con React Router Link */}
       <ul className="nav nav-pills flex-column mb-auto gap-3">
         {menuItems.map((item: MenuItem) => {
           const Icon = item.icon;
@@ -110,7 +112,7 @@ const SidebarContent: React.FC<SidebarContentProps> = ({ userRole, isMobile = fa
 
       <hr className="border-dark" />
 
-      {/* Sección inferior de usuario (Perfil / Cerrar Sesión) */}
+      {/* SecciÃ³n inferior de usuario (Perfil / Cerrar SesiÃ³n) */}
       <div className="dropdown">
         <a href="#" className="d-flex align-items-center text-dark text-decoration-none dropdown-toggle" id="dropdownUser1" data-bs-toggle="dropdown" aria-expanded="false">
           <div className="rounded-circle bg-gradient-salud text-white fw-bold d-flex align-items-center justify-content-center me-2" style={{ width: '32px', height: '32px' }}>
@@ -119,11 +121,12 @@ const SidebarContent: React.FC<SidebarContentProps> = ({ userRole, isMobile = fa
           <strong className="text-capitalize">{userRole}</strong>
         </a>
         <ul className="dropdown-menu shadow" aria-labelledby="dropdownUser1">
-          <li><Link className="dropdown-item" to="/configuracion">Configuración</Link></li>
+          <li><Link className="dropdown-item" to="/configuracion">ConfiguraciÃ³n</Link></li>
           <li><hr className="dropdown-divider" /></li>
-          <li><button className="dropdown-item text-danger bg-transparent border-0 w-100 text-start" onClick={() => { /* Lógica de logout futura */ }}>Cerrar sesión</button></li>
+          <li><button className="dropdown-item text-danger bg-transparent border-0 w-100 text-start" onClick={() => { /* LÃ³gica de logout futura */ }}>Cerrar sesiÃ³n</button></li>
         </ul>
       </div>
     </div>
   );
 };
+

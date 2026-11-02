@@ -26,7 +26,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     if (debeCambiarPassword) {
       window.location.href = "/cambiar-password";
     } else {
-      window.location.href = "/dashboard";
+      window.location.href = "/turnos";
     }
   };
 
