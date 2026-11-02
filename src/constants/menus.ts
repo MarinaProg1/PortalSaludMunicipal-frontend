@@ -33,7 +33,7 @@ ADMIN: [
     { id: 'obra-social', label: 'Obras Sociales', icon: BsCapsule,path: '#' },
   ],
   
-  RECEPCIONISTA: [
+RECEPCIONISTA: [
     { id: 'turnos', label: 'Turnos', icon: BsCalendarCheck,path: '#' },
     { id: 'medicos', label: 'Médicos', icon: BsPeople,path: '#' },
     { id: 'pacientes', label: 'Pacientes', icon: BsHeartPulse,path: '#' },
