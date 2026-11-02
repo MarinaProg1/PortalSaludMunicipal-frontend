@@ -10,9 +10,12 @@ html, body, #root {
   background-color: rgb(228, 222, 215);
 }
 .bg-salud-claro {
-background-image: linear-gradient(135deg, #e6e3b9 0%, #ebeedf 50%, #c2ca4e 100%) !important;
-
+  background: rgba(141, 124, 68, 0.45) !important;
+  border: 2px solid rgba(122, 120, 120, 0.288) !important;
+  border-radius: 0px 30px 30px 0px !important;
+  box-shadow: 2px 6px 8px rgba(0, 0, 0, 0.1) !important;
 }
+
 
 .bg-gradient-salud {
   background: #ff9450 !important;

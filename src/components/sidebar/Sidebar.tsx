@@ -3,7 +3,7 @@ import { roleMenus } from '../../constants/menus';
 import type { UserRole, MenuItem } from '../../constants/menus'; 
 import { Link, useLocation } from 'react-router-dom';
 import { BsList } from 'react-icons/bs';
-import logoGoya from '../../assets/logo.png';
+import logoGoya from '../../assets/logo1.png';
 interface SidebarProps {
   userRole: UserRole;
 }
@@ -63,10 +63,10 @@ const SidebarContent: React.FC<SidebarContentProps> = ({ userRole, isMobile = fa
   const menuItems: MenuItem[] = roleMenus[normalizedRole] || roleMenus['ADMIN'] || [];
 
   return (
-    <div className="d-flex flex-column h-100 p-1">
+    <div className="d-flex flex-column h-100 p-1 ">
       {/* Título de la marca (solo en escritorio) */}
       {!isMobile && (
-    <div className="pb-3 mb-3 border-bottom border-dark border-opacity-25 text-center">
+    <div className="pb-3 mb-3 border-bottom border-dark border-opacity-25 text-center ">
       <a className="navbar-brand d-flex align-items-center justify-content-center m-0" href="#">
         <img 
           src={logoGoya} 
@@ -75,6 +75,7 @@ const SidebarContent: React.FC<SidebarContentProps> = ({ userRole, isMobile = fa
           style={{ width: '100px', height: 'auto' }}
         />
       </a>
+      <span className="fw-bold text-dark">Tu sistema de salud</span>
     </div>
   )}
 
