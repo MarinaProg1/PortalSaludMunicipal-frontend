@@ -4,6 +4,8 @@ import { TurnosLista } from './components/turnos/TurnosLista';
 import NotFound from './components/utils/NotFound';
 import { TurnoForm } from './components/turnos/TurnoForm';
 import { DetalleTurno } from './components/turnos/DetalleTurno';
+import { HorarioAtencionForm } from './components/horarios/HorarioAtencionForm';
+import { HorarioAtencionLista } from './components/horarios/HorarioAtencionLista';
 
 // Componente envoltorio para capturar el ID de la URL en modo Edición
 const EdicionTurnoWrapper = () => {
@@ -33,6 +35,9 @@ export default function App() {
           <Route path="turnos/nuevo" element={<TurnoForm />} />
           <Route path="turno-detalle/:id" element={<DetalleTurno />} />
           <Route path="turnos/editar/:id" element={<EdicionTurnoWrapper />} />
+
+          <Route path="/horarioAtencion" element={<HorarioAtencionLista />} />
+          <Route path="/horarioAtencion/nuevo" element={<HorarioAtencionForm />} />
           
         </Route>
 

@@ -4,25 +4,9 @@ import { isAxiosError } from 'axios';
 import { BsCalendarEvent, BsArrowLeft, BsPerson, BsPersonBadge, BsClock } from 'react-icons/bs';
 import clientesAxios from '../../config/axios';
 import { DetalleTurnoSkeleton } from './DetalleTurnoSkeleton';
+import type { TurnoDetalle } from './turno.schema';
+import { PageHeader } from '../../constants/PageHeader';
 
-interface TurnoDetalle {
-   id: string;
-  paciente: {
-    nombre: string;
-    apellido: string;
-    dni?: string;
-  };
-  medico: {
-    nombre: string;
-    apellido: string;
-  };
-  especialidad: {
-    nombre: string;
-  };
-  fecha: string;
-  hora: string;
-  estado: string;
-}
 
 export const DetalleTurno: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -95,19 +79,13 @@ export const DetalleTurno: React.FC = () => {
     <div className="container-fluid px-2 px-md-4 py-4">
       <div className="card border-0 shadow-sm bg-white p-4 mx-auto" style={{ maxWidth: '700px', borderRadius: '12px' }}>
         
-        {/* Cabecera */}
-        <div className="d-flex justify-content-between align-items-center mb-4 pb-3 border-bottom border-secondary-subtle">
-          <div>
-            <h3 className="fw-bold text-dark mb-1">
-              <BsCalendarEvent className="me-2" style={{ color: '#00ACB2' }} />
-              Detalle del Turno
-            </h3>
-            <p className="text-muted mb-0 small">Información completa de la cita médica registrada.</p>
-          </div>
-          <button className="btn btn-outline-secondary btn-sm d-flex align-items-center gap-1" onClick={() => navigate(-1)}>
-            <BsArrowLeft /> Volver
-          </button>
-        </div>
+      {/* Cabecera Reutilizada */}
+        <PageHeader 
+          titulo="Detalle del Turno"
+          subtitulo="Información completa de la cita médica registrada."
+          icon={<BsCalendarEvent className="me-2" style={{ color: '#00ACB2' }} />}
+          onBack={() => navigate(-1)}
+        />
 
         {/* Cuerpo de la Tarjeta */}
         <div className="row g-4">
