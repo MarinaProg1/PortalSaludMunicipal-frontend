@@ -4,7 +4,7 @@ import {  BsPlusCircle,  BsSearch,  BsClockHistory,  BsChevronDown,  BsChevronUp
 import { useNavigate } from 'react-router-dom';
 import clientesAxios from '../../config/axios';
 import { HorarioAtencionSkeleton } from './HorarioAtencionSkeleton';
-import type { HorarioItem, MedicoAgrupado } from './HorarioAtencion.interfaces';
+import type { HorarioItem, MedicoAgrupado } from './horario.schema';
 
 
 export const HorarioAtencionLista: React.FC = () => {

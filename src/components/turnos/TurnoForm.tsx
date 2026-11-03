@@ -3,7 +3,7 @@ import { isAxiosError } from 'axios';
 import { BsCalendarPlus, BsCheckCircle } from 'react-icons/bs';
 import { TurnoFormSkeleton } from './TurnoFormSkeleton';
 import clientesAxios from '../../config/axios';
-import type { OptionItem,  MedicoItem,  HorarioAtencionItem,  TurnoFormProps } from './turnos.interfaces';
+import type { OptionItem,  MedicoItem,  HorarioAtencionItem,  TurnoFormProps } from './turno.schema';
 import { PageHeader } from '../../constants/PageHeader';
 
 export const TurnoForm: React.FC<TurnoFormProps> = ({ turnoId, onSuccess, onCancel }) => {

@@ -4,7 +4,7 @@ import { isAxiosError } from 'axios';
 import { BsCalendarEvent, BsArrowLeft, BsPerson, BsPersonBadge, BsClock } from 'react-icons/bs';
 import clientesAxios from '../../config/axios';
 import { DetalleTurnoSkeleton } from './DetalleTurnoSkeleton';
-import type { TurnoDetalle } from './turnos.interfaces';
+import type { TurnoDetalle } from './turno.schema';
 import { PageHeader } from '../../constants/PageHeader';
 
 

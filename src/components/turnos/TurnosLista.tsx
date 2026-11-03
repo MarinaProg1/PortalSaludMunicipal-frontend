@@ -4,7 +4,7 @@ import { ActionButtons } from '../../constants/ActionButtons';
 import { BsPlusCircle, BsSearch, BsCalendarCheck } from 'react-icons/bs';
 import clientesAxios from '../../config/axios';
 import { TurnosSkeleton } from './TurnosSkeleton'; // <-- Importas tu componente
-import type { TurnoItem } from './turnos.interfaces';
+import type { TurnoItem } from './turno.schema';
 import { PageHeader } from '../../constants/PageHeader';
 
 

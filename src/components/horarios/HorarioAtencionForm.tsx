@@ -3,7 +3,7 @@ import { BsClock, BsCheckCircle } from 'react-icons/bs';
 import { useNavigate } from 'react-router-dom';
 import clientesAxios from '../../config/axios';
 import { isAxiosError } from 'axios';
-import type { MedicoItem, DiaConfig, HorarioApiResponse } from './HorarioAtencion.interfaces';
+import type { MedicoItem, DiaConfig, HorarioApiResponse } from './horario.schema';
 import { PageHeader } from '../../constants/PageHeader';
 
 
