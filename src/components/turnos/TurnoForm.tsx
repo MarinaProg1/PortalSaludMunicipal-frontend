@@ -1,30 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { isAxiosError } from 'axios';
-import { BsCalendarPlus, BsArrowLeft, BsCheckCircle } from 'react-icons/bs';
+import { BsCalendarPlus, BsCheckCircle } from 'react-icons/bs';
 import { TurnoFormSkeleton } from './TurnoFormSkeleton';
 import clientesAxios from '../../config/axios';
-
-interface OptionItem {
-  id?: string;
-  nombre: string;
-  apellido?: string;
-  razonSocial?: string;
-}
-
-interface MedicoItem extends OptionItem {
-  especialidades?: OptionItem[];
-}
-
-interface TurnoFormProps {
-  turnoId?: string; // 👈 Opcional: Si se pasa, el formulario entra en modo EDICIÓN
-  onSuccess?: () => void; 
-  onCancel?: () => void;  
-}
+import type { OptionItem,  MedicoItem,  HorarioAtencionItem,  TurnoFormProps } from './turnos.interfaces';
+import { PageHeader } from '../../constants/PageHeader';
 
 export const TurnoForm: React.FC<TurnoFormProps> = ({ turnoId, onSuccess, onCancel }) => {
   const [pacientes, setPacientes] = useState<OptionItem[]>([]);
   const [medicos, setMedicos] = useState<MedicoItem[]>([]);
   const [especialidadesDisponibles, setEspecialidadesDisponibles] = useState<OptionItem[]>([]);
+  
+  const [horariosAtencionMedico, setHorariosAtencionMedico] = useState<HorarioAtencionItem[]>([]);
 
   const [formData, setFormData] = useState({
     paciente: '',
@@ -36,18 +23,64 @@ export const TurnoForm: React.FC<TurnoFormProps> = ({ turnoId, onSuccess, onCanc
   });
 
   const [loadingData, setLoadingData] = useState<boolean>(true);
+  const [loadingHorarios, setLoadingHorarios] = useState<boolean>(false);
   const [submitting, setSubmitting] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<boolean>(false);
 
   const isEditing = Boolean(turnoId);
 
+  // 1. Función para obtener los horarios de atención configurados del médico
+  const cargarHorariosAtencionMedico = async (medicoId: string) => {
+    try {
+      setLoadingHorarios(true);
+      const response = await clientesAxios.get(`/horarioAtencion?medico=${medicoId}`);
+      const data = response.data;
+      let listaHorarios: HorarioAtencionItem[] = [];
+
+      if (Array.isArray(data)) {
+        listaHorarios = data;
+      } else if (data && typeof data === 'object') {
+        const record = data as Record<string, unknown>;
+        if (Array.isArray(record.data)) listaHorarios = record.data as HorarioAtencionItem[];
+        else if (Array.isArray(record.horarios)) listaHorarios = record.horarios as HorarioAtencionItem[];
+      }
+
+      setHorariosAtencionMedico(listaHorarios);
+    } catch (err) {
+      console.error('Error al cargar horarios de atención del médico:', err);
+      setHorariosAtencionMedico([]);
+    } finally {
+      setLoadingHorarios(false);
+    }
+  };
+
+  // 2. Función auxiliar para generar los bloques de horas
+  const generarBloquesHorarios = (horaInicio: string, horaFin: string, duracionMinutos: number) => {
+    const bloques: string[] = [];
+    const [hInicio, mInicio] = horaInicio.split(':').map(Number);
+    const [hFin, mFin] = horaFin.split(':').map(Number);
+
+    let minutosActuales = hInicio * 60 + mInicio;
+    const minutosFin = hFin * 60 + mFin;
+    const duracion = duracionMinutos && duracionMinutos > 0 ? duracionMinutos : 30;
+
+    while (minutosActuales < minutosFin) {
+      const horas = Math.floor(minutosActuales / 60);
+      const minutos = minutosActuales % 60;
+      const horaFormateada = `${String(horas).padStart(2, '0')}:${String(minutos).padStart(2, '0')}`;
+      bloques.push(horaFormateada);
+      minutosActuales += duracion;
+    }
+
+    return bloques;
+  };
+
   useEffect(() => {
     const fetchData = async () => {
       try {
         setLoadingData(true);
         
-        // Función auxiliar robusta para extraer el array de cualquier formato de respuesta de Axios
         const extraerArray = (responseData: unknown, claveSugerida: string): OptionItem[] => {
           if (Array.isArray(responseData)) {
             return responseData as OptionItem[];
@@ -65,7 +98,6 @@ export const TurnoForm: React.FC<TurnoFormProps> = ({ turnoId, onSuccess, onCanc
         };
 
         if (isEditing && turnoId) {
-          // Si estamos editando, traemos todo en paralelo
           const [resPacientes, resMedicos, resTurno] = await Promise.all([
             clientesAxios.get('/pacientes'),
             clientesAxios.get('/medicos'),
@@ -84,9 +116,13 @@ export const TurnoForm: React.FC<TurnoFormProps> = ({ turnoId, onSuccess, onCanc
           const medicoId = dataTurno.medico?._id || dataTurno.medico?.id || dataTurno.medico;
           const especialidadId = dataTurno.especialidad?._id || dataTurno.especialidad?.id || dataTurno.especialidad;
 
-          const medicoEncontrado = listaMedicos.find(m => (m.id === medicoId || m.id === medicoId));
+          const medicoEncontrado = listaMedicos.find(m => (m.id === medicoId || m._id === medicoId));
           if (medicoEncontrado && Array.isArray(medicoEncontrado.especialidades)) {
             setEspecialidadesDisponibles(medicoEncontrado.especialidades);
+          }
+
+          if (medicoId) {
+            await cargarHorariosAtencionMedico(medicoId);
           }
 
           setFormData({
@@ -99,7 +135,6 @@ export const TurnoForm: React.FC<TurnoFormProps> = ({ turnoId, onSuccess, onCanc
           });
 
         } else {
-          // Si es creación normal
           const [resPacientes, resMedicos] = await Promise.all([
             clientesAxios.get('/pacientes'),
             clientesAxios.get('/medicos')
@@ -120,27 +155,56 @@ export const TurnoForm: React.FC<TurnoFormProps> = ({ turnoId, onSuccess, onCanc
     fetchData();
   }, [turnoId, isEditing]);
 
-  const handleMedicoChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+  // 3. Cálculo derivado de horas disponibles (Sin usar useEffect ni setState innecesario)
+  const obtenerHorasDisponibles = (): string[] => {
+    if (!formData.fecha || horariosAtencionMedico.length === 0) {
+      return [];
+    }
+
+    const fechaObj = new Date(formData.fecha + 'T00:00:00');
+    const diasSemanaMap = ['DOMINGO', 'LUNES', 'MARTES', 'MIERCOLES', 'JUEVES', 'VIERNES', 'SABADO'];
+    const diaSeleccionado = diasSemanaMap[fechaObj.getDay()];
+
+    const horariosDelDia = horariosAtencionMedico.filter(h => h.diaSemana === diaSeleccionado && h.activo !== false);
+
+    let horasCalculadas: string[] = [];
+    horariosDelDia.forEach(bloque => {
+      const generadas = generarBloquesHorarios(bloque.horaInicio, bloque.horaFin, bloque.duracionTurnoMinutos);
+      horasCalculadas = [...horasCalculadas, ...generadas];
+    });
+
+    return horasCalculadas;
+  };
+
+  const horasDisponibles = obtenerHorasDisponibles();
+
+  const handleMedicoChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
     const medicoId = e.target.value;
     
     setFormData(prev => ({ 
       ...prev, 
       medico: medicoId, 
-      especialidad: '' 
+      especialidad: '',
+      fecha: '',
+      hora: ''
     }));
+
+    setHorariosAtencionMedico([]);
 
     if (!medicoId) {
       setEspecialidadesDisponibles([]);
       return;
     }
 
-    const medicoSeleccionado = medicos.find(m => m.id === medicoId || m.id === medicoId);
+    const medicoSeleccionado = medicos.find(m => (m.id === medicoId || m._id === medicoId));
 
     if (medicoSeleccionado && Array.isArray(medicoSeleccionado.especialidades)) {
       setEspecialidadesDisponibles(medicoSeleccionado.especialidades);
     } else {
       setEspecialidadesDisponibles([]);
     }
+
+    await cargarHorariosAtencionMedico(medicoId);
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -183,26 +247,15 @@ export const TurnoForm: React.FC<TurnoFormProps> = ({ turnoId, onSuccess, onCanc
   return (
     <div className="container-fluid px-2 px-md-4 py-4">
       <div className="card border-0 shadow-sm bg-white p-4 mx-auto" style={{ maxWidth: '700px', borderRadius: '12px' }}>
-        
-        {/* Cabecera dinámica */}
-        <div className="d-flex justify-content-between align-items-center mb-4 pb-3 border-bottom border-secondary-subtle">
-          <div>
-            <h3 className="fw-bold text-dark mb-1">
-              <BsCalendarPlus className="me-2" style={{ color: '#00ACB2' }} />
-              {isEditing ? 'Modificar Turno Médico' : 'Asignar Nuevo Turno'}
-            </h3>
-            <p className="text-muted mb-0 small">
-              {isEditing ? 'Actualice los datos necesarios del turno.' : 'Complete los datos para registrar un turno médico.'}
-            </p>
-          </div>
-          {onCancel && (
-            <button className="btn btn-outline-secondary btn-sm d-flex align-items-center gap-1" onClick={onCancel}>
-              <BsArrowLeft /> Volver
-            </button>
-          )}
-        </div>
+     
+       {/* Cabecera Reutilizada */}
+        <PageHeader 
+          titulo={isEditing ? 'Modificar Turno Médico' : 'Asignar Nuevo Turno'}
+          subtitulo={isEditing ? 'Actualice los datos necesarios del turno.' : 'Complete los datos para registrar un turno médico.'}
+          icon={<BsCalendarPlus className="me-2" style={{ color: '#00ACB2' }} />}
+          onBack={onCancel} // Si onCancel existe, mostrará el botón "Volver" automáticamente
+        />
 
-        {/* Mensaje de Éxito */}
         {successMsg && (
           <div className="alert alert-success d-flex align-items-center gap-2 mb-4" role="alert">
             <BsCheckCircle size={20} />
@@ -210,18 +263,15 @@ export const TurnoForm: React.FC<TurnoFormProps> = ({ turnoId, onSuccess, onCanc
           </div>
         )}
 
-        {/* Mensaje de Error */}
         {error && (
           <div className="alert alert-danger mb-4" role="alert">
             {error}
           </div>
         )}
 
-        {/* Formulario */}
         <form onSubmit={handleSubmit}>
           <div className="row g-3">
             
-            {/* Paciente */}
             <div className="col-12">
               <label className="form-label fw-semibold text-secondary small">Paciente</label>
               <select 
@@ -232,15 +282,17 @@ export const TurnoForm: React.FC<TurnoFormProps> = ({ turnoId, onSuccess, onCanc
                 required
               >
                 <option value="">Seleccione un paciente...</option>
-                {pacientes.map(p => (
-                  <option key={p.id || p.id} value={p.id || p.id}>
-                    {p.nombre} {p.apellido}
-                  </option>
-                ))}
+                {pacientes.map(p => {
+                  const pId = p.id || p._id || '';
+                  return (
+                    <option key={pId} value={pId}>
+                      {p.nombre} {p.apellido}
+                    </option>
+                  );
+                })}
               </select>
             </div>
 
-            {/* Médico */}
             <div className="col-md-6">
               <label className="form-label fw-semibold text-secondary small">Médico</label>
               <select 
@@ -251,15 +303,17 @@ export const TurnoForm: React.FC<TurnoFormProps> = ({ turnoId, onSuccess, onCanc
                 required
               >
                 <option value="">Seleccione un médico...</option>
-                {medicos.map(m => (
-                  <option key={m.id || m.id} value={m.id || m.id}>
-                    Dr./Dra. {m.nombre} {m.apellido}
-                  </option>
-                ))}
+                {medicos.map(m => {
+                  const mId = m.id || m._id || '';
+                  return (
+                    <option key={mId} value={mId}>
+                      Dr./Dra. {m.nombre} {m.apellido}
+                    </option>
+                  );
+                })}
               </select>
             </div>
 
-            {/* Especialidad */}
             <div className="col-md-6">
               <label className="form-label fw-semibold text-secondary small">Especialidad</label>
               <select 
@@ -273,15 +327,17 @@ export const TurnoForm: React.FC<TurnoFormProps> = ({ turnoId, onSuccess, onCanc
                 <option value="">
                   {formData.medico ? 'Seleccione una especialidad...' : 'Primero seleccione un médico'}
                 </option>
-                {especialidadesDisponibles.map(e => (
-                  <option key={e.id || e.id} value={e.id || e.id}>
-                    {e.nombre}
-                  </option>
-                ))}
+                {especialidadesDisponibles.map(e => {
+                  const eId = e.id || e._id || '';
+                  return (
+                    <option key={eId} value={eId}>
+                      {e.nombre}
+                    </option>
+                  );
+                })}
               </select>
             </div>
 
-            {/* Fecha */}
             <div className="col-md-6">
               <label className="form-label fw-semibold text-secondary small">Fecha</label>
               <input 
@@ -291,24 +347,37 @@ export const TurnoForm: React.FC<TurnoFormProps> = ({ turnoId, onSuccess, onCanc
                 value={formData.fecha}
                 onChange={handleChange}
                 required
+                disabled={!formData.medico}
               />
             </div>
 
-            {/* Hora */}
             <div className="col-md-6">
-              <label className="form-label fw-semibold text-secondary small">Hora (ej: 09:30)</label>
-              <input 
-                type="text" 
-                placeholder="09:30" 
-                className="form-control shadow-none" 
+              <label className="form-label fw-semibold text-secondary small">
+                Hora del Turno {loadingHorarios && <span className="text-info spinner-border spinner-border-sm ms-1"></span>}
+              </label>
+              <select 
+                className="form-select shadow-none" 
                 name="hora"
                 value={formData.hora}
                 onChange={handleChange}
                 required
-              />
+                disabled={!formData.fecha || horasDisponibles.length === 0}
+              >
+                <option value="">
+                  {!formData.fecha 
+                    ? 'Primero seleccione una fecha' 
+                    : horasDisponibles.length === 0 
+                      ? 'No hay horarios configurados para este día' 
+                      : 'Seleccione un horario disponible...'}
+                </option>
+                {horasDisponibles.map(horaBlock => (
+                  <option key={horaBlock} value={horaBlock}>
+                    {horaBlock} hs
+                  </option>
+                ))}
+              </select>
             </div>
 
-            {/* Estado */}
             <div className="col-12">
               <label className="form-label fw-semibold text-secondary small">Estado del Turno</label>
               <select 
@@ -328,7 +397,6 @@ export const TurnoForm: React.FC<TurnoFormProps> = ({ turnoId, onSuccess, onCanc
 
           </div>
 
-          {/* Botones de acción */}
           <div className="d-flex justify-content-end gap-2 mt-4 pt-3 border-top border-secondary-subtle">
             {onCancel && (
               <button type="button" className="btn btn-light px-4" onClick={onCancel} disabled={submitting}>

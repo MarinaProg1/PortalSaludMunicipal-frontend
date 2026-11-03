@@ -4,28 +4,9 @@ import { ActionButtons } from '../../constants/ActionButtons';
 import { BsPlusCircle, BsSearch, BsCalendarCheck } from 'react-icons/bs';
 import clientesAxios from '../../config/axios';
 import { TurnosSkeleton } from './TurnosSkeleton'; // <-- Importas tu componente
+import type { TurnoItem } from './turnos.interfaces';
+import { PageHeader } from '../../constants/PageHeader';
 
-interface TurnoItem {
-  id: string;
-  medico?: {
-    id: string; 
-    nombre: string;
-    apellido: string;
-  };
-  paciente?: {
-    id: string;
-    nombre: string;
-    apellido: string;
-  };
-  especialidad?: {
-    id: string;
-    nombre: string;
-  };
-  fecha: string;
-  hora: string;
-  estado: 'PENDIENTE' | 'CONFIRMADO' | 'CANCELADO' | 'ATENDIDO';
-  activo: boolean;
-}
 
 export const TurnosLista: React.FC = () => {
  const navigate = useNavigate();
@@ -104,26 +85,23 @@ export const TurnosLista: React.FC = () => {
 
   return (
     <div className="container-fluid px-2 px-md-4 py-4">
-      
-      {/* Cabecera institucional */}
-      <div className="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3 mb-4 pb-3 border-bottom border-secondary-subtle">
-        <div>
-          <h2 className="fw-bold text-dark mb-1 fs-4 fs-md-3">
-            <BsCalendarCheck className="me-2" style={{ color: '#00ACB2' }} />
-            Gestión de Turnos Médicos
-          </h2>
-          <p className="text-muted mb-0 small">Control y administración de turnos asignados en la salita.</p>
-        </div>
-        
-        <button 
-          className="btn text-white fw-semibold d-flex align-items-center justify-content-center gap-2 shadow-sm"
-          style={{ backgroundColor: '#00ACB2', borderRadius: '10px', padding: '10px 18px' }}
-          onClick={() => navigate('/turnos/nuevo')} 
-        >
-          <BsPlusCircle size={18} />
-          Asignar Nuevo Turno
-        </button>
-      </div>
+    
+      <PageHeader 
+  titulo="Gestión de Turnos Médicos"
+  subtitulo="Control y administración de turnos asignados en la salita."
+  icon={<BsCalendarCheck className="me-2" style={{ color: '#00ACB2' }} />}
+  onBack={() => navigate(-1)}
+  rightContent={
+    <button 
+      className="btn text-white fw-semibold d-flex align-items-center justify-content-center gap-2 shadow-sm"
+      style={{ backgroundColor: '#00ACB2', borderRadius: '10px', padding: '8px 16px' }}
+      onClick={() => navigate('/turnos/nuevo')} 
+    >
+      <BsPlusCircle size={18} />
+      Asignar Nuevo Turno
+    </button>
+  }
+/>
 
       {/* Buscador */}
       <div className="card border-0 shadow-sm mb-4 bg-white" style={{ borderRadius: '12px' }}>

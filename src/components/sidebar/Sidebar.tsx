@@ -72,7 +72,7 @@ const SidebarContent: React.FC<SidebarContentProps> = ({ userRole, isMobile = fa
           src={logoGoya} 
           alt="Logo Portal Salud Goya"
           className="img-fluid"
-          style={{ width: '100px', height: 'auto' }}
+          style={{ width: '150px', height: 'auto' }}
         />
       </a>
     </div>

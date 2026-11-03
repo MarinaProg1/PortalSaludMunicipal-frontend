@@ -7,7 +7,8 @@ import {
   BsPeople, 
   BsShieldLock, 
   BsHospital,
-  BsJournalMedical
+  BsJournalMedical,
+  BsCheckCircle
 } from 'react-icons/bs';
 
 // Definimos los roles válidos en el sistema
@@ -26,6 +27,7 @@ export interface MenuItem {
 export const roleMenus: Record<UserRole, MenuItem[]> = {
 ADMIN: [
     { id: 'turnos', label: 'Turnos', icon: BsCalendarCheck,path: '/turnos' },
+    { id: 'horarios-atencion', label: 'Horarios de Atención', icon: BsCheckCircle,path: '/horarioAtencion' },
     { id: 'medicos', label: 'Médicos', icon: BsPeople,path: '#' },
     { id: 'pacientes', label: 'Pacientes', icon: BsHeartPulse,path: '#' },
     { id: 'usuarios', label: 'Usuarios del Sistema', icon: BsShieldLock,path: '#' },
@@ -35,7 +37,8 @@ ADMIN: [
   
 RECEPCIONISTA: [
     { id: 'turnos', label: 'Turnos', icon: BsCalendarCheck,path: '#' },
-    { id: 'medicos', label: 'Médicos', icon: BsPeople,path: '#' },
+    { id: 'horarios-atencion', label: 'Horarios de Atención', icon: BsCheckCircle,path: '/horarioAtencion' },
+    { id: 'medicos', label: 'Médicos', icon: BsPeople,path: '#' },  
     { id: 'pacientes', label: 'Pacientes', icon: BsHeartPulse,path: '#' },
     { id: 'especialidades', label: 'Especialidades', icon: BsHospital,path: '#' },
     { id: 'obra-social', label: 'Obras Sociales', icon: BsCapsule,path: '#' },
@@ -43,6 +46,7 @@ RECEPCIONISTA: [
 
   MEDICO: [
     { id: 'turnos', label: 'Mis Turnos', icon: BsCalendarCheck,path: '#' },
+    { id: 'horarios-atencion', label: 'Horarios de Atención', icon: BsCheckCircle,path: '/horarioAtencion' },
     { id: 'pacientes', label: 'Pacientes', icon: BsHeartPulse,path: '#' },
     { id: 'consultas', label: 'Consultas Médicas', icon: BsJournalMedical,path: '#' },
     { id: 'historias-clinicas', label: 'Historia Clínica', icon: BsFileEarmarkText,path: '#' },
@@ -50,6 +54,8 @@ RECEPCIONISTA: [
 
   PACIENTE: [
      { id: 'turnos', label: 'Mis Turnos', icon: BsCalendarCheck,path: '#' },
+     { id: 'horarios-atencion', label: 'Horarios de Atención', icon: BsCheckCircle,path: '/horarioAtencion' },
     { id: 'pacientes', label: 'Pacientes', icon: BsHeartPulse,path: '#' },
+
   ]
 };
