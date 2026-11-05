@@ -1,5 +1,6 @@
 ﻿import { BrowserRouter, Routes, Route, Navigate, useParams, useNavigate } from "react-router-dom";
 import Login from "../pages/auth/Login";
+import CambiarPassword from "../pages/auth/CambiarPassword";
 import { useAuth } from "../context/AuthContext";
 import LayoutPrincipal from "../components/layout/LayoutPrincipal";
 import { TurnosLista } from "../components/turnos/TurnosLista";
@@ -45,6 +46,7 @@ const AppRouter = () => {
     <BrowserRouter>
       <Routes>
         <Route path="/login" element={!isAuthenticated ? <Login /> : <Navigate to="/turnos" replace />} />
+        <Route path="/cambiar-password" element={isAuthenticated ? <CambiarPassword /> : <Navigate to="/login" replace />} />
 
         <Route
           path="/"
