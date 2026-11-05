@@ -9,6 +9,7 @@ import { HorarioAtencionLista } from "../components/horarios/HorarioAtencionList
 import { HorarioAtencionForm } from "../components/horarios/HorarioAtencionForm";
 import { ObraSocialLista } from "../components/obrasSociales/ObraSocialLista";
 import { ObraSocialForm } from "../components/obrasSociales/ObraSocialForm";
+import { RequireRole } from "./RequireRole";
 import NotFound from "../components/utils/NotFound";
 
 const EdicionTurnoWrapper = () => {
@@ -58,9 +59,9 @@ const AppRouter = () => {
           <Route path="horarioAtencion" element={<HorarioAtencionLista />} />
           <Route path="horarioAtencion/nuevo" element={<HorarioAtencionForm />} />
 
-          <Route path="obras-sociales" element={<ObraSocialLista />} />
-          <Route path="obras-sociales/nuevo" element={<ObraSocialForm />} />
-          <Route path="obras-sociales/editar/:id" element={<EdicionObraSocialWrapper />} />
+          <Route path="obras-sociales" element={<RequireRole allowed={["ADMIN", "RECEPCIONISTA"]}><ObraSocialLista /></RequireRole>} />
+          <Route path="obras-sociales/nuevo" element={<RequireRole allowed={["ADMIN", "RECEPCIONISTA"]}><ObraSocialForm /></RequireRole>} />
+          <Route path="obras-sociales/editar/:id" element={<RequireRole allowed={["ADMIN", "RECEPCIONISTA"]}><EdicionObraSocialWrapper /></RequireRole>} />
         </Route>
 
         <Route path="*" element={<NotFound />} />
