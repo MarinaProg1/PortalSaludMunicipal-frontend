@@ -17,13 +17,13 @@ const Login = () => {
       const response = await authService.login({ email, password });
 
       if (response.ok && response.token) {
-        toast.success("Inicio de sesi├│n correcto");
+        toast.success("Inicio de sesion correcto");
         login(response.token, response.debeCambiarPassword);
       } else {
-        toast.error(response.message || "Credenciales inv├ílidas");
+        toast.error(response.message || "Credenciales invalidas");
       }
     } catch (error: any) {
-      const msg = error.response?.data?.message || "Error al iniciar sesi├│n";
+      const msg = error.response?.data?.message || "Error al iniciar sesion";
       toast.error(msg);
     } finally {
       setLoading(false);
@@ -33,7 +33,7 @@ const Login = () => {
   return (
     <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100vh", backgroundColor: "#f7f7f7" }}>
       <form onSubmit={handleSubmit} style={{ background: "#fff", padding: "2rem", borderRadius: "8px", width: "350px", boxShadow: "0 2px 10px rgba(0,0,0,0.1)" }}>
-        <h2 style={{ textAlign: "center", marginBottom: "1.5rem" }}>Iniciar Sesi├│n</h2>
+        <h2 style={{ textAlign: "center", marginBottom: "1.5rem" }}>Iniciar Sesion</h2>
 
         <div style={{ marginBottom: "1rem" }}>
           <label>Email</label>
@@ -47,7 +47,7 @@ const Login = () => {
         </div>
 
         <div style={{ marginBottom: "1.5rem" }}>
-          <label>Contrase├▒a</label>
+          <label>Contrasena</label>
           <input
             type="password"
             value={password}
