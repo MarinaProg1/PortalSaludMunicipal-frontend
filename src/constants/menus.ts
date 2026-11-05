@@ -32,7 +32,7 @@ ADMIN: [
     { id: 'pacientes', label: 'Pacientes', icon: BsHeartPulse,path: '#' },
     { id: 'usuarios', label: 'Usuarios del Sistema', icon: BsShieldLock,path: '#' },
     { id: 'especialidades', label: 'Especialidades', icon: BsHospital,path: '#' },
-    { id: 'obra-social', label: 'Obras Sociales', icon: BsCapsule,path: '#' },
+    { id: 'obra-social', label: 'Obras Sociales', icon: BsCapsule, path: '/obras-sociales' },
   ],
   
 RECEPCIONISTA: [
@@ -41,7 +41,7 @@ RECEPCIONISTA: [
     { id: 'medicos', label: 'Médicos', icon: BsPeople,path: '#' },  
     { id: 'pacientes', label: 'Pacientes', icon: BsHeartPulse,path: '#' },
     { id: 'especialidades', label: 'Especialidades', icon: BsHospital,path: '#' },
-    { id: 'obra-social', label: 'Obras Sociales', icon: BsCapsule,path: '#' },
+    { id: 'obra-social', label: 'Obras Sociales', icon: BsCapsule, path: '/obras-sociales' },
   ],
 
   MEDICO: [

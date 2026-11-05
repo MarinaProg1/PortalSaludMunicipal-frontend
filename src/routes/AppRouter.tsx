@@ -1,0 +1,72 @@
+﻿import { BrowserRouter, Routes, Route, Navigate, useParams, useNavigate } from "react-router-dom";
+import Login from "../pages/auth/Login";
+import { useAuth } from "../context/AuthContext";
+import LayoutPrincipal from "../components/layout/LayoutPrincipal";
+import { TurnosLista } from "../components/turnos/TurnosLista";
+import { TurnoForm } from "../components/turnos/TurnoForm";
+import { DetalleTurno } from "../components/turnos/DetalleTurno";
+import { HorarioAtencionLista } from "../components/horarios/HorarioAtencionLista";
+import { HorarioAtencionForm } from "../components/horarios/HorarioAtencionForm";
+import { ObraSocialLista } from "../components/obrasSociales/ObraSocialLista";
+import { ObraSocialForm } from "../components/obrasSociales/ObraSocialForm";
+import NotFound from "../components/utils/NotFound";
+
+const EdicionTurnoWrapper = () => {
+  const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+
+  return (
+    <TurnoForm
+      turnoId={id}
+      onSuccess={() => navigate("/turnos")}
+      onCancel={() => navigate(-1)}
+    />
+  );
+};
+
+const EdicionObraSocialWrapper = () => {
+  const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+
+  return (
+    <ObraSocialForm
+      obraSocialId={id}
+      onSuccess={() => navigate("/obras-sociales")}
+      onCancel={() => navigate(-1)}
+    />
+  );
+};
+
+const AppRouter = () => {
+  const { isAuthenticated } = useAuth();
+
+  return (
+    <BrowserRouter>
+      <Routes>
+        <Route path="/login" element={!isAuthenticated ? <Login /> : <Navigate to="/turnos" replace />} />
+
+        <Route
+          path="/"
+          element={isAuthenticated ? <LayoutPrincipal /> : <Navigate to="/login" replace />}
+        >
+          <Route index element={<Navigate to="/turnos" replace />} />
+          <Route path="turnos" element={<TurnosLista />} />
+          <Route path="turnos/nuevo" element={<TurnoForm />} />
+          <Route path="turno-detalle/:id" element={<DetalleTurno />} />
+          <Route path="turnos/editar/:id" element={<EdicionTurnoWrapper />} />
+
+          <Route path="horarioAtencion" element={<HorarioAtencionLista />} />
+          <Route path="horarioAtencion/nuevo" element={<HorarioAtencionForm />} />
+
+          <Route path="obras-sociales" element={<ObraSocialLista />} />
+          <Route path="obras-sociales/nuevo" element={<ObraSocialForm />} />
+          <Route path="obras-sociales/editar/:id" element={<EdicionObraSocialWrapper />} />
+        </Route>
+
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+    </BrowserRouter>
+  );
+};
+
+export default AppRouter;
