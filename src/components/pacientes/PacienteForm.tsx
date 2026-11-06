@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { BsHeartPulse, BsSave } from 'react-icons/bs';
 import { PageHeader } from '../../constants/PageHeader';
 import { ObraSocialSelect } from '../obrasSociales/ObraSocialSelect';
+import { obraSocialSchema, getObraSocialId } from '../obrasSociales/obraSocial.schema';
+import { obraSocialService } from '../../services/obraSocial.service';
 import { pacienteService } from '../../services/paciente.service';
 import {
   pacienteSchema,
@@ -88,6 +90,13 @@ export const PacienteForm: React.FC<Props> = ({ pacienteId, onSuccess, onCancel 
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(false);
 
+  // Creación rápida de obra social desde el alta/edición del paciente
+  const [refreshObras, setRefreshObras] = useState(0);
+  const [showNuevaObra, setShowNuevaObra] = useState(false);
+  const [nuevaObra, setNuevaObra] = useState({ nombre: '', email: '', telefono: '' });
+  const [erroresObra, setErroresObra] = useState<Record<string, string>>({});
+  const [creandoObra, setCreandoObra] = useState(false);
+
   useEffect(() => {
     if (!pacienteId) {
       setValues(EMPTY);
@@ -118,6 +127,53 @@ export const PacienteForm: React.FC<Props> = ({ pacienteId, onSuccess, onCancel 
 
   const setTelefono = (field: keyof FormState['telefono'], value: string) => {
     setValues((prev) => ({ ...prev, telefono: { ...prev.telefono, [field]: value } }));
+  };
+
+  const setNuevaObraField = (field: keyof typeof nuevaObra, value: string) => {
+    setNuevaObra((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const cancelarNuevaObra = () => {
+    setShowNuevaObra(false);
+    setNuevaObra({ nombre: '', email: '', telefono: '' });
+    setErroresObra({});
+  };
+
+  const crearObraSocialRapida = async () => {
+    setErroresObra({});
+
+    const parsed = obraSocialSchema.safeParse(nuevaObra);
+    if (!parsed.success) {
+      const fieldErrors: Record<string, string> = {};
+      parsed.error.issues.forEach((issue) => {
+        const key = issue.path.join('.');
+        if (key) fieldErrors[key] = issue.message;
+      });
+      setErroresObra(fieldErrors);
+      return;
+    }
+
+    try {
+      setCreandoObra(true);
+      const obra = await obraSocialService.crear(parsed.data);
+      const nuevoId = getObraSocialId(obra);
+
+      if (!nuevoId) {
+        toast.error('La obra social se creó pero no se pudo seleccionar');
+        setRefreshObras((n) => n + 1);
+      } else {
+        setRefreshObras((n) => n + 1);
+        setField('obraSocial', nuevoId);
+        toast.success('Obra social creada');
+      }
+
+      cancelarNuevaObra();
+    } catch (err: any) {
+      console.error(err);
+      toast.error(err?.response?.data?.message || 'Error al crear la obra social');
+    } finally {
+      setCreandoObra(false);
+    }
   };
 
   const onSubmit = async (e: React.FormEvent) => {
@@ -364,8 +420,94 @@ export const PacienteForm: React.FC<Props> = ({ pacienteId, onSuccess, onCancel 
                   onChange={(value) => setField('obraSocial', value)}
                   placeholder="Sin obra social"
                   className={`form-select ${errors.obraSocial ? 'is-invalid' : ''}`}
+                  refreshKey={refreshObras}
                 />
                 {errors.obraSocial && <div className="invalid-feedback">{errors.obraSocial}</div>}
+
+                {!showNuevaObra ? (
+                  <button
+                    type="button"
+                    className="btn btn-link btn-sm px-0 mt-1 text-decoration-none"
+                    style={{ color: '#00ACB2' }}
+                    onClick={() => setShowNuevaObra(true)}
+                  >
+                    + Crear obra social nueva
+                  </button>
+                ) : (
+                  <div className="border rounded-3 p-3 mt-2 bg-light">
+                    <div className="d-flex justify-content-between align-items-center mb-2">
+                      <span className="fw-semibold small">Nueva obra social</span>
+                      <button
+                        type="button"
+                        className="btn-close"
+                        aria-label="Cerrar"
+                        onClick={cancelarNuevaObra}
+                      />
+                    </div>
+
+                    <div className="row g-2">
+                      <div className="col-12">
+                        <label className="form-label small mb-1 fw-semibold">Nombre *</label>
+                        <input
+                          value={nuevaObra.nombre}
+                          onChange={(e) => setNuevaObraField('nombre', e.target.value)}
+                          className={`form-control form-control-sm ${erroresObra.nombre ? 'is-invalid' : ''}`}
+                          placeholder="Ej: OSDE"
+                        />
+                        {erroresObra.nombre && (
+                          <div className="invalid-feedback">{erroresObra.nombre}</div>
+                        )}
+                      </div>
+
+                      <div className="col-12 col-md-6">
+                        <label className="form-label small mb-1">Email</label>
+                        <input
+                          type="email"
+                          value={nuevaObra.email}
+                          onChange={(e) => setNuevaObraField('email', e.target.value)}
+                          className={`form-control form-control-sm ${erroresObra.email ? 'is-invalid' : ''}`}
+                          placeholder="opcional"
+                        />
+                        {erroresObra.email && (
+                          <div className="invalid-feedback">{erroresObra.email}</div>
+                        )}
+                      </div>
+
+                      <div className="col-12 col-md-6">
+                        <label className="form-label small mb-1">Teléfono</label>
+                        <input
+                          value={nuevaObra.telefono}
+                          onChange={(e) => setNuevaObraField('telefono', e.target.value)}
+                          className={`form-control form-control-sm ${erroresObra.telefono ? 'is-invalid' : ''}`}
+                          placeholder="opcional"
+                        />
+                        {erroresObra.telefono && (
+                          <div className="invalid-feedback">{erroresObra.telefono}</div>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="d-flex justify-content-end gap-2 mt-3">
+                      <button
+                        type="button"
+                        className="btn btn-sm btn-outline-secondary"
+                        onClick={cancelarNuevaObra}
+                        disabled={creandoObra}
+                      >
+                        Cancelar
+                      </button>
+                      <button
+                        type="button"
+                        className="btn btn-sm text-white"
+                        style={{ backgroundColor: '#00ACB2' }}
+                        onClick={crearObraSocialRapida}
+                        disabled={creandoObra}
+                      >
+                        {creandoObra ? 'Creando...' : 'Crear y seleccionar'}
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div className="col-12 col-md-6">

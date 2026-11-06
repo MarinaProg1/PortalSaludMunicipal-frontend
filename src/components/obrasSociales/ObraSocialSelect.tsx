@@ -12,6 +12,8 @@ interface Props {
   className?: string;
   placeholder?: string;
   includeInactive?: boolean;
+  /** Cambiar este valor fuerza a recargar el listado (ej: tras crear una obra social). */
+  refreshKey?: number;
 }
 
 export const ObraSocialSelect: React.FC<Props> = ({
@@ -24,12 +26,14 @@ export const ObraSocialSelect: React.FC<Props> = ({
   className = 'form-select',
   placeholder = 'Seleccionar obra social...',
   includeInactive = false,
+  refreshKey = 0,
 }) => {
   const [items, setItems] = useState<ObraSocialItem[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let mounted = true;
+    setLoading(true);
     (async () => {
       try {
         const data = await obraSocialService.listar(includeInactive);
@@ -41,7 +45,7 @@ export const ObraSocialSelect: React.FC<Props> = ({
       }
     })();
     return () => { mounted = false; };
-  }, [includeInactive]);
+  }, [includeInactive, refreshKey]);
 
   return (
     <select
