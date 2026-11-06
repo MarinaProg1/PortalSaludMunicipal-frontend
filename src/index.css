@@ -32,6 +32,58 @@ background-image: linear-gradient(135deg, #e6e3b9 0%, #ebeedf 50%, #c2ca4e 100%)
   display: none;              /* Chrome / Safari */
 }
 
+/* En pantallas bajas compactamos el sidebar para que entren
+   todas las opciones del menu y el boton Salir. */
+@media (max-height: 860px) {
+  .sidebar-header {
+    padding-bottom: 0.5rem !important;
+    margin-bottom: 0.5rem !important;
+  }
+
+  .sidebar-logo {
+    width: 120px !important;
+  }
+
+  .sidebar-nav {
+    gap: 0.5rem !important;
+  }
+
+  .sidebar-nav .nav-link {
+    padding-top: 0.4rem;
+    padding-bottom: 0.4rem;
+  }
+
+  .sidebar-divider {
+    margin: 0.5rem 0 !important;
+  }
+
+  .sidebar-footer {
+    margin-top: 0.25rem !important;
+    padding-top: 0.25rem !important;
+  }
+}
+
+@media (max-height: 680px) {
+  .sidebar-header {
+    padding-bottom: 0.25rem !important;
+    margin-bottom: 0.25rem !important;
+  }
+
+  .sidebar-logo {
+    width: 95px !important;
+  }
+
+  .sidebar-nav {
+    gap: 0.25rem !important;
+  }
+
+  .sidebar-nav .nav-link {
+    padding-top: 0.3rem;
+    padding-bottom: 0.3rem;
+    font-size: 0.875rem;
+  }
+}
+
 .nav-link:not(.active) svg {
   color: #00ACB2 !important; 
 }

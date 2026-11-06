@@ -65,12 +65,12 @@ const SidebarContent: React.FC<SidebarContentProps> = ({ userRole, isMobile = fa
   return (
     <div className="d-flex flex-column h-100 p-1">
       {!isMobile && (
-        <div className="pb-3 mb-3 border-bottom border-dark border-opacity-25 text-center">
+        <div className="sidebar-header pb-3 mb-3 border-bottom border-dark border-opacity-25 text-center">
           <a className="navbar-brand d-flex align-items-center justify-content-center m-0" href="#">
             <img
               src={logoGoya}
               alt="Logo Portal Salud Goya"
-              className="img-fluid"
+              className="sidebar-logo img-fluid"
               style={{ width: '150px', height: 'auto' }}
             />
           </a>
@@ -109,9 +109,9 @@ const SidebarContent: React.FC<SidebarContentProps> = ({ userRole, isMobile = fa
         })}
       </ul>
 
-      <hr className="border-dark" />
+      <hr className="sidebar-divider border-dark" />
 
-      <div className="mt-2 pt-2 flex-shrink-0">
+      <div className="sidebar-footer mt-2 pt-2 flex-shrink-0">
         <div className="d-flex align-items-center text-dark mb-2">
           <div className="rounded-circle bg-gradient-salud text-white fw-bold d-flex align-items-center justify-content-center me-2" style={{ width: '32px', height: '32px' }}>
             {userRole.substring(0, 2).toUpperCase()}
