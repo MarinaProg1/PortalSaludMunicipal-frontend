@@ -10,6 +10,9 @@ import { HorarioAtencionLista } from "../components/horarios/HorarioAtencionList
 import { HorarioAtencionForm } from "../components/horarios/HorarioAtencionForm";
 import { ObraSocialLista } from "../components/obrasSociales/ObraSocialLista";
 import { ObraSocialForm } from "../components/obrasSociales/ObraSocialForm";
+import { PacienteLista } from "../components/pacientes/PacienteLista";
+import { PacienteForm } from "../components/pacientes/PacienteForm";
+import { PacienteDetalle } from "../components/pacientes/PacienteDetalle";
 import { RequireRole } from "./RequireRole";
 import NotFound from "../components/utils/NotFound";
 
@@ -34,6 +37,19 @@ const EdicionObraSocialWrapper = () => {
     <ObraSocialForm
       obraSocialId={id}
       onSuccess={() => navigate("/obras-sociales")}
+      onCancel={() => navigate(-1)}
+    />
+  );
+};
+
+const EdicionPacienteWrapper = () => {
+  const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+
+  return (
+    <PacienteForm
+      pacienteId={id}
+      onSuccess={() => navigate("/pacientes")}
       onCancel={() => navigate(-1)}
     />
   );
@@ -64,6 +80,11 @@ const AppRouter = () => {
           <Route path="obras-sociales" element={<RequireRole allowed={["ADMIN", "RECEPCIONISTA"]}><ObraSocialLista /></RequireRole>} />
           <Route path="obras-sociales/nuevo" element={<RequireRole allowed={["ADMIN", "RECEPCIONISTA"]}><ObraSocialForm /></RequireRole>} />
           <Route path="obras-sociales/editar/:id" element={<RequireRole allowed={["ADMIN", "RECEPCIONISTA"]}><EdicionObraSocialWrapper /></RequireRole>} />
+
+          <Route path="pacientes" element={<RequireRole allowed={["ADMIN", "RECEPCIONISTA"]}><PacienteLista /></RequireRole>} />
+          <Route path="pacientes/nuevo" element={<RequireRole allowed={["ADMIN", "RECEPCIONISTA"]}><PacienteForm /></RequireRole>} />
+          <Route path="pacientes/editar/:id" element={<RequireRole allowed={["ADMIN", "RECEPCIONISTA"]}><EdicionPacienteWrapper /></RequireRole>} />
+          <Route path="pacientes/:id" element={<RequireRole allowed={["ADMIN", "RECEPCIONISTA"]}><PacienteDetalle /></RequireRole>} />
         </Route>
 
         <Route path="*" element={<NotFound />} />
