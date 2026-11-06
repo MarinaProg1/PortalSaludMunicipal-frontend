@@ -23,6 +23,15 @@ background-image: linear-gradient(135deg, #e6e3b9 0%, #ebeedf 50%, #c2ca4e 100%)
   background-color: rgba(62, 110, 98, 0.08) !important;
   color: #2b4d44 !important;
 }
+.sidebar-nav {
+  scrollbar-width: none;      /* Firefox */
+  -ms-overflow-style: none;   /* Edge / IE */
+}
+
+.sidebar-nav::-webkit-scrollbar {
+  display: none;              /* Chrome / Safari */
+}
+
 .nav-link:not(.active) svg {
   color: #00ACB2 !important; 
 }

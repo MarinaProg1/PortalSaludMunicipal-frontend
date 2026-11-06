@@ -28,7 +28,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ userRole }) => {
 
       <div
         className="d-none d-lg-flex flex-column flex-shrink-0 p-3 bg-salud-claro text-darck vh-100 border-end shadow-sm"
-        style={{ width: '280px', overflowY: 'auto' }}
+        style={{ width: '280px' }}
       >
         <SidebarContent userRole={userRole} />
       </div>
@@ -78,7 +78,7 @@ const SidebarContent: React.FC<SidebarContentProps> = ({ userRole, isMobile = fa
       )}
 
       <ul
-        className="nav nav-pills flex-column gap-3 flex-grow-1"
+        className="nav nav-pills flex-column mb-auto gap-3 sidebar-nav"
         style={{ minHeight: 0, overflowY: 'auto' }}
       >
         {menuItems.map((item: MenuItem) => {
@@ -111,7 +111,7 @@ const SidebarContent: React.FC<SidebarContentProps> = ({ userRole, isMobile = fa
 
       <hr className="border-dark" />
 
-      <div className="mt-auto pt-2 flex-shrink-0">
+      <div className="mt-2 pt-2 flex-shrink-0">
         <div className="d-flex align-items-center text-dark mb-2">
           <div className="rounded-circle bg-gradient-salud text-white fw-bold d-flex align-items-center justify-content-center me-2" style={{ width: '32px', height: '32px' }}>
             {userRole.substring(0, 2).toUpperCase()}
