@@ -196,7 +196,7 @@ export const PacienteForm: React.FC<Props> = ({ pacienteId, onSuccess, onCancel 
     const payload = {
       ...data,
       obraSocial: data.obraSocial || null,
-      numeroAfiliado: data.numeroAfiliado || null,
+      numeroAfiliado: data.obraSocial ? data.numeroAfiliado || null : null,
       activo: isEdit ? values.activo : true,
     };
 
@@ -417,7 +417,10 @@ export const PacienteForm: React.FC<Props> = ({ pacienteId, onSuccess, onCancel 
                 <label className="form-label fw-semibold">Obra social</label>
                 <ObraSocialSelect
                   value={values.obraSocial}
-                  onChange={(value) => setField('obraSocial', value)}
+                  onChange={(value) => {
+                    setField('obraSocial', value);
+                    if (!value) setField('numeroAfiliado', '');
+                  }}
                   placeholder="Sin obra social"
                   className={`form-select ${errors.obraSocial ? 'is-invalid' : ''}`}
                   refreshKey={refreshObras}

@@ -21,7 +21,10 @@ export const pacienteSchema = z.object({
     codigoArea: z.string().trim().min(2, 'Codigo de area invalido'),
     numero: z.string().trim().min(6, 'Numero de telefono invalido'),
   }),
-  obraSocial: z.string().length(24, 'Obra social invalida').nullable().optional(),
+  obraSocial: z.preprocess(
+    (value) => (value === '' || value === undefined ? null : value),
+    z.string().length(24, 'Obra social invalida').nullable()
+  ),
   numeroAfiliado: z.string().trim().optional().nullable(),
   activo: z.boolean().optional(),
 });
