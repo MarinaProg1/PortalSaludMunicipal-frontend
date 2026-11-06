@@ -26,12 +26,29 @@ function userFromToken(token: string | null): AuthUser | null {
   return { id: payload.id, email: payload.email, user: payload.user, rol: payload.rol };
 }
 
+function isTokenValid(token: string | null): boolean {
+  if (!token) return false;
+  const payload = decodeJwt(token);
+  if (!payload) return false;
+  if (typeof payload.exp === "number" && payload.exp * 1000 <= Date.now()) return false;
+  return true;
+}
+
+function getStoredToken(): string | null {
+  const stored = localStorage.getItem("token");
+  if (!isTokenValid(stored)) {
+    if (stored) localStorage.removeItem("token");
+    return null;
+  }
+  return stored;
+}
+
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [token, setToken] = useState<string | null>(localStorage.getItem("token"));
-  const [user, setUser] = useState<AuthUser | null>(() => userFromToken(localStorage.getItem("token")));
+  const [token, setToken] = useState<string | null>(() => getStoredToken());
+  const [user, setUser] = useState<AuthUser | null>(() => userFromToken(getStoredToken()));
 
   useEffect(() => {
-    const storedToken = localStorage.getItem("token");
+    const storedToken = getStoredToken();
     setToken(storedToken);
     setUser(userFromToken(storedToken));
   }, []);
@@ -62,7 +79,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         token,
         user,
         rol: user?.rol || null,
-        isAuthenticated: !!token,
+        isAuthenticated: isTokenValid(token),
         login,
         logout,
       }}

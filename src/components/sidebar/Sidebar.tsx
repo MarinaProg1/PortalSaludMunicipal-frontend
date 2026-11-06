@@ -28,7 +28,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ userRole }) => {
 
       <div
         className="d-none d-lg-flex flex-column flex-shrink-0 p-3 bg-salud-claro text-darck vh-100 border-end shadow-sm"
-        style={{ width: '280px' }}
+        style={{ width: '280px', overflowY: 'auto' }}
       >
         <SidebarContent userRole={userRole} />
       </div>
@@ -43,7 +43,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ userRole }) => {
           <h5 className="offcanvas-title fw-bold text-dark" id="sidebarOffcanvasLabel">Portal de Salud</h5>
           <button type="button" className="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
         </div>
-        <div className="offcanvas-body p-0">
+        <div className="offcanvas-body p-0 d-flex flex-column">
           <SidebarContent userRole={userRole} isMobile={true} />
         </div>
       </div>
@@ -77,7 +77,10 @@ const SidebarContent: React.FC<SidebarContentProps> = ({ userRole, isMobile = fa
         </div>
       )}
 
-      <ul className="nav nav-pills flex-column mb-auto gap-3">
+      <ul
+        className="nav nav-pills flex-column gap-3 flex-grow-1"
+        style={{ minHeight: 0, overflowY: 'auto' }}
+      >
         {menuItems.map((item: MenuItem) => {
           const Icon = item.icon;
           const isActive = location.pathname === item.path;
@@ -108,7 +111,7 @@ const SidebarContent: React.FC<SidebarContentProps> = ({ userRole, isMobile = fa
 
       <hr className="border-dark" />
 
-      <div className="mt-2 pt-2">
+      <div className="mt-auto pt-2 flex-shrink-0">
         <div className="d-flex align-items-center text-dark mb-2">
           <div className="rounded-circle bg-gradient-salud text-white fw-bold d-flex align-items-center justify-content-center me-2" style={{ width: '32px', height: '32px' }}>
             {userRole.substring(0, 2).toUpperCase()}
