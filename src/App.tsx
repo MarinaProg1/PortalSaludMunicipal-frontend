@@ -4,6 +4,9 @@ import { TurnosLista } from './components/turnos/TurnosLista';
 import NotFound from './components/utils/NotFound';
 import { TurnoForm } from './components/turnos/TurnoForm';
 import { DetalleTurno } from './components/turnos/DetalleTurno';
+import { DetalleHistorialMedico } from './components/historialMedico/DetalleHistorialMedico';
+import { HistorialMedicoForm } from './components/historialMedico/HistorialMedicoForm';
+import { HistorialMedicoLista } from './components/historialMedico/HistorialMedicoLista';
 import { HorarioAtencionForm } from './components/horarios/HorarioAtencionForm';
 import { HorarioAtencionLista } from './components/horarios/HorarioAtencionLista';
 import {EspecialidadesLista} from './components/especialidades/EspecialidadLista';
@@ -38,6 +41,11 @@ export default function App() {
           <Route path="turnos/nuevo" element={<TurnoForm />} />
           <Route path="turno-detalle/:id" element={<DetalleTurno />} />
           <Route path="turnos/editar/:id" element={<EdicionTurnoWrapper />} />
+          <Route path="/historial-medico" element={<HistorialMedicoLista />} />
+          <Route path="/historial-medico/nuevo" element={<HistorialMedicoForm />} />
+          <Route path="/historial-medico/detalle/:id" element={<DetalleHistorialMedico />} />
+          <Route path="/historial-medico/editar/:id" element={<HistorialMedicoForm />} />
+          <Route path="/historial-medico/nuevo/:turnoId" element={<HistorialMedicoForm />} />
           <Route path="/especialidades" element={<EspecialidadesLista />} />
           <Route path="/especialidades/nuevo" element={<EspecialidadForm />} />
           <Route path="/especialidades/editar/:id" element={<EspecialidadForm />} />
