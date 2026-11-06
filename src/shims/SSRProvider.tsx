@@ -1,4 +1,4 @@
-import { ReactNode } from "react";
+import type { ReactNode } from "react";
 
 export const SSRProvider = ({ children }: { children: ReactNode }) => {
   return <>{children}</>;
