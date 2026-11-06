@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { BsClock, BsCheckCircle } from 'react-icons/bs';
+import { BsClock } from 'react-icons/bs';
+import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 import clientesAxios from '../../config/axios';
 import { isAxiosError } from 'axios';
 import type { MedicoItem, DiaConfig, HorarioApiResponse } from './horario.schema';
 import { PageHeader } from '../../constants/PageHeader';
-
+import { HorarioAtencionFormSkeleton } from './HorarioAtencionFromSkeleton';
 
 const DIAS_SEMANA = [
   { key: 'LUNES', label: 'Lunes' },
@@ -30,19 +31,12 @@ const estructuraInicialDias = (): Record<string, DiaConfig> => ({
 export const HorarioAtencionForm: React.FC = () => {
   const navigate = useNavigate();
   const [medicos, setMedicos] = useState<MedicoItem[]>([]);
-
-  // Datos generales
   const [medicoSeleccionado, setMedicoSeleccionado] = useState('');
   const [duracionTurno, setDuracionTurno] = useState<number>(30);
-
-  // Configuración por día (Mañana y Tarde)
   const [agendaDias, setAgendaDias] = useState<Record<string, DiaConfig>>(estructuraInicialDias());
-
   const [loadingData, setLoadingData] = useState<boolean>(true);
   const [loadingHorariosMedico, setLoadingHorariosMedico] = useState<boolean>(false);
   const [submitting, setSubmitting] = useState<boolean>(false);
-  const [error, setError] = useState<string | null>(null);
-  const [successMsg, setSuccessMsg] = useState<boolean>(false);
 
   // 1. Cargar lista de médicos al montar el componente
   useEffect(() => {
@@ -63,7 +57,7 @@ export const HorarioAtencionForm: React.FC = () => {
         setMedicos(listaMedicos);
       } catch (err) {
         console.error('Error al cargar médicos:', err);
-        setError('No se pudo cargar la lista de médicos.');
+        toast.error('No se pudo cargar la lista de médicos.');
       } finally {
         setLoadingData(false);
       }
@@ -132,12 +126,12 @@ export const HorarioAtencionForm: React.FC = () => {
       setAgendaDias(nuevaAgenda);
     } catch (err) {
       console.error('Error al consultar horarios del médico:', err);
+      toast.error('No se pudieron cargar los horarios del médico.');
     } finally {
       setLoadingHorariosMedico(false);
     }
   };
 
-  // Manejadores de cambios para los días y turnos
   const handleToggleDia = (diaKey: string) => {
     setAgendaDias(prev => ({
       ...prev,
@@ -160,17 +154,16 @@ export const HorarioAtencionForm: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError(null);
 
     if (!medicoSeleccionado) {
-      setError('Por favor, seleccione un médico.');
+      toast.error('Por favor, seleccione un médico.');
       return;
     }
 
     const diasSeleccionados = Object.entries(agendaDias).filter(([, config]) => config.seleccionado);
 
     if (diasSeleccionados.length === 0) {
-      setError('Debe seleccionar al menos un día de la semana.');
+      toast.error('Debe seleccionar al menos un día de la semana.');
       return;
     }
 
@@ -209,7 +202,8 @@ export const HorarioAtencionForm: React.FC = () => {
 
       await Promise.all(promesas);
 
-      setSuccessMsg(true);
+      toast.success('¡Horarios de atención registrados exitosamente!');
+      
       setTimeout(() => {
         navigate('/horarioAtencion');
       }, 1500);
@@ -218,46 +212,28 @@ export const HorarioAtencionForm: React.FC = () => {
       const backendMessage = isAxiosError<{ message?: string }>(err)
         ? err.response?.data?.message || 'Error al registrar los horarios de atención en el servidor.'
         : 'Error al registrar los horarios de atención en el servidor.';
-      setError(backendMessage);
+      
+      toast.error(backendMessage);
     } finally {
       setSubmitting(false);
     }
   };
 
   if (loadingData) {
-    return (
-      <div className="container-fluid px-2 px-md-4 py-4 text-center">
-        <div className="spinner-border mx-auto mb-3" role="status" style={{ color: '#00ACB2' }}></div>
-        <p className="text-muted">Cargando formulario...</p>
-      </div>
-    );
+    return <HorarioAtencionFormSkeleton />;
   }
 
   return (
     <div className="container-fluid px-2 px-md-4 py-4">
       <div className="card border-0 shadow-sm bg-white p-4 mx-auto" style={{ maxWidth: '850px', borderRadius: '12px' }}>
         
-       {/* Cabecera Reutilizada */}
-<PageHeader 
-  titulo="Configurar Horarios de Atención"
-  subtitulo="Seleccione el profesional para consultar o actualizar su disponibilidad semanal."
-  icon={<BsClock className="me-2" style={{ color: '#00ACB2' }} />}
-  onBack={() => navigate('/horarioAtencion')}
-/>
-
-        {/* Alertas */}
-        {successMsg && (
-          <div className="alert alert-success d-flex align-items-center gap-2 mb-4" role="alert">
-            <BsCheckCircle size={20} />
-            <div>¡Horarios de atención registrados exitosamente!</div>
-          </div>
-        )}
-
-        {error && (
-          <div className="alert alert-danger mb-4" role="alert">
-            {error}
-          </div>
-        )}
+        {/* Cabecera Reutilizada */}
+        <PageHeader 
+          titulo="Configurar Horarios de Atención"
+          subtitulo="Seleccione el profesional para consultar o actualizar su disponibilidad semanal."
+          icon={<BsClock className="me-2" style={{ color: '#00ACB2' }} />}
+          onBack={() => navigate('/horarioAtencion')}
+        />
 
         {/* Formulario */}
         <form onSubmit={handleSubmit}>
@@ -451,7 +427,7 @@ export const HorarioAtencionForm: React.FC = () => {
               type="submit" 
               className="btn text-white fw-semibold px-4 shadow-sm"
               style={{ backgroundColor: '#00ACB2', borderRadius: '8px' }}
-              disabled={submitting || successMsg}
+              disabled={submitting}
             >
               {submitting ? 'Guardando...' : 'Guardar Horarios'}
             </button>

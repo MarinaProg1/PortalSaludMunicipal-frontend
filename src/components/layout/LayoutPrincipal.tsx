@@ -24,7 +24,7 @@ const LayoutPrincipal = () => {
                 <div className="d-lg-none" style={{ height: '56px' }}></div>
 
                 {/* 3. Área dinámica donde se renderizan las sub-rutas */}
-                <main className="flex-grow-1 p-4 w-100 bg-light">
+                <main className="flex-grow-1 p-1 w-100 bg-light">
                     <Outlet />
                 </main>
             </div>

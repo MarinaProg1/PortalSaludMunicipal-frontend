@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { isAxiosError } from 'axios';
-import { BsCalendarPlus, BsCheckCircle, BsSearch, BsX } from 'react-icons/bs';
+import { BsCalendarPlus, BsSearch, BsX } from 'react-icons/bs';
 import { TurnoFormSkeleton } from './TurnoFormSkeleton';
 import clientesAxios from '../../config/axios';
 import type { OptionItem, MedicoItem, HorarioAtencionItem, TurnoFormProps } from './turno.schema';
 import { PageHeader } from '../../constants/PageHeader';
+import { toast } from 'sonner';
 
 export const TurnoForm: React.FC<TurnoFormProps> = ({ turnoId, onSuccess, onCancel }) => {
   const [pacientes, setPacientes] = useState<OptionItem[]>([]);
@@ -35,8 +36,6 @@ export const TurnoForm: React.FC<TurnoFormProps> = ({ turnoId, onSuccess, onCanc
   const [loadingData, setLoadingData] = useState<boolean>(true);
   const [loadingHorarios, setLoadingHorarios] = useState<boolean>(false);
   const [submitting, setSubmitting] = useState<boolean>(false);
-  const [error, setError] = useState<string | null>(null);
-  const [successMsg, setSuccessMsg] = useState<boolean>(false);
 
   const isEditing = Boolean(turnoId);
 
@@ -179,7 +178,7 @@ export const TurnoForm: React.FC<TurnoFormProps> = ({ turnoId, onSuccess, onCanc
 
       } catch (err) {
         console.error('Error al cargar datos del formulario:', err);
-        setError('No se pudieron cargar los datos necesarios.');
+        toast.error('No se pudieron cargar los datos necesarios.');
       } finally {
         setLoadingData(false);
       }
@@ -261,27 +260,26 @@ export const TurnoForm: React.FC<TurnoFormProps> = ({ turnoId, onSuccess, onCanc
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError(null);
     setSubmitting(true);
 
     try {
       if (isEditing && turnoId) {
         await clientesAxios.put(`/turnos/${turnoId}`, formData);
+        toast.success('¡Turno actualizado exitosamente!');
       } else {
         await clientesAxios.post('/turnos', formData);
+        toast.success('¡Turno creado y guardado exitosamente!');
       }
-
-      setSuccessMsg(true);
       
       setTimeout(() => {
         if (onSuccess) onSuccess();
-      }, 1500);
+      }, 1000);
     } catch (err: unknown) {
       console.error('Error al guardar el turno:', err);
       const backendMessage = isAxiosError<{ message?: string }>(err)
         ? err.response?.data?.message || 'Error al guardar el turno en el servidor.'
         : 'Error al guardar el turno en el servidor.';
-      setError(backendMessage);
+      toast.error(backendMessage);
     } finally {
       setSubmitting(false);
     }
@@ -293,8 +291,6 @@ export const TurnoForm: React.FC<TurnoFormProps> = ({ turnoId, onSuccess, onCanc
 
   return (
     <div className="container-fluid px-2 px-md-4 py-4">
-      <div className="card border-0 shadow-sm bg-white p-4 mx-auto" style={{ maxWidth: '700px', borderRadius: '12px' }}>
-      
        {/* Cabecera Reutilizada */}
         <PageHeader 
           titulo={isEditing ? 'Modificar Turno Médico' : 'Asignar Nuevo Turno'}
@@ -302,19 +298,7 @@ export const TurnoForm: React.FC<TurnoFormProps> = ({ turnoId, onSuccess, onCanc
           icon={<BsCalendarPlus className="me-2" style={{ color: '#00ACB2' }} />}
           onBack={onCancel}
         />
-
-        {successMsg && (
-          <div className="alert alert-success d-flex align-items-center gap-2 mb-4" role="alert">
-            <BsCheckCircle size={20} />
-            <div>{isEditing ? '¡Turno actualizado exitosamente!' : '¡Turno creado y guardado exitosamente!'}</div>
-          </div>
-        )}
-
-        {error && (
-          <div className="alert alert-danger mb-4" role="alert">
-            {error}
-          </div>
-        )}
+      <div className="card border-0 shadow-sm bg-white p-4 mx-auto" style={{ maxWidth: '700px', borderRadius: '12px' }}>
 
         <form onSubmit={handleSubmit}>
           <div className="row g-3">
@@ -536,7 +520,7 @@ export const TurnoForm: React.FC<TurnoFormProps> = ({ turnoId, onSuccess, onCanc
               type="submit" 
               className="btn text-white fw-semibold px-4 shadow-sm"
               style={{ backgroundColor: '#00ACB2', borderRadius: '8px' }}
-              disabled={submitting || successMsg}
+              disabled={submitting}
             >
               {submitting ? 'Guardando...' : (isEditing ? 'Actualizar Turno' : 'Registrar Turno')}
             </button>
