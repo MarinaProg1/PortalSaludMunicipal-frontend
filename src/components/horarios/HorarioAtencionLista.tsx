@@ -1,11 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { ActionButtons } from '../../constants/ActionButtons';
-import {  BsPlusCircle,  BsSearch,  BsClockHistory,  BsChevronDown,  BsChevronUp,  BsCalendarCheck } from 'react-icons/bs';
+import { BsPlusCircle, BsSearch, BsClockHistory, BsChevronDown, BsChevronUp, BsCalendarCheck, BsArrowLeft } from 'react-icons/bs';
 import { useNavigate } from 'react-router-dom';
 import clientesAxios from '../../config/axios';
 import { HorarioAtencionSkeleton } from './HorarioAtencionSkeleton';
-import type { HorarioItem, MedicoAgrupado } from './horario.schema';
-
+import type { HorarioItem, MedicoAgrupado, DiaDisponibilidad } from './horario.schema';
+import { MedicoAgendaDesplegable } from './MedicoAgendaDesplegable'; 
 
 export const HorarioAtencionLista: React.FC = () => {
   const navigate = useNavigate();
@@ -14,112 +13,138 @@ export const HorarioAtencionLista: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [busqueda, setBusqueda] = useState('');
   
-  // Estado para controlar qué acordeón/desplegable de médico está abierto
   const [medicoDesplegado, setMedicoDesplegado] = useState<string | null>(null);
+
+  const [mesActual, setMesActual] = useState<Date>(new Date());
+  const [diasMes, setDiasMes] = useState<DiaDisponibilidad[]>([]);
+  const [cargandoMes, setCargandoMes] = useState<boolean>(false);
+  const [fechaSeleccionada, setFechaSeleccionada] = useState<string>('');
+  const [slotsDisponibles, setSlotsDisponibles] = useState<string[]>([]);
+  const [cargandoSlots, setCargandoSlots] = useState<boolean>(false);
 
   useEffect(() => {
     let isMounted = true;
-
     const fetchHorarios = async () => {
       try {
         const response = await clientesAxios.get('/horarioAtencion');
-        
         if (isMounted) {
           const dataApi = response.data;
-          console.log("DATOS CRUDOS DEL BACKEND:", dataApi);
           let listaHorarios: HorarioItem[] = [];
-
           if (Array.isArray(dataApi)) {
             listaHorarios = dataApi;
-            
           } else if (dataApi && typeof dataApi === 'object') {
             const record = dataApi as Record<string, unknown>;
-            
             if (Array.isArray(record.horarios)) listaHorarios = record.horarios as HorarioItem[];
             else if (Array.isArray(record.data)) listaHorarios = record.data as HorarioItem[];
           }
-
           setHorarios(listaHorarios);
           setError(null);
         }
       } catch (err) {
         console.error('Error al cargar los horarios:', err);
-        if (isMounted) {
-          setError('No se pudo conectar con el servidor para cargar los horarios de atención.');
-        }
+        if (isMounted) setError('No se pudo conectar con el servidor para cargar los horarios de atención.');
       } finally {
-        if (isMounted) {
-          setLoading(false);
-        }
+        if (isMounted) setLoading(false);
       }
     };
-
     fetchHorarios();
-
-    return () => {
-      isMounted = false;
-    };
+    return () => { isMounted = false; };
   }, []);
 
-  const handleView = (id?: string) => {
-    if (id) alert(`Ver detalle del horario ID: ${id}`);
-  };
-
-  const handleEdit = (id?: string) => {
-    if (id) alert(`Modificar horario ID: ${id}`);
-  };
-
-  const handleDelete = async (id?: string) => {
-    if (!id) return;
-    if (confirm('¿Estás seguro de eliminar este horario de atención?')) {
+  useEffect(() => {
+    if (!medicoDesplegado) return;
+    const fetchDisponibilidadMes = async () => {
+      setCargandoMes(true);
       try {
-        await clientesAxios.delete(`/horarioAtencion/${id}`);
-        setHorarios(prev => prev.filter(h => h.id !== id));
+        const anio = mesActual.getFullYear();
+        const mes = mesActual.getMonth() + 1;
+        const res = await clientesAxios.get('/turnos/disponibilidad-mes', {
+          params: { medico: medicoDesplegado, anio, mes }
+        });
+        if (res.data && res.data.ok) {
+          setDiasMes(res.data.data || []);
+        }
       } catch (err) {
-        console.error('Error al eliminar el horario:', err);
-        alert('Hubo un error al intentar eliminar el registro.');
+        console.error('Error al cargar disponibilidad mensual:', err);
+        setDiasMes([]);
+      } finally {
+        setCargandoMes(false);
       }
+    };
+    fetchDisponibilidadMes();
+  }, [medicoDesplegado, mesActual]);
+
+  const handleSeleccionarDia = async (fechaStr: string, tieneDisponibilidad: boolean) => {
+    if (!tieneDisponibilidad || !medicoDesplegado) return;
+    setFechaSeleccionada(fechaStr);
+    setCargandoSlots(true);
+    try {
+      const res = await clientesAxios.get('/turnos/disponibles', {
+        params: { medico: medicoDesplegado, fecha: fechaStr }
+      });
+      if (res.data && res.data.ok) {
+        setSlotsDisponibles(res.data.data.horariosDisponibles || []);
+      } else {
+        setSlotsDisponibles([]);
+      }
+    } catch (err) {
+      console.error('Error al obtener turnos disponibles:', err);
+      setSlotsDisponibles([]);
+    } finally {
+      setCargandoSlots(false);
     }
   };
 
-  const toggleDesplegar = (medicoId: string) => {
-    setMedicoDesplegado(prev => (prev === medicoId ? null : medicoId));
+  const cambiarMes = (direccion: 'anterior' | 'siguiente') => {
+    setMesActual(prev => {
+      const nuevo = new Date(prev);
+      if (direccion === 'anterior') nuevo.setMonth(nuevo.getMonth() - 1);
+      else nuevo.setMonth(nuevo.getMonth() + 1);
+      return nuevo;
+    });
+    setFechaSeleccionada('');
+    setSlotsDisponibles([]);
   };
 
-  // 1. Agrupar horarios por Médico
+  const toggleDesplegar = (medicoId: string) => {
+    if (medicoDesplegado === medicoId) {
+      setMedicoDesplegado(null);
+    } else {
+      setMedicoDesplegado(medicoId);
+      setFechaSeleccionada('');
+      setSlotsDisponibles([]);
+      setMesActual(new Date());
+    }
+  };
+
   const agruparPorMedico = (items: HorarioItem[]): MedicoAgrupado[] => {
     const mapa = new Map<string, MedicoAgrupado>();
-
     items.forEach(h => {
-      const idMed = h.medico?._id || h.medico?._id || 'sin-medico';
+      const idMed = h.medico?._id || 'sin-medico';
       const nombreMed = h.medico && h.medico.nombre 
         ? `Dr./Dra. ${h.medico.nombre} ${h.medico.apellido || ''}`.trim() 
         : 'Sin médico asignado';
 
       if (!mapa.has(idMed)) {
-        mapa.set(idMed, {
-          medicoId: idMed,
-          medicoNombreCompleto: nombreMed,
-          horarios: []
-        });
+        mapa.set(idMed, { medicoId: idMed, medicoNombreCompleto: nombreMed, horarios: [] });
       }
-
       mapa.get(idMed)?.horarios.push(h);
     });
-
     return Array.from(mapa.values());
   };
 
-  // 2. Filtrar por término de búsqueda y obtener los grupos
   const medicosAgrupados = agruparPorMedico(
     Array.isArray(horarios) ? horarios.filter(h => {
       const nombreMed = `${h.medico?.nombre || ''} ${h.medico?.apellido || ''}`.toLowerCase();
       const dia = (h.diaSemana || '').toLowerCase();
       const termino = busqueda.toLowerCase();
-
       return nombreMed.includes(termino) || dia.includes(termino);
     }) : []
   );
+
+  const medicosAVisualizar = medicoDesplegado 
+    ? medicosAgrupados.filter(g => g.medicoId === medicoDesplegado)
+    : medicosAgrupados;
 
   return (
     <div className="container-fluid px-2 px-md-4 py-4">
@@ -129,9 +154,9 @@ export const HorarioAtencionLista: React.FC = () => {
         <div>
           <h2 className="fw-bold text-dark mb-1 fs-4 fs-md-3">
             <BsClockHistory className="me-2" style={{ color: '#00ACB2' }} />
-            Horarios de Atención por Médico
+            Horarios y Agenda de Turnos por Médico
           </h2>
-          <p className="text-muted mb-0 small">Consulta la agenda y disponibilidad horaria semanal asignada a cada profesional.</p>
+          <p className="text-muted mb-0 small">Consulta la disponibilidad horaria y visualiza la agenda de turnos en tiempo real.</p>
         </div>
         
         <button 
@@ -145,59 +170,65 @@ export const HorarioAtencionLista: React.FC = () => {
       </div>
 
       {/* Buscador */}
-      <div className="card border-0 shadow-sm mb-4 bg-white" style={{ borderRadius: '12px' }}>
-        <div className="card-body p-3">
-          <div className="input-group">
-            <span className="input-group-text bg-transparent border-end-0 text-muted">
-              <BsSearch size={18} />
-            </span>
-            <input 
-              type="text" 
-              className="form-control border-start-0 shadow-none ps-0" 
-              placeholder="Buscar por médico o día de semana (ej: LUNES)..."
-              value={busqueda}
-              onChange={(e) => setBusqueda(e.target.value)}
-              disabled={loading}
-            />
+      {!medicoDesplegado && (
+        <div className="card border-0 shadow-sm mb-4 bg-white" style={{ borderRadius: '12px' }}>
+          <div className="card-body p-3">
+            <div className="input-group">
+              <span className="input-group-text bg-transparent border-end-0 text-muted"><BsSearch size={18} /></span>
+              <input 
+                type="text" 
+                className="form-control border-start-0 shadow-none ps-0" 
+                placeholder="Buscar por médico o día de semana (ej: LUNES)..."
+                value={busqueda}
+                onChange={(e) => setBusqueda(e.target.value)}
+                disabled={loading}
+              />
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
-      {/* Renderizado de Estados */}
+      {/* Botón de Regresar */}
+      {medicoDesplegado && (
+        <div className="mb-3">
+          <button 
+            className="btn btn-outline-secondary btn-sm d-flex align-items-center gap-1 shadow-none"
+            onClick={() => setMedicoDesplegado(null)}
+          >
+            <BsArrowLeft /> Volver a la lista de médicos
+          </button>
+        </div>
+      )}
+
+      {/* Renderizado */}
       {loading ? (
         <HorarioAtencionSkeleton />
       ) : error ? (
         <div className="card border-0 shadow-sm bg-danger-subtle text-danger p-4 text-center" style={{ borderRadius: '12px' }}>
           <p className="mb-0 fw-semibold">{error}</p>
         </div>
-      ) : medicosAgrupados.length > 0 ? (
+      ) : medicosAVisualizar.length > 0 ? (
         <div className="d-flex flex-column gap-3">
-          {medicosAgrupados.map((grupo) => {
+          {medicosAVisualizar.map((grupo) => {
             const estaAbierto = medicoDesplegado === grupo.medicoId;
 
             return (
-              <div 
-                key={grupo.medicoId} 
-                className="card border-0 shadow-sm bg-white overflow-hidden" 
-                style={{ borderRadius: '12px' }}
-              >
-                {/* Cabecera de la Tarjeta del Médico */}
+              <div key={grupo.medicoId} className="card border-0 shadow-sm bg-white overflow-hidden" style={{ borderRadius: '12px' }}>
+                
+                {/* Cabecera del Médico */}
                 <div 
                   className="p-3 d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center gap-2 bg-white"
                   style={{ cursor: 'pointer' }}
                   onClick={() => toggleDesplegar(grupo.medicoId)}
                 >
                   <div className="d-flex align-items-center gap-3">
-                    <div 
-                      className="p-2 rounded-circle d-flex align-items-center justify-content-center text-white"
-                      style={{ backgroundColor: '#00ACB2', width: '42px', height: '42px' }}
-                    >
+                    <div className="p-2 rounded-circle d-flex align-items-center justify-content-center text-white" style={{ backgroundColor: '#00ACB2', width: '42px', height: '42px' }}>
                       <BsCalendarCheck size={20} />
                     </div>
                     <div>
                       <h5 className="fw-bold text-dark mb-0">{grupo.medicoNombreCompleto}</h5>
                       <span className="text-muted small">
-                        {grupo.horarios.length} {grupo.horarios.length === 1 ? 'bloque horario cargado' : 'bloques horarios cargados'}
+                        {grupo.horarios.length} {grupo.horarios.length === 1 ? 'bloque horario configurado' : 'bloques horarios configurados'}
                       </span>
                     </div>
                   </div>
@@ -210,54 +241,23 @@ export const HorarioAtencionLista: React.FC = () => {
                       toggleDesplegar(grupo.medicoId);
                     }}
                   >
-                    <span>{estaAbierto ? 'Ocultar Agenda' : 'Ver Agenda'}</span>
+                    <span>{estaAbierto ? 'Ocultar Agenda' : 'Ver Agenda de Turnos'}</span>
                     {estaAbierto ? <BsChevronUp /> : <BsChevronDown />}
                   </button>
                 </div>
 
-                {/* Desplegable de la Agenda (Tabla de Horarios del Médico) */}
+                {/* 🌟 Agenda integrada limpiamente mediante el subcomponente */}
                 {estaAbierto && (
-                  <div className="border-top border-secondary-subtle bg-light-subtle p-3">
-                    <div className="table-responsive bg-white rounded shadow-sm border border-secondary-subtle">
-                      <table className="table table-hover align-middle mb-0">
-                        <thead className="table-light text-uppercase fs-7 text-secondary">
-                          <tr>
-                            <th className="py-2 px-3">Día</th>
-                            <th className="py-2">Rango Horario</th>
-                            <th className="py-2">Duración Turno</th>
-                            <th className="py-2">Estado</th>
-                            <th className="py-2 text-end px-3">Acciones</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {grupo.horarios.map((horario) => {
-                            const horarioId = horario.id || horario.id || '';
-                            return (
-                              <tr key={horarioId}>
-                                <td className="px-3 fw-bold text-dark">{horario.diaSemana}</td>
-                                <td className="text-dark">
-                                  {horario.horaInicio} a {horario.horaFin} <span className="text-muted">hs</span>
-                                </td>
-                                <td className="text-muted">{horario.duracionTurnoMinutos} mins</td>
-                                <td>
-                                  <span className={`badge px-2 py-1 text-uppercase ${horario.activo ? 'bg-success-subtle text-success' : 'bg-danger-subtle text-danger'}`}>
-                                    {horario.activo ? 'Activo' : 'Inactivo'}
-                                  </span>
-                                </td>
-                                <td className="text-end px-3">
-                                  <ActionButtons 
-                                    onView={() => handleView(horarioId)}
-                                    onEdit={() => handleEdit(horarioId)}
-                                    onDelete={() => handleDelete(horarioId)}
-                                  />
-                                </td>
-                              </tr>
-                            );
-                          })}
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
+                  <MedicoAgendaDesplegable 
+                    mesActual={mesActual}
+                    diasMes={diasMes}
+                    cargandoMes={cargandoMes}
+                    fechaSeleccionada={fechaSeleccionada}
+                    slotsDisponibles={slotsDisponibles}
+                    cargandoSlots={cargandoSlots}
+                    onCambiarMes={cambiarMes}
+                    onSeleccionarDia={handleSeleccionarDia}
+                  />
                 )}
 
               </div>

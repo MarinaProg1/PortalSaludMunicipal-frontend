@@ -1,528 +1,237 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { isAxiosError } from 'axios';
-import { BsCalendarPlus, BsSearch, BsX } from 'react-icons/bs';
-import { TurnoFormSkeleton } from './TurnoFormSkeleton';
-import clientesAxios from '../../config/axios';
-import type { OptionItem, MedicoItem, HorarioAtencionItem, TurnoFormProps } from './turno.schema';
-import { PageHeader } from '../../constants/PageHeader';
+import React, { useState, useEffect } from 'react';
+import { useSearchParams, useNavigate, useParams } from 'react-router-dom';
+import { BsCalendarPlus, BsPerson, BsClock, BsHeartPulse } from 'react-icons/bs';
 import { toast } from 'sonner';
+import clientesAxios from '../../config/axios';
+import { PageHeader } from '../../constants/PageHeader';
+import type { PacienteItem, EspecialidadItem, TurnoFormProps } from './turno.schema';
+import { TurnoSelectField } from './TurnoSelectField';
 
 export const TurnoForm: React.FC<TurnoFormProps> = ({ turnoId, onSuccess, onCancel }) => {
-  const [pacientes, setPacientes] = useState<OptionItem[]>([]);
-  const [medicos, setMedicos] = useState<MedicoItem[]>([]);
-  const [especialidadesDisponibles, setEspecialidadesDisponibles] = useState<OptionItem[]>([]);
-  const [horariosAtencionMedico, setHorariosAtencionMedico] = useState<HorarioAtencionItem[]>([]);
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const { id: idParam } = useParams<{ id: string }>();
+  
+  // Determinamos si estamos editando (por prop o por parámetro de ruta)
+  const idEditando = turnoId || idParam;
 
-  const [formData, setFormData] = useState({
-    paciente: '',
-    medico: '',
-    especialidad: '',
-    fecha: '',
-    hora: '',
-    estado: 'pendiente'
-  });
+  // Query Params para turnos nuevos desde la agenda
+  const medicoId = searchParams.get('medico');
+  const medicoNombre = searchParams.get('nombre');
+  const especialidadUrl = searchParams.get('especialidad');
+  const fechaUrl = searchParams.get('fecha');
+  const horaUrl = searchParams.get('hora');
 
-  // Estados específicos para los inputs de búsqueda interactiva
-  const [busquedaPaciente, setBusquedaPaciente] = useState('');
-  const [mostrarDropdownPaciente, setMostrarDropdownPaciente] = useState(false);
-
-  const [busquedaMedico, setBusquedaMedico] = useState('');
-  const [mostrarDropdownMedico, setMostrarDropdownMedico] = useState(false);
-
-  // Referencias para detectar clics fuera y cerrar los desplegables
-  const pacienteRef = useRef<HTMLDivElement>(null);
-  const medicoRef = useRef<HTMLDivElement>(null);
-
-  const [loadingData, setLoadingData] = useState<boolean>(true);
-  const [loadingHorarios, setLoadingHorarios] = useState<boolean>(false);
+  const [pacientes, setPacientes] = useState<PacienteItem[]>([]);
+  const [especialidades, setEspecialidades] = useState<EspecialidadItem[]>([]);
+  
+  // Campos del formulario
+  const [pacienteSeleccionado, setPacienteSeleccionado] = useState<string>('');
+  const [especialidadSeleccionada, setEspecialidadSeleccionada] = useState<string>(especialidadUrl || '');
+  const [fechaTurno, setFechaTurno] = useState<string>(fechaUrl || '');
+  const [horaTurno, setHoraTurno] = useState<string>(horaUrl || '');
   const [submitting, setSubmitting] = useState<boolean>(false);
 
-  const isEditing = Boolean(turnoId);
-
-  // Cerrar los dropdowns si hacen clic fuera del componente
+  // 1. Cargar datos iniciales y el turno si estamos editando
   useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (pacienteRef.current && !pacienteRef.current.contains(event.target as Node)) {
-        setMostrarDropdownPaciente(false);
-      }
-      if (medicoRef.current && !medicoRef.current.contains(event.target as Node)) {
-        setMostrarDropdownMedico(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
-
-  // 1. Función para obtener los horarios de atención configurados del médico
-  const cargarHorariosAtencionMedico = async (medicoId: string) => {
-    try {
-      setLoadingHorarios(true);
-      const response = await clientesAxios.get(`/horarioAtencion?medico=${medicoId}`);
-      const data = response.data;
-      let listaHorarios: HorarioAtencionItem[] = [];
-
-      if (Array.isArray(data)) {
-        listaHorarios = data;
-      } else if (data && typeof data === 'object') {
-        const record = data as Record<string, unknown>;
-        if (Array.isArray(record.data)) listaHorarios = record.data as HorarioAtencionItem[];
-        else if (Array.isArray(record.horarios)) listaHorarios = record.horarios as HorarioAtencionItem[];
-      }
-
-      setHorariosAtencionMedico(listaHorarios);
-    } catch (err) {
-      console.error('Error al cargar horarios de atención del médico:', err);
-      setHorariosAtencionMedico([]);
-    } finally {
-      setLoadingHorarios(false);
-    }
-  };
-
-  // 2. Función auxiliar para generar los bloques de horas
-  const generarBloquesHorarios = (horaInicio: string, horaFin: string, duracionMinutos: number) => {
-    const bloques: string[] = [];
-    const [hInicio, mInicio] = horaInicio.split(':').map(Number);
-    const [hFin, mFin] = horaFin.split(':').map(Number);
-
-    let minutosActuales = hInicio * 60 + mInicio;
-    const minutosFin = hFin * 60 + mFin;
-    const duracion = duracionMinutos && duracionMinutos > 0 ? duracionMinutos : 30;
-
-    while (minutosActuales < minutosFin) {
-      const horas = Math.floor(minutosActuales / 60);
-      const minutos = minutosActuales % 60;
-      const horaFormateada = `${String(horas).padStart(2, '0')}:${String(minutos).padStart(2, '0')}`;
-      bloques.push(horaFormateada);
-      minutosActuales += duracion;
-    }
-
-    return bloques;
-  };
-
-  useEffect(() => {
-    const fetchData = async () => {
+    const fetchDataInicial = async () => {
       try {
-        setLoadingData(true);
-        
-        const extraerArray = (responseData: unknown, claveSugerida: string): OptionItem[] => {
-          if (Array.isArray(responseData)) {
-            return responseData as OptionItem[];
+        const [resPacientes, resEspecialidades] = await Promise.all([
+          clientesAxios.get('/pacientes'),
+          clientesAxios.get('/especialidades')
+        ]);
+
+        const dataPac = resPacientes.data.data || resPacientes.data || [];
+        const dataEsp = resEspecialidades.data.data || resEspecialidades.data || [];
+
+        setPacientes(Array.isArray(dataPac) ? dataPac : []);
+        setEspecialidades(Array.isArray(dataEsp) ? dataEsp : []);
+
+        // Si viene una especialidad por URL pero es el nombre en vez de ID, la buscamos y resolvemos
+       if (especialidadUrl && especialidadUrl.length !== 24 && Array.isArray(dataEsp)) {
+          const encontrada = dataEsp.find(
+            (esp: EspecialidadItem) => esp.nombre?.toLowerCase() === especialidadUrl.toLowerCase()
+          );
+          if (encontrada) {
+            setEspecialidadSeleccionada(encontrada.id || encontrada._id || '');
           }
-          if (responseData && typeof responseData === 'object') {
-            const record = responseData as Record<string, unknown>;
-            if (Array.isArray(record[claveSugerida])) {
-              return record[claveSugerida] as OptionItem[];
-            }
-            if (Array.isArray(record.data)) {
-              return record.data as OptionItem[];
-            }
-          }
-          return [];
-        };
-
-        if (isEditing && turnoId) {
-          const [resPacientes, resMedicos, resTurno] = await Promise.all([
-            clientesAxios.get('/pacientes'),
-            clientesAxios.get('/medicos'),
-            clientesAxios.get(`/turnos/${turnoId}`)
-          ]);
-
-          const listaPacientes = extraerArray(resPacientes.data, 'pacientes');
-          const listaMedicos = extraerArray(resMedicos.data, 'medicos') as MedicoItem[];
-
-          setPacientes(listaPacientes);
-          setMedicos(listaMedicos);
-
-          const dataTurno = resTurno.data.turno || resTurno.data.data || resTurno.data;
-          
-          const pacienteId = dataTurno.paciente?._id || dataTurno.paciente?.id || dataTurno.paciente;
-          const medicoId = dataTurno.medico?._id || dataTurno.medico?.id || dataTurno.medico;
-          const especialidadId = dataTurno.especialidad?._id || dataTurno.especialidad?.id || dataTurno.especialidad;
-
-          // Autocompletar textos visuales si estamos editando
-          const pacienteEncontrado = listaPacientes.find(p => (p.id === pacienteId || p._id === pacienteId));
-          if (pacienteEncontrado) {
-            setBusquedaPaciente(`${pacienteEncontrado.nombre} ${pacienteEncontrado.apellido || ''}`);
-          }
-
-          const medicoEncontrado = listaMedicos.find(m => (m.id === medicoId || m._id === medicoId));
-          if (medicoEncontrado) {
-            setBusquedaMedico(`Dr./Dra. ${medicoEncontrado.nombre} ${medicoEncontrado.apellido || ''}`);
-            if (Array.isArray(medicoEncontrado.especialidades)) {
-              setEspecialidadesDisponibles(medicoEncontrado.especialidades);
-            }
-          }
-
-          if (medicoId) {
-            await cargarHorariosAtencionMedico(medicoId);
-          }
-
-          setFormData({
-            paciente: pacienteId || '',
-            medico: medicoId || '',
-            especialidad: especialidadId || '',
-            fecha: dataTurno.fecha ? dataTurno.fecha.split('T')[0] : '',
-            hora: dataTurno.hora || '',
-            estado: dataTurno.estado || 'pendiente'
-          });
-
-        } else {
-          const [resPacientes, resMedicos] = await Promise.all([
-            clientesAxios.get('/pacientes'),
-            clientesAxios.get('/medicos')
-          ]);
-
-          setPacientes(extraerArray(resPacientes.data, 'pacientes'));
-          setMedicos(extraerArray(resMedicos.data, 'medicos') as MedicoItem[]);
         }
 
+        // Si estamos en modo edición, cargamos los datos del turno existente
+        if (idEditando) {
+          const resTurno = await clientesAxios.get(`/turnos/${idEditando}`);
+          const turnoData = resTurno.data.data || resTurno.data;
+          
+          if (turnoData) {
+            setPacienteSeleccionado(turnoData.paciente?._id || turnoData.paciente?.id || turnoData.paciente || '');
+            setEspecialidadSeleccionada(turnoData.especialidad?._id || turnoData.especialidad?.id || turnoData.especialidad || '');
+            if (turnoData.fecha) setFechaTurno(turnoData.fecha.split('T')[0]);
+            if (turnoData.hora) setHoraTurno(turnoData.hora);
+          }
+        }
       } catch (err) {
-        console.error('Error al cargar datos del formulario:', err);
+        console.error('Error al cargar datos:', err);
         toast.error('No se pudieron cargar los datos necesarios.');
-      } finally {
-        setLoadingData(false);
       }
     };
 
-    fetchData();
-  }, [turnoId, isEditing]);
-
-  // Filtrado reactivo de pacientes según lo que escriba el usuario
-  const pacientesFiltrados = pacientes.filter(p => {
-    const texto = `${p.nombre} ${p.apellido || ''} ${p.razonSocial || ''}`.toLowerCase();
-    return texto.includes(busquedaPaciente.toLowerCase());
-  });
-
-  // Filtrado reactivo de médicos
-  const medicosFiltrados = medicos.filter(m => {
-    const texto = `Dr. Dra. ${m.nombre} ${m.apellido || ''}`.toLowerCase();
-    return texto.includes(busquedaMedico.toLowerCase());
-  });
-
-  // 3. Cálculo derivado de horas disponibles
-  const obtenerHorasDisponibles = (): string[] => {
-    if (!formData.fecha || horariosAtencionMedico.length === 0) {
-      return [];
-    }
-
-    const fechaObj = new Date(formData.fecha + 'T00:00:00');
-    const diasSemanaMap = ['DOMINGO', 'LUNES', 'MARTES', 'MIERCOLES', 'JUEVES', 'VIERNES', 'SABADO'];
-    const diaSeleccionado = diasSemanaMap[fechaObj.getDay()];
-
-    const horariosDelDia = horariosAtencionMedico.filter(h => h.diaSemana === diaSeleccionado && h.activo !== false);
-
-    let horasCalculadas: string[] = [];
-    horariosDelDia.forEach(bloque => {
-      const generadas = generarBloquesHorarios(bloque.horaInicio, bloque.horaFin, bloque.duracionTurnoMinutos);
-      horasCalculadas = [...horasCalculadas, ...generadas];
-    });
-
-    return horasCalculadas;
-  };
-
-  const horasDisponibles = obtenerHorasDisponibles();
-
-  const seleccionarPaciente = (p: OptionItem) => {
-    const pId = p.id || p._id || '';
-    setFormData(prev => ({ ...prev, paciente: pId }));
-    setBusquedaPaciente(`${p.nombre} ${p.apellido || ''}`);
-    setMostrarDropdownPaciente(false);
-  };
-
-  const seleccionarMedico = async (m: MedicoItem) => {
-    const mId = m.id || m._id || '';
-    
-    setFormData(prev => ({ 
-      ...prev, 
-      medico: mId, 
-      especialidad: '',
-      fecha: '',
-      hora: ''
-    }));
-
-    setBusquedaMedico(`Dr./Dra. ${m.nombre} ${m.apellido || ''}`);
-    setMostrarDropdownMedico(false);
-    setHorariosAtencionMedico([]);
-
-    if (Array.isArray(m.especialidades)) {
-      setEspecialidadesDisponibles(m.especialidades);
-    } else {
-      setEspecialidadesDisponibles([]);
-    }
-
-    await cargarHorariosAtencionMedico(mId);
-  };
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
-  };
+    fetchDataInicial();
+  }, [idEditando, especialidadUrl]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setSubmitting(true);
 
+    const finalEspecialidad = especialidadSeleccionada || especialidadUrl;
+    const finalFecha = fechaUrl || fechaTurno;
+    const finalHora = horaUrl || horaTurno;
+
+    if (!pacienteSeleccionado || !finalEspecialidad || !finalFecha || !finalHora) {
+      toast.error('Por favor, complete todos los campos obligatorios.');
+      return;
+    }
+
+    setSubmitting(true);
     try {
-      if (isEditing && turnoId) {
-        await clientesAxios.put(`/turnos/${turnoId}`, formData);
+      if (idEditando) {
+        // Modo Edición
+        await clientesAxios.put(`/turnos/${idEditando}`, {
+          paciente: pacienteSeleccionado,
+          especialidad: finalEspecialidad,
+          fecha: finalFecha,
+          hora: finalHora
+        });
         toast.success('¡Turno actualizado exitosamente!');
       } else {
-        await clientesAxios.post('/turnos', formData);
-        toast.success('¡Turno creado y guardado exitosamente!');
+        // Modo Creación (con médico por query params)
+        if (!medicoId) {
+          toast.error('Falta el médico asignado. Por favor, seleccione un horario desde la agenda.');
+          setSubmitting(false);
+          return;
+        }
+
+        const payload = {
+          paciente: pacienteSeleccionado,
+          medico: medicoId,
+          especialidad: finalEspecialidad,
+          fecha: finalFecha,
+          hora: finalHora
+        };
+
+        await clientesAxios.post('/turnos', payload);
+        toast.success('¡Turno registrado exitosamente!');
       }
       
-      setTimeout(() => {
-        if (onSuccess) onSuccess();
-      }, 1000);
+      if (onSuccess) {
+        onSuccess();
+      } else {
+        setTimeout(() => navigate('/turnos'), 1500);
+      }
+
     } catch (err: unknown) {
-      console.error('Error al guardar el turno:', err);
-      const backendMessage = isAxiosError<{ message?: string }>(err)
-        ? err.response?.data?.message || 'Error al guardar el turno en el servidor.'
-        : 'Error al guardar el turno en el servidor.';
-      toast.error(backendMessage);
+      console.error('Error al guardar turno:', err);
+      const errorObj = err as { response?: { data?: { message?: string } } };
+      const mensaje = errorObj.response?.data?.message || 'Error al procesar la solicitud en el servidor.';
+      toast.error(mensaje);
     } finally {
       setSubmitting(false);
     }
   };
 
-  if (loadingData) {
-    return <TurnoFormSkeleton />;
-  }
+  const handleCancelar = () => {
+    if (onCancel) {
+      onCancel();
+    } else {
+      navigate(-1);
+    }
+  };
 
   return (
     <div className="container-fluid px-2 px-md-4 py-4">
-       {/* Cabecera Reutilizada */}
+      <div className="card border-0 shadow-sm bg-white p-4 mx-auto" style={{ maxWidth: '750px', borderRadius: '12px' }}>
+        
         <PageHeader 
-          titulo={isEditing ? 'Modificar Turno Médico' : 'Asignar Nuevo Turno'}
-          subtitulo={isEditing ? 'Actualice los datos necesarios del turno.' : 'Complete los datos para registrar un turno médico.'}
+          titulo={idEditando ? "Editar Turno Médico" : "Registrar Nuevo Turno"}
+          subtitulo="Confirme los datos del paciente y la cita médica."
           icon={<BsCalendarPlus className="me-2" style={{ color: '#00ACB2' }} />}
-          onBack={onCancel}
+          onBack={handleCancelar}
         />
-      <div className="card border-0 shadow-sm bg-white p-4 mx-auto" style={{ maxWidth: '700px', borderRadius: '12px' }}>
 
-        <form onSubmit={handleSubmit}>
-          <div className="row g-3">
-            
-            {/* BUSCADOR INTELIGENTE DE PACIENTES */}
-            <div className="col-12 position-relative" ref={pacienteRef}>
-              <label className="form-label fw-semibold text-secondary small">Paciente</label>
-              <div className="input-group">
-                <span className="input-group-text bg-white text-muted border-end-0">
-                  <BsSearch size={14} />
-                </span>
-                <input 
-                  type="text" 
-                  className="form-control shadow-none border-start-0 ps-0"
-                  placeholder="Escriba el nombre o apellido del paciente para buscar..."
-                  value={busquedaPaciente}
-                  onChange={(e) => {
-                    setBusquedaPaciente(e.target.value);
-                    setMostrarDropdownPaciente(true);
-                    if (!e.target.value) setFormData(prev => ({ ...prev, paciente: '' }));
-                  }}
-                  onFocus={() => setMostrarDropdownPaciente(true)}
-                  required={!formData.paciente}
-                />
-                {busquedaPaciente && (
-                  <button 
-                    type="button" 
-                    className="btn btn-outline-secondary border bg-white"
-                    onClick={() => {
-                      setBusquedaPaciente('');
-                      setFormData(prev => ({ ...prev, paciente: '' }));
-                    }}
-                  >
-                    <BsX size={16} />
-                  </button>
-                )}
+        <form onSubmit={handleSubmit} className="mt-4">
+          
+          {/* Información precargada del Médico y Horario (si viene por agenda) */}
+          {medicoNombre && (
+            <div className="row g-3 mb-4 p-3 bg-light rounded-3 border">
+              <div className="col-md-6">
+                <span className="text-muted small d-block mb-1"><BsHeartPulse className="me-1 text-info" /> Profesional Asignado</span>
+                <strong className="text-dark">{decodeURIComponent(medicoNombre)}</strong>
+                <p>{decodeURIComponent(especialidadSeleccionada)}</p>
               </div>
-
-              {/* Lista desplegable filtrada de pacientes */}
-              {mostrarDropdownPaciente && (
-                <div className="position-absolute w-100 bg-white shadow-sm border rounded-bottom mt-1 z-3" style={{ maxHeight: '200px', overflowY: 'auto' }}>
-                  {pacientesFiltrados.length > 0 ? (
-                    pacientesFiltrados.map(p => {
-                      const pId = p.id || p._id || '';
-                      return (
-                        <div 
-                          key={pId} 
-                          className="p-2 px-3 border-bottom text-dark"
-                          style={{ cursor: 'pointer', fontSize: '14px' }}
-                          onMouseDown={() => seleccionarPaciente(p)}
-                          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#f8f9fa')}
-                          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'white')}
-                        >
-                          <strong>{p.nombre} {p.apellido}</strong>
-                        </div>
-                      );
-                    })
-                  ) : (
-                    <div className="p-2 text-muted small text-center">No se encontraron pacientes con ese nombre.</div>
-                  )}
-                </div>
-              )}
-            </div>
-
-            {/* BUSCADOR INTELIGENTE DE MÉDICOS */}
-            <div className="col-md-6 position-relative" ref={medicoRef}>
-              <label className="form-label fw-semibold text-secondary small">Médico</label>
-              <div className="input-group">
-                <span className="input-group-text bg-white text-muted border-end-0">
-                  <BsSearch size={14} />
-                </span>
-                <input 
-                  type="text" 
-                  className="form-control shadow-none border-start-0 ps-0"
-                  placeholder="Buscar médico..."
-                  value={busquedaMedico}
-                  onChange={(e) => {
-                    setBusquedaMedico(e.target.value);
-                    setMostrarDropdownMedico(true);
-                    if (!e.target.value) {
-                      setFormData(prev => ({ ...prev, medico: '', especialidad: '', fecha: '', hora: '' }));
-                      setEspecialidadesDisponibles([]);
-                    }
-                  }}
-                  onFocus={() => setMostrarDropdownMedico(true)}
-                  required={!formData.medico}
-                />
-                {busquedaMedico && (
-                  <button 
-                    type="button" 
-                    className="btn btn-outline-secondary border bg-white"
-                    onClick={() => {
-                      setBusquedaMedico('');
-                      setFormData(prev => ({ ...prev, medico: '', especialidad: '', fecha: '', hora: '' }));
-                      setEspecialidadesDisponibles([]);
-                    }}
-                  >
-                    <BsX size={16} />
-                  </button>
-                )}
+              <div className="col-md-3">
+                <span className="text-muted small d-block mb-1"><BsCalendarPlus className="me-1 text-info" /> Fecha</span>
+                <strong className="text-dark">{fechaUrl}</strong>
               </div>
-
-              {/* Lista desplegable filtrada de médicos */}
-              {mostrarDropdownMedico && (
-                <div className="position-absolute w-100 bg-white shadow-sm border rounded-bottom mt-1 z-3" style={{ maxHeight: '200px', overflowY: 'auto' }}>
-                  {medicosFiltrados.length > 0 ? (
-                    medicosFiltrados.map(m => {
-                      const mId = m.id || m._id || '';
-                      return (
-                        <div 
-                          key={mId} 
-                          className="p-2 px-3 border-bottom text-dark"
-                          style={{ cursor: 'pointer', fontSize: '14px' }}
-                          onMouseDown={() => seleccionarMedico(m)}
-                          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#f8f9fa')}
-                          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'white')}
-                        >
-                          <strong>Dr./Dra. {m.nombre} {m.apellido}</strong>
-                        </div>
-                      );
-                    })
-                  ) : (
-                    <div className="p-2 text-muted small text-center">No se encontraron médicos.</div>
-                  )}
-                </div>
-              )}
+              <div className="col-md-3">
+                <span className="text-muted small d-block mb-1"><BsClock className="me-1 text-info" /> Hora</span>
+                <strong className="text-success fs-5">{horaUrl}</strong>
+              </div>
             </div>
+          )}
 
-            <div className="col-md-6">
-              <label className="form-label fw-semibold text-secondary small">Especialidad</label>
-              <select 
-                className="form-select shadow-none" 
-                name="especialidad"
-                value={formData.especialidad}
-                onChange={handleChange}
-                required
-                disabled={!formData.medico}
-              >
-                <option value="">
-                  {formData.medico ? 'Seleccione una especialidad...' : 'Primero seleccione un médico'}
-                </option>
-                {especialidadesDisponibles.map(e => {
-                  const eId = e.id || e._id || '';
-                  return (
-                    <option key={eId} value={eId}>
-                      {e.nombre}
-                    </option>
-                  );
-                })}
-              </select>
-            </div>
+          <TurnoSelectField
+            label="Seleccionar Paciente"
+            labelIcon={<BsPerson className="me-1" />}
+            value={pacienteSeleccionado}
+            onChange={setPacienteSeleccionado}
+            placeholder="Seleccione un paciente..."
+            required
+            selectClassName="form-select shadow-none"
+            options={pacientes.map((pac: PacienteItem) => {
+              const pacId = pac.id || pac.id;
+              return {
+                value: pacId,
+                label: `${pac.apellido}, ${pac.nombre} ${pac.dni ? `- DNI: ${pac.dni}` : ''}`,
+              };
+            })}
+          />
 
-            <div className="col-md-6">
-              <label className="form-label fw-semibold text-secondary small">Fecha</label>
-              <input 
-                type="date" 
-                className="form-control shadow-none" 
-                name="fecha"
-                value={formData.fecha}
-                onChange={handleChange}
-                required
-                disabled={!formData.medico}
-              />
-            </div>
+          <TurnoSelectField
+            label="Especialidad del Turno"
+            labelIcon={<BsHeartPulse className="me-1" />}
+            value={especialidadSeleccionada}
+            onChange={setEspecialidadSeleccionada}
+            placeholder="Seleccione la especialidad..."
+            required
+            disabled={Boolean(especialidadUrl)}
+            className="mb-4"
+            selectClassName="form-select shadow-none bg-light"
+            options={especialidades.map((esp: EspecialidadItem) => ({
+              value: esp._id || esp._id,
+              label: esp.nombre,
+            }))}
+            helpText={especialidadUrl ? (
+              <div className="form-text text-muted" style={{ fontSize: '0.75rem' }}>
+                La especialidad está fijada por la selección previa en la agenda.
+              </div>
+            ) : undefined}
+          />
 
-            <div className="col-md-6">
-              <label className="form-label fw-semibold text-secondary small">
-                Hora del Turno {loadingHorarios && <span className="text-info spinner-border spinner-border-sm ms-1"></span>}
-              </label>
-              <select 
-                className="form-select shadow-none" 
-                name="hora"
-                value={formData.hora}
-                onChange={handleChange}
-                required
-                disabled={!formData.fecha || horasDisponibles.length === 0}
-              >
-                <option value="">
-                  {!formData.fecha 
-                    ? 'Primero seleccione una fecha' 
-                    : horasDisponibles.length === 0 
-                      ? 'No hay horarios configurados para este día' 
-                      : 'Seleccione un horario disponible...'}
-                </option>
-                {horasDisponibles.map(horaBlock => (
-                  <option key={horaBlock} value={horaBlock}>
-                    {horaBlock} hs
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="col-12">
-              <label className="form-label fw-semibold text-secondary small">Estado del Turno</label>
-              <select 
-                className="form-select shadow-none text-uppercase" 
-                name="estado"
-                value={formData.estado}
-                onChange={handleChange}
-                required
-              >
-                <option value="pendiente">Pendiente</option>
-                <option value="confirmado">Confirmado</option>
-                <option value="cancelado">Cancelado</option>
-                <option value="finalizado">Finalizado</option>
-                <option value="atendido">Atendido</option>
-              </select>
-            </div>
-
-          </div>
-
-          <div className="d-flex justify-content-end gap-2 mt-4 pt-3 border-top border-secondary-subtle">
-            {onCancel && (
-              <button type="button" className="btn btn-light px-4" onClick={onCancel} disabled={submitting}>
-                Cancelar
-              </button>
-            )}
+          {/* Botones de acción */}
+          <div className="d-flex justify-content-end gap-2 pt-3 border-top">
+            <button 
+              type="button" 
+              className="btn btn-light px-4" 
+              onClick={handleCancelar}
+              disabled={submitting}
+            >
+              Cancelar
+            </button>
             <button 
               type="submit" 
               className="btn text-white fw-semibold px-4 shadow-sm"
               style={{ backgroundColor: '#00ACB2', borderRadius: '8px' }}
               disabled={submitting}
             >
-              {submitting ? 'Guardando...' : (isEditing ? 'Actualizar Turno' : 'Registrar Turno')}
+              {submitting ? 'Guardando...' : (idEditando ? 'Actualizar Turno' : 'Confirmar y Asignar Turno')}
             </button>
           </div>
 

@@ -42,7 +42,6 @@ export const DetalleTurno: React.FC = () => {
     }
   }, [id]);
 
-  // Estado de Carga
   if (loading) {
     return (
      <DetalleTurnoSkeleton />
@@ -78,8 +77,7 @@ export const DetalleTurno: React.FC = () => {
   return (
     <div className="container-fluid px-2 px-md-4 py-4">
       <div className="card border-0 shadow-sm bg-white p-4 mx-auto" style={{ maxWidth: '700px', borderRadius: '12px' }}>
-        
-      {/* Cabecera Reutilizada */}
+  
         <PageHeader 
           titulo="Detalle del Turno"
           subtitulo="Información completa de la cita médica registrada."

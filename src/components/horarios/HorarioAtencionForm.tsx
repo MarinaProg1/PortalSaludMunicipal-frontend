@@ -7,6 +7,7 @@ import { isAxiosError } from 'axios';
 import type { MedicoItem, DiaConfig, HorarioApiResponse } from './horario.schema';
 import { PageHeader } from '../../constants/PageHeader';
 import { HorarioAtencionFormSkeleton } from './HorarioAtencionFromSkeleton';
+import { DiaAgendaItem } from './DiaAgendaItem'; 
 
 const DIAS_SEMANA = [
   { key: 'LUNES', label: 'Lunes' },
@@ -34,6 +35,10 @@ export const HorarioAtencionForm: React.FC = () => {
   const [medicoSeleccionado, setMedicoSeleccionado] = useState('');
   const [duracionTurno, setDuracionTurno] = useState<number>(30);
   const [agendaDias, setAgendaDias] = useState<Record<string, DiaConfig>>(estructuraInicialDias());
+  
+  // Estado para almacenar los horarios que YA están guardados en la BD para este médico
+  const [horariosExistentesIds, setHorariosExistentesIds] = useState<HorarioApiResponse[]>([]);
+
   const [loadingData, setLoadingData] = useState<boolean>(true);
   const [loadingHorariosMedico, setLoadingHorariosMedico] = useState<boolean>(false);
   const [submitting, setSubmitting] = useState<boolean>(false);
@@ -72,6 +77,7 @@ export const HorarioAtencionForm: React.FC = () => {
 
     if (!idMedico) {
       setAgendaDias(estructuraInicialDias());
+      setHorariosExistentesIds([]);
       return;
     }
 
@@ -79,25 +85,27 @@ export const HorarioAtencionForm: React.FC = () => {
     try {
       const response = await clientesAxios.get(`/horarioAtencion?medico=${idMedico}`);
       const dataApi = response.data;
-      let horariosExistentes: HorarioApiResponse[] = [];
+      let horariosBD: HorarioApiResponse[] = [];
 
       if (Array.isArray(dataApi)) {
-        horariosExistentes = dataApi as HorarioApiResponse[];
+        horariosBD = dataApi as HorarioApiResponse[];
       } else if (dataApi && typeof dataApi === 'object') {
         const record = dataApi as Record<string, unknown>;
-        if (Array.isArray(record.data)) horariosExistentes = record.data as HorarioApiResponse[];
-        else if (Array.isArray(record.horarios)) horariosExistentes = record.horarios as HorarioApiResponse[];
+        if (Array.isArray(record.data)) horariosBD = record.data as HorarioApiResponse[];
+        else if (Array.isArray(record.horarios)) horariosBD = record.data as HorarioApiResponse[];
       }
+
+      setHorariosExistentesIds(horariosBD);
 
       const nuevaAgenda = estructuraInicialDias();
 
-      if (horariosExistentes.length > 0) {
-        const primerHorario = horariosExistentes[0];
+      if (horariosBD.length > 0) {
+        const primerHorario = horariosBD[0];
         if (typeof primerHorario.duracionTurnoMinutos === 'number') {
           setDuracionTurno(primerHorario.duracionTurnoMinutos);
         }
 
-        horariosExistentes.forEach((h) => {
+        horariosBD.forEach((h) => {
           const dia = h.diaSemana;
           const horaInicioStr = h.horaInicio || '';
           const horaFinStr = h.horaFin || '';
@@ -152,6 +160,21 @@ export const HorarioAtencionForm: React.FC = () => {
     }));
   };
 
+  // Helper para verificar si un turno específico ya existía en la BD
+  const turnoYaExisteEnBD = (diaKey: string, tipoTurno: 'manana' | 'tarde') => {
+    const configDia = agendaDias[diaKey];
+    if (!configDia) return false;
+
+    const horaInicioConfig = tipoTurno === 'manana' ? configDia.manana.horaInicio : configDia.tarde.horaInicio;
+    const horaInicioNum = parseInt(horaInicioConfig.split(':')[0], 10);
+
+    return horariosExistentesIds.some(h => {
+      if (h.diaSemana !== diaKey) return false;
+      const hBDInicioNum = parseInt((h.horaInicio || '').split(':')[0], 10);
+      return (horaInicioNum < 13 && hBDInicioNum < 13) || (horaInicioNum >= 13 && hBDInicioNum >= 13);
+    });
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -173,7 +196,8 @@ export const HorarioAtencionForm: React.FC = () => {
       const promesas: Promise<unknown>[] = [];
 
       diasSeleccionados.forEach(([diaKey, config]) => {
-        if (config.manana.activo) {
+        // Solo enviamos si está activo Y NO existía previamente en la BD
+        if (config.manana.activo && !turnoYaExisteEnBD(diaKey, 'manana')) {
           promesas.push(
             clientesAxios.post('/horarioAtencion', {
               medico: medicoSeleccionado,
@@ -186,7 +210,7 @@ export const HorarioAtencionForm: React.FC = () => {
           );
         }
 
-        if (config.tarde.activo) {
+        if (config.tarde.activo && !turnoYaExisteEnBD(diaKey, 'tarde')) {
           promesas.push(
             clientesAxios.post('/horarioAtencion', {
               medico: medicoSeleccionado,
@@ -200,9 +224,15 @@ export const HorarioAtencionForm: React.FC = () => {
         }
       });
 
+      if (promesas.length === 0) {
+        toast.info('No hay nuevos horarios para registrar.');
+        setSubmitting(false);
+        return;
+      }
+
       await Promise.all(promesas);
 
-      toast.success('¡Horarios de atención registrados exitosamente!');
+      toast.success('¡Nuevos horarios de atención agregados exitosamente!');
       
       setTimeout(() => {
         navigate('/horarioAtencion');
@@ -226,19 +256,17 @@ export const HorarioAtencionForm: React.FC = () => {
   return (
     <div className="container-fluid px-2 px-md-4 py-4">
       <div className="card border-0 shadow-sm bg-white p-4 mx-auto" style={{ maxWidth: '850px', borderRadius: '12px' }}>
-        
-        {/* Cabecera Reutilizada */}
+    
         <PageHeader 
           titulo="Configurar Horarios de Atención"
-          subtitulo="Seleccione el profesional para consultar o actualizar su disponibilidad semanal."
+          subtitulo="Seleccione el profesional para consultar o añadir nueva disponibilidad semanal."
           icon={<BsClock className="me-2" style={{ color: '#00ACB2' }} />}
           onBack={() => navigate('/horarioAtencion')}
         />
 
-        {/* Formulario */}
+      
         <form onSubmit={handleSubmit}>
           
-          {/* Configuración General */}
           <div className="row g-3 mb-4 p-3 bg-light rounded-3">
             <div className="col-md-8">
               <label className="form-label fw-semibold text-secondary small">Médico Profesional</label>
@@ -284,133 +312,19 @@ export const HorarioAtencionForm: React.FC = () => {
             )}
           </div>
 
-          {/* Listado de Días */}
+          {/* Listado de Días usando el subcomponente reutilizable */}
           <div className="d-flex flex-column gap-3">
-            {DIAS_SEMANA.map(({ key, label }) => {
-              const diaConf = agendaDias[key];
-              return (
-                <div key={key} className={`card border ${diaConf.seleccionado ? 'border-info bg-light-subtle shadow-sm' : 'border-secondary-subtle'} p-3`} style={{ borderRadius: '10px', transition: 'all 0.2s' }}>
-                  
-                  {/* Fila principal del Día */}
-                  <div className="d-flex justify-content-between align-items-center">
-                    <div className="form-check">
-                      <input 
-                        className="form-check-input" 
-                        type="checkbox" 
-                        id={`check-${key}`}
-                        checked={diaConf.seleccionado}
-                        onChange={() => handleToggleDia(key)}
-                        style={{ cursor: 'pointer', transform: 'scale(1.2)' }}
-                      />
-                      <label className="form-check-label fw-bold text-dark ms-2 fs-6" htmlFor={`check-${key}`} style={{ cursor: 'pointer' }}>
-                        {label}
-                      </label>
-                    </div>
-                    <span className={`badge ${diaConf.seleccionado ? 'bg-info text-dark' : 'bg-secondary text-white'}`}>
-                      {diaConf.seleccionado ? 'Habilitado' : 'Sin servicio'}
-                    </span>
-                  </div>
-
-                  {/* Configuración de Turnos si el día está seleccionado */}
-                  {diaConf.seleccionado && (
-                    <div className="mt-3 pt-3 border-top border-secondary-subtle row g-3">
-                      
-                      {/* TURNO MAÑANA */}
-                      <div className="col-md-6">
-                        <div className="p-2 bg-white rounded border border-secondary-subtle">
-                          <div className="form-check mb-2">
-                            <input 
-                              className="form-check-input" 
-                              type="checkbox" 
-                              id={`manana-${key}`}
-                              checked={diaConf.manana.activo}
-                              onChange={(e) => handleTurnoChange(key, 'manana', 'activo', e.target.checked)}
-                            />
-                            <label className="form-check-label fw-semibold small text-muted" htmlFor={`manana-${key}`}>
-                              Turno Mañana
-                            </label>
-                          </div>
-
-                          {diaConf.manana.activo && (
-                            <div className="row g-2">
-                              <div className="col-6">
-                                <label className="form-label text-muted x-small mb-0">Desde</label>
-                                <input 
-                                  type="text" 
-                                  className="form-control form-control-sm shadow-none" 
-                                  value={diaConf.manana.horaInicio}
-                                  onChange={(e) => handleTurnoChange(key, 'manana', 'horaInicio', e.target.value)}
-                                  placeholder="08:00"
-                                  required
-                                />
-                              </div>
-                              <div className="col-6">
-                                <label className="form-label text-muted x-small mb-0">Hasta</label>
-                                <input 
-                                  type="text" 
-                                  className="form-control form-control-sm shadow-none" 
-                                  value={diaConf.manana.horaFin}
-                                  onChange={(e) => handleTurnoChange(key, 'manana', 'horaFin', e.target.value)}
-                                  placeholder="12:00"
-                                  required
-                                />
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-
-                      {/* TURNO TARDE */}
-                      <div className="col-md-6">
-                        <div className="p-2 bg-white rounded border border-secondary-subtle">
-                          <div className="form-check mb-2">
-                            <input 
-                              className="form-check-input" 
-                              type="checkbox" 
-                              id={`tarde-${key}`}
-                              checked={diaConf.tarde.activo}
-                              onChange={(e) => handleTurnoChange(key, 'tarde', 'activo', e.target.checked)}
-                            />
-                            <label className="form-check-label fw-semibold small text-muted" htmlFor={`tarde-${key}`}>
-                              Turno Tarde
-                            </label>
-                          </div>
-
-                          {diaConf.tarde.activo && (
-                            <div className="row g-2">
-                              <div className="col-6">
-                                <label className="form-label text-muted x-small mb-0">Desde</label>
-                                <input 
-                                  type="text" 
-                                  className="form-control form-control-sm shadow-none" 
-                                  value={diaConf.tarde.horaInicio}
-                                  onChange={(e) => handleTurnoChange(key, 'tarde', 'horaInicio', e.target.value)}
-                                  placeholder="16:00"
-                                  required
-                                />
-                              </div>
-                              <div className="col-6">
-                                <label className="form-label text-muted x-small mb-0">Hasta</label>
-                                <input 
-                                  type="text" 
-                                  className="form-control form-control-sm shadow-none" 
-                                  value={diaConf.tarde.horaFin}
-                                  onChange={(e) => handleTurnoChange(key, 'tarde', 'horaFin', e.target.value)}
-                                  placeholder="20:00"
-                                  required
-                                />
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-
-                    </div>
-                  )}
-
-                </div>
-              );
-            })}
+            {DIAS_SEMANA.map(({ key, label }) => (
+              <DiaAgendaItem
+                key={key}
+                diaKey={key}
+                label={label}
+                diaConf={agendaDias[key]}
+                onToggleDia={() => handleToggleDia(key)}
+                onTurnoChange={(turno, field, value) => handleTurnoChange(key, turno, field, value)}
+                yaExisteEnBD={(tipoTurno) => turnoYaExisteEnBD(key, tipoTurno)}
+              />
+            ))}
           </div>
 
           {/* Botones de acción */}
@@ -429,7 +343,7 @@ export const HorarioAtencionForm: React.FC = () => {
               style={{ backgroundColor: '#00ACB2', borderRadius: '8px' }}
               disabled={submitting}
             >
-              {submitting ? 'Guardando...' : 'Guardar Horarios'}
+              {submitting ? 'Guardando...' : 'Guardar Nuevos Horarios'}
             </button>
           </div>
 

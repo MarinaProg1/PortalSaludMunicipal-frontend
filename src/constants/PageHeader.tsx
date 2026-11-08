@@ -6,7 +6,7 @@ interface PageHeaderProps {
   subtitulo: string;
   icon: React.ReactNode;
   onBack?: () => void;
-  rightContent?: React.ReactNode; // 👈 1. Añadimos esta nueva prop opcional
+  rightContent?: React.ReactNode; 
 }
 
 export const PageHeader: React.FC<PageHeaderProps> = ({ titulo, subtitulo, icon, onBack, rightContent }) => {

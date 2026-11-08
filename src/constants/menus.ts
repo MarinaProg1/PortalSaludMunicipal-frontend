@@ -40,7 +40,7 @@ export const roleMenus: Record<UserRole, MenuItem[]> = {
       icon: BsCalendarCheck, 
       children: [
         { id: 'turnos-lista', label: 'Ver Listado', path: '/turnos' },
-        { id: 'turnos-nuevo', label: 'Asignar Nuevo', path: '/turnos/nuevo' },
+        { id: 'turnos-nuevo', label: 'Asignar Nuevo', path: '/turnos/asignar' },
       ]
     },
     { 
