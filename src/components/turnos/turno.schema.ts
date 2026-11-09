@@ -55,6 +55,7 @@ export interface TurnoDetalle {
   fecha: string;
   hora: string;
   estado: string;
+  observaciones?: string;
 }
 
 export interface TurnoItem {
@@ -76,5 +77,6 @@ export interface TurnoItem {
   fecha: string;
   hora: string;
   estado: 'PENDIENTE' | 'CONFIRMADO' | 'CANCELADO' | 'ATENDIDO';
+  observaciones?: string;
   activo: boolean;
 }

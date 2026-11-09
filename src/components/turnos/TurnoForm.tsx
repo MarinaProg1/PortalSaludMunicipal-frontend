@@ -22,7 +22,8 @@ export const TurnoForm: React.FC<TurnoFormProps> = ({ turnoId, onSuccess, onCanc
     especialidad: '',
     fecha: '',
     hora: '',
-    estado: 'pendiente'
+    estado: 'pendiente',
+    observaciones: ''
   });
 
   const [loadingData, setLoadingData] = useState<boolean>(true);
@@ -134,7 +135,8 @@ export const TurnoForm: React.FC<TurnoFormProps> = ({ turnoId, onSuccess, onCanc
             especialidad: especialidadId || '',
             fecha: dataTurno.fecha ? dataTurno.fecha.split('T')[0] : '',
             hora: dataTurno.hora || '',
-            estado: dataTurno.estado || 'pendiente'
+            estado: dataTurno.estado || 'pendiente',
+            observaciones: dataTurno.observaciones || ''
           });
 
         } else {
@@ -396,6 +398,19 @@ export const TurnoForm: React.FC<TurnoFormProps> = ({ turnoId, onSuccess, onCanc
                 <option value="finalizado">Finalizado</option>
                 <option value="atendido">Atendido</option>
               </select>
+            </div>
+
+            <div className="col-12">
+              <label className="form-label fw-semibold text-secondary small">Observaciones</label>
+              <textarea
+                className="form-control shadow-none"
+                name="observaciones"
+                rows={3}
+                maxLength={500}
+                placeholder="Observaciones del turno (opcional)"
+                value={formData.observaciones}
+                onChange={(e) => setFormData(prev => ({ ...prev, observaciones: e.target.value }))}
+              />
             </div>
 
           </div>
