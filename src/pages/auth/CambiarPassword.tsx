@@ -26,7 +26,7 @@ const CambiarPassword = () => {
       const response = await authService.cambiarPassword({ passwordActual, nuevaPassword });
       if (response.ok || response.success) {
         toast.success(response.message || "Contrasena actualizada");
-        window.location.href = "/turnos";
+        window.location.href = "/";
       } else {
         toast.error(response.message || "No se pudo cambiar la contrasena");
       }

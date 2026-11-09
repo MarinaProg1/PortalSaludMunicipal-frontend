@@ -61,7 +61,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     if (debeCambiarPassword) {
       window.location.href = "/cambiar-password";
     } else {
-      window.location.href = "/turnos";
+      const payload = decodeJwt(newToken);
+      const destino = (payload?.rol || "").toUpperCase() === "PACIENTE" ? "/mis-turnos" : "/turnos";
+      window.location.href = destino;
     }
   };
 

@@ -12,7 +12,8 @@ export const RequireRole = ({ allowed, children }: Props) => {
   const ok = allowed.map((r) => r.toUpperCase()).includes(current);
 
   if (!ok) {
-    return <Navigate to="/turnos" replace />;
+    const destino = current === "PACIENTE" ? "/mis-turnos" : "/turnos";
+    return <Navigate to={destino} replace />;
   }
 
   return <>{children}</>;

@@ -8,7 +8,8 @@ import {
   BsShieldLock, 
   BsHospital,
   BsJournalMedical,
-  BsCheckCircle
+  BsCheckCircle,
+  BsPersonCircle
 } from 'react-icons/bs';
 
 // Definimos los roles válidos en el sistema
@@ -53,9 +54,7 @@ RECEPCIONISTA: [
   ],
 
   PACIENTE: [
-     { id: 'turnos', label: 'Mis Turnos', icon: BsCalendarCheck,path: '#' },
-     { id: 'horarios-atencion', label: 'Horarios de Atención', icon: BsCheckCircle,path: '/horarioAtencion' },
-    { id: 'pacientes', label: 'Pacientes', icon: BsHeartPulse,path: '#' },
-
+    { id: 'mis-turnos', label: 'Mis Turnos', icon: BsCalendarCheck, path: '/mis-turnos' },
+    { id: 'mi-perfil', label: 'Mi Perfil', icon: BsPersonCircle, path: '/mi-perfil' },
   ]
 };
