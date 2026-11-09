@@ -65,6 +65,7 @@ export const MisTurnos: React.FC = () => {
   const navigate = useNavigate();
   const [turnos, setTurnos] = useState<MiTurno[]>([]);
   const [loading, setLoading] = useState(true);
+  const [verHistorial, setVerHistorial] = useState(false);
 
   useEffect(() => {
     let mounted = true;
@@ -72,7 +73,7 @@ export const MisTurnos: React.FC = () => {
     (async () => {
       try {
         setLoading(true);
-        const data = await pacientePortalService.misTurnos();
+        const data = await pacientePortalService.misTurnos(verHistorial);
         if (mounted) setTurnos(data);
       } catch (e) {
         console.error(e);
@@ -85,7 +86,7 @@ export const MisTurnos: React.FC = () => {
     return () => {
       mounted = false;
     };
-  }, []);
+  }, [verHistorial]);
 
   const { proximos, anteriores } = useMemo(() => {
     const ahora = new Date();
@@ -115,6 +116,23 @@ export const MisTurnos: React.FC = () => {
           </button>
         }
       />
+
+      <div className="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+        <small className="text-muted">
+          {verHistorial
+            ? 'Mostrando todo el historial de turnos.'
+            : 'Mostrando turnos futuros y los de los últimos 30 días.'}
+        </small>
+        <button
+          type="button"
+          className="btn btn-outline-secondary btn-sm fw-semibold"
+          style={{ borderRadius: '8px' }}
+          onClick={() => setVerHistorial((valor) => !valor)}
+          disabled={loading}
+        >
+          {verHistorial ? 'Ver solo últimos 30 días' : 'Ver historial completo'}
+        </button>
+      </div>
 
       {loading ? (
         <div className="text-center py-5 text-muted">Cargando tus turnos...</div>

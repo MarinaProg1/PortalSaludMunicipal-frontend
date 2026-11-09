@@ -7,8 +7,10 @@ export const pacientePortalService = {
     return res.data?.data as MiPerfil;
   },
 
-  async misTurnos(): Promise<MiTurno[]> {
-    const res = await clientesAxios.get('/turnos/mis-turnos');
+  async misTurnos(historial = false): Promise<MiTurno[]> {
+    const res = await clientesAxios.get('/turnos/mis-turnos', {
+      params: historial ? { historial: true } : undefined,
+    });
     const data = res.data?.data;
     return Array.isArray(data) ? (data as MiTurno[]) : [];
   },
