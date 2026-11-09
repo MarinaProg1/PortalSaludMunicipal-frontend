@@ -62,6 +62,47 @@ export interface PacienteItem {
   activo?: boolean;
 }
 
+export interface PacienteTurno {
+  id?: string;
+  _id?: string;
+  fecha: string;
+  hora: string;
+  estado?: string;
+  observaciones?: string;
+  medico?: {
+    nombre?: string;
+    apellido?: string;
+  };
+  especialidad?: {
+    nombre?: string;
+  };
+}
+
+export interface PacienteConsulta {
+  id?: string;
+  _id?: string;
+  turno?: string | { id?: string; _id?: string };
+  motivo?: string;
+  diagnostico?: string;
+  tratamiento?: string;
+  observaciones?: string;
+  estado?: string;
+  fecha?: string;
+}
+
+export interface PacienteHistorial {
+  turnos: PacienteTurno[];
+  consultas: PacienteConsulta[];
+}
+
+export const getRefId = (valor: string | { id?: string; _id?: string } | null | undefined): string => {
+  if (!valor) return '';
+  if (typeof valor === 'string') return valor;
+  return valor.id || valor._id || '';
+};
+
+export const getTurnoId = (turno: PacienteTurno) => turno.id || turno._id || '';
+
 export const getPacienteId = (item: PacienteItem) => item.id || item._id || '';
 
 export const getObraSocialRefId = (

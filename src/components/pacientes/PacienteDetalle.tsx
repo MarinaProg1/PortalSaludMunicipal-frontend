@@ -1,12 +1,25 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { BsHeartPulse, BsJournalMedical, BsPencilSquare, BsCalendarPlus } from 'react-icons/bs';
+import {
+  BsHeartPulse,
+  BsJournalMedical,
+  BsPencilSquare,
+  BsCalendarPlus,
+  BsCalendarCheck,
+  BsClock,
+  BsPersonBadge,
+} from 'react-icons/bs';
 import { PageHeader } from '../../constants/PageHeader';
 import { pacienteService } from '../../services/paciente.service';
 import {
   getObraSocialNombre,
+  getRefId,
+  getTurnoId,
+  type PacienteConsulta,
   type PacienteItem,
+  type PacienteTurno,
 } from './paciente.schema';
+import { estadoTurnoClase, formatearFecha } from '../pacientePortal/pacientePortal.schema';
 import toast from 'react-hot-toast';
 
 export const PacienteDetalle: React.FC = () => {
@@ -14,6 +27,11 @@ export const PacienteDetalle: React.FC = () => {
   const navigate = useNavigate();
   const [paciente, setPaciente] = useState<PacienteItem | null>(null);
   const [loading, setLoading] = useState(true);
+
+  const [turnos, setTurnos] = useState<PacienteTurno[]>([]);
+  const [consultas, setConsultas] = useState<PacienteConsulta[]>([]);
+  const [verHistorial, setVerHistorial] = useState(false);
+  const [cargandoHistorial, setCargandoHistorial] = useState(true);
 
   useEffect(() => {
     if (!id) return;
@@ -30,6 +48,31 @@ export const PacienteDetalle: React.FC = () => {
       }
     })();
   }, [id]);
+
+  useEffect(() => {
+    if (!id) return;
+    let mounted = true;
+
+    (async () => {
+      try {
+        setCargandoHistorial(true);
+        const data = await pacienteService.historial(id, verHistorial);
+        if (mounted) {
+          setTurnos(data.turnos);
+          setConsultas(data.consultas);
+        }
+      } catch (e) {
+        console.error(e);
+        if (mounted) toast.error('No se pudo cargar el historial de turnos');
+      } finally {
+        if (mounted) setCargandoHistorial(false);
+      }
+    })();
+
+    return () => {
+      mounted = false;
+    };
+  }, [id, verHistorial]);
 
   if (loading) return <div className="container-fluid py-4 text-muted">Cargando...</div>;
 
@@ -135,14 +178,98 @@ export const PacienteDetalle: React.FC = () => {
         <div className="col-12">
           <div className="card border-0 shadow-sm bg-white" style={{ borderRadius: '12px' }}>
             <div className="card-body p-4">
-              <div className="d-flex align-items-center gap-2 mb-3">
-                <BsJournalMedical style={{ color: '#00ACB2' }} />
-                <h6 className="fw-bold text-dark mb-0">Observaciones y consultas</h6>
+              <div className="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2">
+                <div className="d-flex align-items-center gap-2">
+                  <BsJournalMedical style={{ color: '#00ACB2' }} />
+                  <h6 className="fw-bold text-dark mb-0">Turnos y consultas</h6>
+                </div>
+                <button
+                  type="button"
+                  className="btn btn-outline-secondary btn-sm fw-semibold"
+                  style={{ borderRadius: '8px' }}
+                  onClick={() => setVerHistorial((valor) => !valor)}
+                  disabled={cargandoHistorial}
+                >
+                  {verHistorial ? 'Ver últimos 30 días' : 'Ver historial completo'}
+                </button>
               </div>
-              <p className="text-muted small mb-0">
-                Aqui se van a mostrar las observaciones y consultas medicas del paciente cuando se
-                conecte el modulo de Consulta Medica.
-              </p>
+
+              <small className="text-muted d-block mb-3">
+                {verHistorial
+                  ? 'Mostrando todo el historial de turnos.'
+                  : 'Mostrando turnos futuros y los de los últimos 30 días.'}
+              </small>
+
+              {cargandoHistorial ? (
+                <p className="text-muted small mb-0">Cargando turnos...</p>
+              ) : turnos.length === 0 ? (
+                <p className="text-muted small mb-0">
+                  Este paciente no tiene turnos en el período seleccionado.
+                </p>
+              ) : (
+                <div className="d-flex flex-column gap-3">
+                  {turnos.map((turno) => {
+                    const turnoId = getTurnoId(turno);
+                    const consulta = consultas.find((item) => getRefId(item.turno) === turnoId);
+
+                    return (
+                      <div key={turnoId} className="border rounded-3 p-3">
+                        <div className="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2">
+                          <div className="d-flex flex-wrap align-items-center gap-3 small fw-semibold text-dark">
+                            <span className="d-flex align-items-center gap-1">
+                              <BsCalendarCheck style={{ color: '#00ACB2' }} />
+                              {formatearFecha(turno.fecha)}
+                            </span>
+                            <span className="d-flex align-items-center gap-1">
+                              <BsClock style={{ color: '#00ACB2' }} />
+                              {turno.hora} hs
+                            </span>
+                            <span className="d-flex align-items-center gap-1">
+                              <BsPersonBadge style={{ color: '#00ACB2' }} />
+                              {turno.medico?.apellido || ''}, {turno.medico?.nombre || ''}
+                            </span>
+                            <span className="text-muted">{turno.especialidad?.nombre || '-'}</span>
+                          </div>
+                          <span className={`badge px-2 py-1 text-uppercase ${estadoTurnoClase(turno.estado || '')}`}>
+                            {turno.estado || '-'}
+                          </span>
+                        </div>
+
+                        {turno.observaciones && (
+                          <div className="p-2 rounded-3 bg-light small text-muted mb-2">
+                            {turno.observaciones}
+                          </div>
+                        )}
+
+                        {consulta ? (
+                          <div className="rounded-3 border p-3 bg-light small">
+                            <div
+                              className="fw-bold text-secondary text-uppercase mb-2"
+                              style={{ fontSize: '0.72rem' }}
+                            >
+                              Consulta médica
+                            </div>
+                            {consulta.motivo && (
+                              <p className="mb-1"><span className="fw-semibold">Motivo:</span> {consulta.motivo}</p>
+                            )}
+                            {consulta.diagnostico && (
+                              <p className="mb-1"><span className="fw-semibold">Diagnóstico:</span> {consulta.diagnostico}</p>
+                            )}
+                            {consulta.tratamiento && (
+                              <p className="mb-1"><span className="fw-semibold">Tratamiento y recomendaciones:</span> {consulta.tratamiento}</p>
+                            )}
+                            {consulta.observaciones && (
+                              <p className="mb-0"><span className="fw-semibold">Observaciones:</span> {consulta.observaciones}</p>
+                            )}
+                          </div>
+                        ) : (
+                          <p className="text-muted small mb-0">Sin recomendaciones cargadas todavía.</p>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           </div>
         </div>

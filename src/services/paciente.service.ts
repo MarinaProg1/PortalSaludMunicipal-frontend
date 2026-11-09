@@ -1,5 +1,9 @@
 import clientesAxios from '../config/axios';
-import type { PacienteFormValues, PacienteItem } from '../components/pacientes/paciente.schema';
+import type {
+  PacienteFormValues,
+  PacienteHistorial,
+  PacienteItem,
+} from '../components/pacientes/paciente.schema';
 
 const BASE = '/pacientes';
 
@@ -20,6 +24,17 @@ export const pacienteService = {
   async obtener(id: string): Promise<PacienteItem> {
     const res = await clientesAxios.get(`${BASE}/${id}`);
     return extractData<PacienteItem>(res);
+  },
+
+  async historial(id: string, historial = false): Promise<PacienteHistorial> {
+    const res = await clientesAxios.get(`${BASE}/${id}/turnos`, {
+      params: historial ? { historial: true } : undefined,
+    });
+    const data = extractData<PacienteHistorial>(res);
+    return {
+      turnos: Array.isArray(data?.turnos) ? data.turnos : [],
+      consultas: Array.isArray(data?.consultas) ? data.consultas : [],
+    };
   },
 
   async crear(data: PacienteFormValues): Promise<unknown> {
