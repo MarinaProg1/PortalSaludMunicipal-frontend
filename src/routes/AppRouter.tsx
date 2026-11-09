@@ -13,6 +13,7 @@ import { ObraSocialForm } from "../components/obrasSociales/ObraSocialForm";
 import { PacienteLista } from "../components/pacientes/PacienteLista";
 import { PacienteForm } from "../components/pacientes/PacienteForm";
 import { PacienteDetalle } from "../components/pacientes/PacienteDetalle";
+import { MedicoLista } from "../components/medicos/MedicoLista";
 import { RequireRole } from "./RequireRole";
 import NotFound from "../components/utils/NotFound";
 
@@ -85,6 +86,8 @@ const AppRouter = () => {
           <Route path="pacientes/nuevo" element={<RequireRole allowed={["ADMIN", "RECEPCIONISTA"]}><PacienteForm /></RequireRole>} />
           <Route path="pacientes/editar/:id" element={<RequireRole allowed={["ADMIN", "RECEPCIONISTA"]}><EdicionPacienteWrapper /></RequireRole>} />
           <Route path="pacientes/:id" element={<RequireRole allowed={["ADMIN", "RECEPCIONISTA"]}><PacienteDetalle /></RequireRole>} />
+
+          <Route path="medicos" element={<RequireRole allowed={["ADMIN", "RECEPCIONISTA"]}><MedicoLista /></RequireRole>} />
         </Route>
 
         <Route path="*" element={<NotFound />} />

@@ -28,7 +28,7 @@ export const roleMenus: Record<UserRole, MenuItem[]> = {
 ADMIN: [
     { id: 'turnos', label: 'Turnos', icon: BsCalendarCheck,path: '/turnos' },
     { id: 'horarios-atencion', label: 'Horarios de Atención', icon: BsCheckCircle,path: '/horarioAtencion' },
-    { id: 'medicos', label: 'Médicos', icon: BsPeople,path: '#' },
+    { id: 'medicos', label: 'Médicos', icon: BsPeople,path: '/medicos' },
     { id: 'pacientes', label: 'Pacientes', icon: BsHeartPulse,path: '/pacientes' },
     { id: 'usuarios', label: 'Usuarios del Sistema', icon: BsShieldLock,path: '#' },
     { id: 'especialidades', label: 'Especialidades', icon: BsHospital,path: '#' },
@@ -38,7 +38,7 @@ ADMIN: [
 RECEPCIONISTA: [
     { id: 'turnos', label: 'Turnos', icon: BsCalendarCheck,path: '/turnos' },
     { id: 'horarios-atencion', label: 'Horarios de Atención', icon: BsCheckCircle,path: '/horarioAtencion' },
-    { id: 'medicos', label: 'Médicos', icon: BsPeople,path: '#' },  
+    { id: 'medicos', label: 'Médicos', icon: BsPeople,path: '/medicos' },  
     { id: 'pacientes', label: 'Pacientes', icon: BsHeartPulse,path: '/pacientes' },
     { id: 'especialidades', label: 'Especialidades', icon: BsHospital,path: '#' },
     { id: 'obra-social', label: 'Obras Sociales', icon: BsCapsule, path: '/obras-sociales' },
