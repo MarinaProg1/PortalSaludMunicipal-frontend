@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { BsClock } from 'react-icons/bs';
+import { BsClock, BsPersonBadge } from 'react-icons/bs';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 import clientesAxios from '../../config/axios';
@@ -8,6 +8,7 @@ import type { MedicoItem, DiaConfig, HorarioApiResponse } from './horario.schema
 import { PageHeader } from '../../constants/PageHeader';
 import { HorarioAtencionFormSkeleton } from './HorarioAtencionFromSkeleton';
 import { DiaAgendaItem } from './DiaAgendaItem'; 
+import { SelectField } from '../../constants/SelectField';
 
 const DIAS_SEMANA = [
   { key: 'LUNES', label: 'Lunes' },
@@ -264,28 +265,27 @@ export const HorarioAtencionForm: React.FC = () => {
           onBack={() => navigate('/horarioAtencion')}
         />
 
-      
         <form onSubmit={handleSubmit}>
-          
+ 
           <div className="row g-3 mb-4 p-3 bg-light rounded-3">
             <div className="col-md-8">
-              <label className="form-label fw-semibold text-secondary small">Médico Profesional</label>
-              <select 
-                className="form-select shadow-none" 
+             <SelectField
+                label="Médico Profesional"
+                labelIcon={<BsPersonBadge className="me-1" />}
                 value={medicoSeleccionado}
-                onChange={(e) => handleCambioMedico(e.target.value)}
+                onChange={(id) => handleCambioMedico(id)}
+                placeholder={loadingData ? "Cargando médicos..." : "Seleccione o busque un médico..."}
                 required
-              >
-                <option value="">Seleccione un médico...</option>
-                {medicos.map(m => {
+                disabled={loadingData}
+                className="mb-0"
+                options={medicos.map(m => {
                   const medicoId = m.id || '';
-                  return (
-                    <option key={medicoId} value={medicoId}>
-                      Dr./Dra. {m.nombre} {m.apellido}
-                    </option>
-                  );
+                  return {
+                    value: medicoId,
+                    label: `Dr./Dra. ${m.nombre} ${m.apellido}`
+                  };
                 })}
-              </select>
+              />
             </div>
 
             <div className="col-md-4">

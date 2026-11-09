@@ -60,13 +60,13 @@ export const MedicoAgendaDesplegable: React.FC<MedicoAgendaDesplegableProps> = (
                         esSeleccionado
                           ? 'text-white'
                           : d.tieneDisponibilidad
-                          ? 'btn-outline-success bg-success-subtle text-success border-success'
-                          : 'btn-light text-muted border-0 opacity-50'
+                          ? 'btn-outline-pimary border-primary text-dark border-primary'
+                          : 'btn-light text-muted border-0 opacity-25'
                       }`}
                       style={{
                         width: '58px',
                         height: '66px',
-                        backgroundColor: esSeleccionado ? '#00ACB2' : undefined,
+                        backgroundColor: esSeleccionado ? '#d3dbdb' : undefined,
                         borderColor: esSeleccionado ? '#00ACB2' : undefined
                       }}
                     >
@@ -83,40 +83,42 @@ export const MedicoAgendaDesplegable: React.FC<MedicoAgendaDesplegableProps> = (
           </div>
         </div>
 
-        {/* Columna Derecha: Horarios / Slots Disponibles (Solo Lectura) */}
-        <div className="col-lg-5">
-          <div className="card border-0 shadow-sm p-3 bg-white h-100" style={{ borderRadius: '12px' }}>
-            <h6 className="fw-bold text-dark mb-3">
-              Horarios Libres {fechaSeleccionada ? `(${fechaSeleccionada.split('-').reverse().join('/')})` : ''}
-            </h6>
+        {/* Columna Derecha: Horarios / Slots Disponibles (Ordenados en Columnas) */}
+<div className="col-lg-5">
+  <div className="card border-0 shadow-sm p-3 bg-white h-100" style={{ borderRadius: '12px' }}>
+    <h6 className="fw-bold text-dark mb-3">
+      Horarios Libres {fechaSeleccionada ? `(${fechaSeleccionada.split('-').reverse().join('/')})` : ''}
+    </h6>
 
-            {!fechaSeleccionada ? (
-              <div className="text-center py-5 text-muted small">
-                Selecciona un día en el calendario para consultar los horarios disponibles.
-              </div>
-            ) : cargandoSlots ? (
-              <div className="text-center py-5">
-                <div className="spinner-border spinner-border-sm text-primary" role="status"></div>
-                <span className="ms-2 small text-muted">Buscando horarios...</span>
-              </div>
-            ) : slotsDisponibles.length > 0 ? (
-              <div className="d-flex flex-wrap gap-2">
-                {slotsDisponibles.map((slot) => (
-                  <span 
-                    key={slot} 
-                    className="badge bg-success-subtle text-success border border-success-subtle px-3 py-2 fs-6 fw-semibold"
-                  >
-                    {slot} hs
-                  </span>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-5 text-muted small">
-                No hay horarios disponibles para esta fecha.
-              </div>
-            )}
+    {!fechaSeleccionada ? (
+      <div className="text-center py-5 text-muted small">
+        Selecciona un día en el calendario para consultar los horarios disponibles.
+      </div>
+    ) : cargandoSlots ? (
+      <div className="text-center py-5">
+        <div className="spinner-border spinner-border-sm" role="status" style={{ color: '#62b2b6' }}></div>
+        <span className="ms-2 small text-muted">Buscando horarios...</span>
+      </div>
+    ) : slotsDisponibles.length > 0 ? (
+      <div className="row g-2">
+        {slotsDisponibles.map((slot) => (
+          <div className="col-4 col-sm-3" key={slot}>
+            <div 
+              className="text-center py-2 px-1 border-primary text-dark border border-primary rounded-2 fw-semibold small shadow-sm d-flex align-items-center justify-content-center gap-1"
+              style={{ fontSize: '0.85rem' }}
+            >
+              {slot} hs
+            </div>
           </div>
-        </div>
+        ))}
+      </div>
+    ) : (
+      <div className="text-center py-5 text-muted small">
+        No hay horarios disponibles para esta fecha.
+      </div>
+    )}
+  </div>
+</div>
 
       </div>
     </div>

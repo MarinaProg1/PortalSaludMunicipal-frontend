@@ -50,6 +50,7 @@ export const roleMenus: Record<UserRole, MenuItem[]> = {
       children: [
         { id: 'horarios-lista', label: 'Ver Agendas', path: '/horarioAtencion' },
         { id: 'horarios-nuevo', label: 'Configurar Horario', path: '/horarioAtencion/nuevo' },
+        { id: 'excepciones-agenda', label: 'Excepciones de agenda', path: '/excepciones' },
       ]
     },
     { id: 'medicos', label: 'Médicos', icon: BsPeople, path: '#' },

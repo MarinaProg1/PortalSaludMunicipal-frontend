@@ -58,8 +58,8 @@ export const CalendarioMensual: React.FC<CalendarioMensualProps> = ({
                     esSeleccionado
                       ? 'btn-info text-white border-dark fw-bold'
                       : dia.tieneDisponibilidad
-                        ? 'btn-outline-success bg-success-subtle text-dark border-success'
-                        : 'btn-outline-secondary bg-light text-muted opacity-50'
+                        ? 'btn-outline-primary text-dark border-primary'
+                        : 'btn-outline-primary bg-light text-muted opacity-25'
                   }`}
                   style={{ borderRadius: '8px' }}
                 >

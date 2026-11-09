@@ -10,6 +10,8 @@ import { HorarioAtencionForm } from './components/horarios/HorarioAtencionForm';
 import { HorarioAtencionLista } from './components/horarios/HorarioAtencionLista';
 import { ConfiguracionView } from './components/configuraciones/ConfiguracionView';
 import { EditarTurnoView } from './components/turnos/EditarTurnoView';
+import { CrearExcepcionView } from './components/excepcionAgenda/CrearExcepcionView';
+import { ExcepcionesLista } from './components/excepcionAgenda/ExcepcionesLista';
 
 
 export default function App() {
@@ -32,6 +34,9 @@ export default function App() {
           <Route path="/horarioAtencion" element={<HorarioAtencionLista />} />
           <Route path="/horarioAtencion/nuevo" element={<HorarioAtencionForm />} />
           <Route path="/turnos/editar/:id" element={<EditarTurnoView />} />
+
+          <Route path="/excepciones" element={<ExcepcionesLista />} />
+       <Route path="/excepciones/nuevo" element={<CrearExcepcionView />} />
           <Route path="/configuracion" element={<ConfiguracionView />} />
 
         </Route>

@@ -10,7 +10,7 @@ html, body, #root {
   background-color: rgb(194, 196, 165)important;
 }
 .bg-salud-claro {
-background-image: linear-gradient(135deg, #e6e3b9 0%, #ebeedf 50%, #c2ca4e 100%) !important;
+background-image: linear-gradient(135deg, #e6e3b9 0%, #ebeedf 50%, #eaebe3 100%) !important;
 border-radius: 0px 30px 30px 0px !important;
 border: #00ACB2 2px solid !important;
 
@@ -20,10 +20,10 @@ border: #00ACB2 2px solid !important;
   background: #ff9450 !important;
   color: #ffffff !important;
 }
-
-.hover-bg-light:hover {
-  background-color: rgba(62, 110, 98, 0.08) !important;
-  color: #2b4d44 !important;
+.style-primary{
+  border: 1px solid #00ACB2!important;
+  color :#ff9450 !important;
+  border-radius: 6px !important;
 }
 .nav-link:not(.active) svg {
   color: #00ACB2 !important; 

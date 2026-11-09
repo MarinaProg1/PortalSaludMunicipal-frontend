@@ -1,6 +1,7 @@
 import React from 'react';
-import type { BloqueTurnoConfigProps} from './horario.schema';
-
+import type { BloqueTurnoConfigProps } from './horario.schema';
+import { InputField } from '../../constants/InputField'; // Ajusta la ruta según dónde tengas guardado el InputField
+import { BsClock } from 'react-icons/bs';
 
 export const BloqueTurnoConfig: React.FC<BloqueTurnoConfigProps> = ({
   titulo,
@@ -37,25 +38,29 @@ export const BloqueTurnoConfig: React.FC<BloqueTurnoConfigProps> = ({
       {activo && (
         <div className="row g-2">
           <div className="col-6">
-            <label className="form-label text-muted x-small mb-0">Desde</label>
-            <input 
-              type="text" 
-              className="form-control form-control-sm shadow-none" 
+            <InputField
+              label="Desde"
+              labelIcon={<BsClock size={12} className="me-1" />}
+              containerClassName="mb-0"
+              className="form-control form-control-sm shadow-none"
               value={horaInicio}
               onChange={(e) => onCambioHoraInicio(e.target.value)}
               disabled={yaGuardado}
               required
+              placeholder="08:00"
             />
           </div>
           <div className="col-6">
-            <label className="form-label text-muted x-small mb-0">Hasta</label>
-            <input 
-              type="text" 
-              className="form-control form-control-sm shadow-none" 
+            <InputField
+              label="Hasta"
+              labelIcon={<BsClock size={12} className="me-1" />}
+              containerClassName="mb-0"
+              className="form-control form-control-sm shadow-none"
               value={horaFin}
               onChange={(e) => onCambioHoraFin(e.target.value)}
               disabled={yaGuardado}
               required
+              placeholder="12:00"
             />
           </div>
         </div>

@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { z } from 'zod';
 
 
@@ -116,5 +117,24 @@ export interface TurnoCardProps {
   onView: () => void;
   onEdit: () => void;
   onDelete: () => void;
+  onCancel?: () => void;
   onMarkAttended: () => void;
+}
+export interface TurnoSelectOption {
+  value: string;
+  label: string;
+}
+
+export interface TurnoSelectFieldProps {
+  label: string;
+  value: string;
+  options: TurnoSelectOption[];
+  placeholder: string;
+  onChange: (value: string) => void;
+  className?: string;
+  selectClassName?: string;
+  labelIcon?: ReactNode;
+  required?: boolean;
+  disabled?: boolean;
+  helpText?: ReactNode;
 }

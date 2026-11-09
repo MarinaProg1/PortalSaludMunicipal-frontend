@@ -18,7 +18,12 @@ export const TurnosLista: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [busqueda, setBusqueda] = useState('');
 
-const [idTurnoAEliminar, setIdTurnoAEliminar] = useState<string | null>(null);
+  // 🌟 Estados independientes para Cancelación
+  const [idTurnoACancelar, setIdTurnoACancelar] = useState<string | null>(null);
+  const [cancelando, setCancelando] = useState<boolean>(false);
+
+  // 🌟 Estados independientes para Eliminación definitiva
+  const [idTurnoAEliminar, setIdTurnoAEliminar] = useState<string | null>(null);
   const [eliminando, setEliminando] = useState<boolean>(false);
 
   useEffect(() => {
@@ -69,7 +74,38 @@ const [idTurnoAEliminar, setIdTurnoAEliminar] = useState<string | null>(null);
     navigate(`/turnos/editar/${id}`);
   };
 
- const handleOpenDeleteModal = (id: string) => {
+  // --- 🌟 MANEJO DE CANCELACIÓN ---
+  const handleOpenCancelModal = (id: string) => {
+    setIdTurnoACancelar(id);
+  };
+
+  const handleConfirmCancel = async () => {
+    if (!idTurnoACancelar) return;
+
+    setCancelando(true);
+    try {
+      const response = await clientesAxios.patch(`/turnos/${idTurnoACancelar}/cancelar`);
+      
+      // Actualizamos el estado del turno a CANCELADO localmente
+      setTurnos(prevTurnos => 
+        prevTurnos.map(t => t.id === idTurnoACancelar ? { ...t, estado: response.data?.data?.estado || 'CANCELADO' } : t)
+      );
+
+      toast.success(response.data?.message || 'Turno cancelado correctamente.');
+      setIdTurnoACancelar(null);
+    } catch (err: unknown) {
+      console.error('Error al cancelar el turno:', err);
+      const mensaje = isAxiosError<{ message?: string }>(err)
+        ? err.response?.data?.message || 'Hubo un error al intentar cancelar el turno.'
+        : 'Hubo un error al intentar cancelar el turno.';
+      toast.error(mensaje);
+    } finally {
+      setCancelando(false);
+    }
+  };
+
+  // --- 🌟 MANEJO DE ELIMINACIÓN DEFINITIVA ---
+  const handleOpenDeleteModal = (id: string) => {
     setIdTurnoAEliminar(id);
   };
 
@@ -79,9 +115,10 @@ const [idTurnoAEliminar, setIdTurnoAEliminar] = useState<string | null>(null);
     setEliminando(true);
     try {
       await clientesAxios.delete(`/turnos/${idTurnoAEliminar}`);
-      setTurnos(turnos.filter(t => t.id !== idTurnoAEliminar));
-      toast.success('Turno eliminado correctamente.');
-      setIdTurnoAEliminar(null); // Cierra el modal
+      // Removemos el turno definitivamente de la lista
+      setTurnos(prevTurnos => prevTurnos.filter(t => t.id !== idTurnoAEliminar));
+      toast.success('Turno eliminado definitivamente de la base de datos.');
+      setIdTurnoAEliminar(null);
     } catch (err) {
       console.error('Error al eliminar el turno:', err);
       toast.error('Hubo un error al intentar eliminar el registro.');
@@ -109,7 +146,7 @@ const [idTurnoAEliminar, setIdTurnoAEliminar] = useState<string | null>(null);
     }
   };
 
- const turnosFiltrados = Array.isArray(turnos) 
+  const turnosFiltrados = Array.isArray(turnos) 
     ? turnos
         .filter(t => {
           const nombrePaciente = `${t.paciente?.nombre || ''} ${t.paciente?.apellido || ''}`.toLowerCase();
@@ -122,12 +159,9 @@ const [idTurnoAEliminar, setIdTurnoAEliminar] = useState<string | null>(null);
           const esHoyA = esFechaDeHoy(a.fecha);
           const esHoyB = esFechaDeHoy(b.fecha);
 
-          // 1. Si el turno 'a' es de hoy y 'b' no, 'a' va primero (-1)
           if (esHoyA && !esHoyB) return -1;
-          // 2. Si el turno 'b' es de hoy y 'a' no, 'b' va primero (1)
           if (!esHoyA && esHoyB) return 1;
 
-          // 3. Si ambos son de hoy (o ninguno lo es), los ordenamos cronológicamente (de menor a mayor fecha/hora)
           const fechaA = new Date(a.fecha).getTime();
           const fechaB = new Date(b.fecha).getTime();
 
@@ -135,7 +169,6 @@ const [idTurnoAEliminar, setIdTurnoAEliminar] = useState<string | null>(null);
             return fechaA - fechaB;
           }
 
-          // Opcional: Si tienen la misma fecha, los ordenamos por hora si la propiedad existe
           return (a.hora || '').localeCompare(b.hora || '');
         })
     : [];
@@ -195,18 +228,29 @@ const [idTurnoAEliminar, setIdTurnoAEliminar] = useState<string | null>(null);
               turno={turno}
               onView={() => handleView(turno.id)}
               onEdit={() => handleEdit(turno.id)}
-              onDelete={() => handleOpenDeleteModal(turno.id)}
+              onCancel={() => handleOpenCancelModal(turno.id)}    
+              onDelete={() => handleOpenDeleteModal(turno.id)}     
               onMarkAttended={() => handleMarcarAtendido(turno.id)}
             />
           ))}
+
           <ConfirmDeleteModal 
-        isOpen={idTurnoAEliminar !== null}
-        titulo="Confirmar Cancelación de Turno"
-        mensaje="¿Estás seguro de que deseas cancelar y eliminar este turno? Esta acción no se puede deshacer."
-        cargando={eliminando}
-        onClose={() => setIdTurnoAEliminar(null)}
-        onConfirm={handleConfirmDelete}
-      />
+            isOpen={idTurnoACancelar !== null}
+            titulo="Confirmar Cancelación de Turno"
+            mensaje="¿Estás seguro de que deseas cancelar este turno? Su estado cambiará a cancelado."
+            cargando={cancelando}
+            onClose={() => setIdTurnoACancelar(null)}
+            onConfirm={handleConfirmCancel}
+          />
+
+          <ConfirmDeleteModal 
+            isOpen={idTurnoAEliminar !== null}
+            titulo="Eliminar Turno Definitivamente"
+            mensaje="¡Atención! Esta acción borrará el registro por completo de la base de datos y no se puede deshacer."
+            cargando={eliminando}
+            onClose={() => setIdTurnoAEliminar(null)}
+            onConfirm={handleConfirmDelete}
+          />
         </div>
 
       ) : (

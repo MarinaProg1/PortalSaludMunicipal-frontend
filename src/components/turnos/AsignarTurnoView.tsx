@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { BsCalendarCheck } from 'react-icons/bs';
+import { BsCalendarCheck, BsArrowLeft } from 'react-icons/bs';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 import clientesAxios from '../../config/axios';
@@ -50,7 +50,6 @@ export const AsignarTurnoView: React.FC = () => {
 
   // 2. Manejar cambio de especialidad para filtrar médicos
   const handleCambioEspecialidad = async (nuevaEsp: string) => {
-    console.log('🔍 ID de especialidad seleccionado:', nuevaEsp);
     setEspecialidadSeleccionada(nuevaEsp);
     setMedicoActivo(null);
     setDiasDelMes([]);
@@ -61,7 +60,6 @@ export const AsignarTurnoView: React.FC = () => {
       return;
     }
     
-
     setLoadingMedicos(true);
     try {
       const res = await clientesAxios.get(`/medicos?especialidades=${nuevaEsp}`);
@@ -98,7 +96,7 @@ export const AsignarTurnoView: React.FC = () => {
     fetchDisponibilidadMes();
   }, [medicoActivo, anioActual, mesActual]);
 
-  // 4. Consultar los slots detallados de un día específico cuando el operador hace clic en un día de la grilla
+  // 4. Consultar los slots detallados de un día específico cuando el operador hace clic en un día
   useEffect(() => {
     if (!medicoActivo || !fechaSeleccionada) return;
 
@@ -141,12 +139,12 @@ export const AsignarTurnoView: React.FC = () => {
     }
   };
 
-  // Al hacer clic en un slot verde, enviamos los datos mediante Query Params a TurnoForm
+  // Al hacer clic en un slot libre
   const handleSeleccionarSlotLibre = (hora: string) => {
     const nombreCompleto = encodeURIComponent(`Dr./Dra. ${medicoActivo?.nombre || ''} ${medicoActivo?.apellido || ''}`);
-    
     navigate(`/turnos/nuevo?medico=${medicoActivo?.id}&nombre=${nombreCompleto}&especialidad=${especialidadSeleccionada}&fecha=${fechaSeleccionada}&hora=${hora}`);
   };
+
   return (
     <div className="container-fluid px-2 px-md-4 py-4">
       <div className="card border-0 shadow-sm bg-white p-4 mx-auto" style={{ maxWidth: '1000px', borderRadius: '12px' }}>
@@ -157,21 +155,50 @@ export const AsignarTurnoView: React.FC = () => {
           icon={<BsCalendarCheck className="me-2" style={{ color: '#00ACB2' }} />}
         />
 
-        <div className="row g-3 mb-4 p-3 bg-light rounded-3 align-items-end">
-          <TurnoSelectField
-            className="col-md-6"
-            label="1. Filtrar por Especialidad"
-            value={especialidadSeleccionada}
-            onChange={(value) => void handleCambioEspecialidad(value)}
-            placeholder="Seleccione una especialidad..."
-            selectClassName="form-select shadow-none"
-            options={especialidades.map((esp: EspecialidadItem) => ({
-              value: esp._id,
-              label: esp.nombre,
-            }))}
-          />
-        </div>
-        {especialidadSeleccionada && (
+        {/* 🌟 Botón de retorno rápido según el nivel de navegación actual */}
+        {medicoActivo && (
+          <div className="mb-3">
+            <button 
+              type="button"
+              className="btn btn-outline-secondary btn-sm d-flex align-items-center gap-1 shadow-none"
+              onClick={() => {
+                if (fechaSeleccionada) {
+                  // Si estamos viendo los horarios de un día, volvemos a mostrar el calendario limpio
+                  setFechaSeleccionada('');
+                  setTodosLosSlots([]);
+                  setHorariosDisponibles([]);
+                } else {
+                  // Si estamos viendo el calendario, volvemos a la selección de médico/especialidad
+                  setMedicoActivo(null);
+                }
+              }}
+            >
+              <BsArrowLeft /> {fechaSeleccionada ? 'Volver al calendario mensual' : 'Cambiar de médico o especialidad'}
+            </button>
+          </div>
+        )}
+
+        {/* 🌟 PASO 1: Filtrar por Especialidad (Se oculta si ya se eligió un médico) */}
+        {!medicoActivo && (
+          <div className="mb-4">
+            <h5 className="fw-bold text-dark mb-3">1. Filtrar por Especialidad</h5>
+            <TurnoSelectField
+              className="mb-0"
+              label=""
+              value={especialidadSeleccionada}
+              onChange={(value) => void handleCambioEspecialidad(value)}
+              placeholder="Seleccione una especialidad..."
+              selectClassName="form-select shadow-none"
+              options={especialidades.map((esp: EspecialidadItem) => ({
+                value: esp._id,
+                label: esp.nombre,
+              }))}
+            />
+          </div>
+        )}
+
+        {/*PASO 2: Seleccionar Profesional (Se oculta si ya se eligió un médico) */}
+        {especialidadSeleccionada && !medicoActivo && (
           <div className="mb-4">
             <h5 className="fw-bold text-dark mb-3">2. Seleccionar Profesional</h5>
             {loadingMedicos ? (
@@ -182,16 +209,18 @@ export const AsignarTurnoView: React.FC = () => {
               <div className="row g-3">
                 {medicos.map(med => (
                   <div key={med.id} className="col-md-6">
-                    <div className={`card border p-3 shadow-sm ${medicoActivo?.id === med.id ? 'border-info bg-light-subtle' : 'border-secondary-subtle'}`} style={{ borderRadius: '10px' }}>
+                    <div 
+                      className="card border border-secondary-subtle p-3 shadow-sm h-100 d-flex flex-column justify-content-between bg-white" 
+                      style={{ borderRadius: '10px' }}
+                    >
                       <div className="d-flex justify-content-between align-items-center">
                         <div>
-                          <h6 className="fw-bold mb-1">Dr./Dra. {med.nombre} {med.apellido}</h6>
+                          <h6 className="fw-bold text-dark mb-1 fs-6">Dr./Dra. {med.nombre} {med.apellido}</h6>
                           <span className="text-muted small">Profesional de salud</span>
                         </div>
                         <button 
                           type="button"
-                          className="btn btn-sm text-white px-3"
-                          style={{ backgroundColor: '#00ACB2', borderRadius: '6px' }}
+                          className="btn btn-sm text-dark bg-primary-subtle px-2 text-center py-2 border-primary border border-primary rounded-2"
                           onClick={() => {
                             setMedicoActivo(med);
                             setFechaSeleccionada('');
@@ -208,27 +237,41 @@ export const AsignarTurnoView: React.FC = () => {
           </div>
         )}
 
-        {/* Calendario Mensual Estilo Grid */}
+        {/* PASO 3: Calendario Mensual y Horarios Disponibles */}
         {medicoActivo && (
-          <div className="mt-4 pt-4 border-top">
-            <CalendarioMensual
-              titulo={`Agenda de Dr./Dra. ${medicoActivo.nombre} ${medicoActivo.apellido}`}
-              anio={anioActual}
-              mes={mesActual}
-              dias={diasDelMes}
-              fechaSeleccionada={fechaSeleccionada}
-              loading={loadingMes}
-              onCambiarMes={cambiarMes}
-              onSeleccionarFecha={setFechaSeleccionada}
-            />
-            {fechaSeleccionada && (
-              <HorariosDisponibles
-                fecha={fechaSeleccionada}
-                todosLosSlots={todosLosSlots}
-                horariosDisponibles={horariosDisponibles}
-                loading={loadingDisponibilidad}
-                onSeleccionar={handleSeleccionarSlotLibre}
+          <div className="mt-2 pt-3">
+            <div className="mb-3 p-3 bg-light rounded-3 d-flex align-items-center justify-content-between">
+              <div>
+                <span className="text-muted small d-block">Profesional seleccionado:</span>
+                <h5 className="fw-bold text-dark mb-0">Dr./Dra. {medicoActivo.nombre} {medicoActivo.apellido}</h5>
+              </div>
+            </div>
+
+            {/* Si ya hay un día seleccionado, ocultamos el calendario mensual para enfocar la vista en los horarios */}
+            {!fechaSeleccionada && (
+              <CalendarioMensual
+                titulo={`Agenda Mensual`}
+                anio={anioActual}
+                mes={mesActual}
+                dias={diasDelMes}
+                fechaSeleccionada={fechaSeleccionada}
+                loading={loadingMes}
+                onCambiarMes={cambiarMes}
+                onSeleccionarFecha={setFechaSeleccionada}
               />
+            )}
+
+            {/* Si hay fecha seleccionada, mostramos los horarios disponibles en pantalla completa */}
+            {fechaSeleccionada && (
+              <div className="mt-2">
+                <HorariosDisponibles
+                  fecha={fechaSeleccionada}
+                  todosLosSlots={todosLosSlots}
+                  horariosDisponibles={horariosDisponibles}
+                  loading={loadingDisponibilidad}
+                  onSeleccionar={handleSeleccionarSlotLibre}
+                />
+              </div>
             )}
 
           </div>

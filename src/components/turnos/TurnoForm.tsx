@@ -5,7 +5,7 @@ import { toast } from 'sonner';
 import clientesAxios from '../../config/axios';
 import { PageHeader } from '../../constants/PageHeader';
 import type { PacienteItem, EspecialidadItem, TurnoFormProps } from './turno.schema';
-import { TurnoSelectField } from './TurnoSelectField';
+import { SelectField } from '../../constants/SelectField';
 
 export const TurnoForm: React.FC<TurnoFormProps> = ({ turnoId, onSuccess, onCancel }) => {
   const navigate = useNavigate();
@@ -164,7 +164,6 @@ export const TurnoForm: React.FC<TurnoFormProps> = ({ turnoId, onSuccess, onCanc
               <div className="col-md-6">
                 <span className="text-muted small d-block mb-1"><BsHeartPulse className="me-1 text-info" /> Profesional Asignado</span>
                 <strong className="text-dark">{decodeURIComponent(medicoNombre)}</strong>
-                <p>{decodeURIComponent(especialidadSeleccionada)}</p>
               </div>
               <div className="col-md-3">
                 <span className="text-muted small d-block mb-1"><BsCalendarPlus className="me-1 text-info" /> Fecha</span>
@@ -177,7 +176,7 @@ export const TurnoForm: React.FC<TurnoFormProps> = ({ turnoId, onSuccess, onCanc
             </div>
           )}
 
-          <TurnoSelectField
+          <SelectField
             label="Seleccionar Paciente"
             labelIcon={<BsPerson className="me-1" />}
             value={pacienteSeleccionado}
@@ -193,33 +192,33 @@ export const TurnoForm: React.FC<TurnoFormProps> = ({ turnoId, onSuccess, onCanc
               };
             })}
           />
-
-          <TurnoSelectField
-            label="Especialidad del Turno"
-            labelIcon={<BsHeartPulse className="me-1" />}
-            value={especialidadSeleccionada}
-            onChange={setEspecialidadSeleccionada}
-            placeholder="Seleccione la especialidad..."
-            required
-            disabled={Boolean(especialidadUrl)}
-            className="mb-4"
-            selectClassName="form-select shadow-none bg-light"
-            options={especialidades.map((esp: EspecialidadItem) => ({
-              value: esp._id || esp._id,
-              label: esp.nombre,
-            }))}
-            helpText={especialidadUrl ? (
-              <div className="form-text text-muted" style={{ fontSize: '0.75rem' }}>
-                La especialidad está fijada por la selección previa en la agenda.
-              </div>
-            ) : undefined}
+         <div className="mb-4">
+             <label className="form-label fw-semibold d-flex align-items-center text-secondary small">
+             <BsHeartPulse className="me-1" />
+              Especialidad del Turno
+         </label>
+  
+         <input
+               type="text"
+               className="form-control shadow-none bg-light text-secondary fw-medium"
+               value={
+                 especialidades.find((esp: EspecialidadItem) => (esp._id || esp._id) === especialidadSeleccionada)?.nombre || 'Cargando especialidad...'
+               }
+               readOnly
+               disabled
           />
-
+  
+          <div className="form-text text-muted" style={{ fontSize: '0.75rem' }}>
+            La especialidad elegida.
+          </div>
+        </div>
           {/* Botones de acción */}
           <div className="d-flex justify-content-end gap-2 pt-3 border-top">
             <button 
               type="button" 
-              className="btn btn-light px-4" 
+              className="btn btn-outline-danger text-danger border-danger px-3" 
+
+              
               onClick={handleCancelar}
               disabled={submitting}
             >
@@ -227,8 +226,7 @@ export const TurnoForm: React.FC<TurnoFormProps> = ({ turnoId, onSuccess, onCanc
             </button>
             <button 
               type="submit" 
-              className="btn text-white fw-semibold px-4 shadow-sm"
-              style={{ backgroundColor: '#00ACB2', borderRadius: '8px' }}
+              className="btn btn-outline-primary text-primary fw-semibold px-4 shadow-sm"
               disabled={submitting}
             >
               {submitting ? 'Guardando...' : (idEditando ? 'Actualizar Turno' : 'Confirmar y Asignar Turno')}

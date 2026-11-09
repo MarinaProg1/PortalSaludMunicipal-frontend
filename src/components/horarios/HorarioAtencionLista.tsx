@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { BsPlusCircle, BsSearch, BsClockHistory, BsChevronDown, BsChevronUp, BsCalendarCheck, BsArrowLeft } from 'react-icons/bs';
+import { BsPlusCircle, BsSearch, BsChevronDown, BsChevronUp, BsCalendarCheck, BsArrowLeft, BsCheckCircle } from 'react-icons/bs';
 import { useNavigate } from 'react-router-dom';
 import clientesAxios from '../../config/axios';
 import { HorarioAtencionSkeleton } from './HorarioAtencionSkeleton';
 import type { HorarioItem, MedicoAgrupado, DiaDisponibilidad } from './horario.schema';
 import { MedicoAgendaDesplegable } from './MedicoAgendaDesplegable'; 
+import { PageHeader } from '../../constants/PageHeader';
 
 export const HorarioAtencionLista: React.FC = () => {
   const navigate = useNavigate();
@@ -150,25 +151,31 @@ export const HorarioAtencionLista: React.FC = () => {
     <div className="container-fluid px-2 px-md-4 py-4">
       
       {/* Cabecera institucional */}
-      <div className="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3 mb-4 pb-3 border-bottom border-secondary-subtle">
-        <div>
-          <h2 className="fw-bold text-dark mb-1 fs-4 fs-md-3">
-            <BsClockHistory className="me-2" style={{ color: '#00ACB2' }} />
-            Horarios y Agenda de Turnos por Médico
-          </h2>
-          <p className="text-muted mb-0 small">Consulta la disponibilidad horaria y visualiza la agenda de turnos en tiempo real.</p>
-        </div>
-        
+        <PageHeader 
+          titulo="Horarios y Agenda de Turnos por Médico"
+          subtitulo="Consulta la disponibilidad horaria y visualiza la agenda de turnos en tiempo real"
+          icon={<BsCheckCircle className="me-2" style={{ color: '#00ACB2' }} />}
+          onBack={() => navigate(-1)}
+          rightContent={
+               <button 
+                 className="btn text-white fw-semibold d-flex align-items-center justify-content-center gap-2 shadow-sm"
+                 style={{ backgroundColor: '#00ACB2', borderRadius: '8px', padding: '4px 10px' }}
+                 onClick={() => navigate('/horarioAtencion/nuevo')} 
+               >
+                 <BsPlusCircle size={18} />
+                 Administar horarios
+               </button>
+             }
+        />
         <button 
-          className="btn text-white fw-semibold d-flex align-items-center justify-content-center gap-2 shadow-sm"
-          style={{ backgroundColor: '#00ACB2', borderRadius: '10px', padding: '10px 18px' }}
-          onClick={() => navigate('/horarioAtencion/nuevo')}
+          className="btn btn-outline-primary fw-semibold d-flex align-items-center justify-content-center gap-2 shadow-sm"
+          style={{borderRadius: '6px', padding: '4px 16px', margin: '2px'}}
+          onClick={() => navigate('/excepciones/nuevo')}
         >
           <BsPlusCircle size={18} />
-          Nuevo Horario
+          Registrar Excepción
         </button>
-      </div>
-
+        
       {/* Buscador */}
       {!medicoDesplegado && (
         <div className="card border-0 shadow-sm mb-4 bg-white" style={{ borderRadius: '12px' }}>
@@ -246,7 +253,7 @@ export const HorarioAtencionLista: React.FC = () => {
                   </button>
                 </div>
 
-                {/* 🌟 Agenda integrada limpiamente mediante el subcomponente */}
+                {/*Agenda integrada limpiamente mediante el subcomponente */}
                 {estaAbierto && (
                   <MedicoAgendaDesplegable 
                     mesActual={mesActual}

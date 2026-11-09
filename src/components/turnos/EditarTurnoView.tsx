@@ -14,7 +14,6 @@ export const EditarTurnoView: React.FC = () => {
 
   const [loading, setLoading] = useState<boolean>(true);
   const [guardando, setGuardando] = useState<boolean>(false);
-  const [error, setError] = useState<string | null>(null);
 
   // Listas para los selects
   const [pacientes, setPacientes] = useState<PacienteItem[]>([]);
@@ -71,12 +70,16 @@ export const EditarTurnoView: React.FC = () => {
           
           setHora(turno.hora || '');
         } else {
-          setError('No se pudo cargar la información del turno.');
+          toast.error('No se pudo cargar la información del turno.');
         }
 
       } catch (err) {
         console.error('Error al cargar datos de edición:', err);
-        if (isMounted) setError('Error al conectar con el servidor.');
+        if (isMounted) {
+          toast.error('Error al conectar con el servidor.', {
+            description: 'Asegúrate de que la API esté respondiendo correctamente.'
+          });
+        }
       } finally {
         if (isMounted) setLoading(false);
       }
@@ -95,7 +98,6 @@ export const EditarTurnoView: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setGuardando(true);
-    setError(null);
 
     try {
       const datosActualizados = {
@@ -112,12 +114,14 @@ export const EditarTurnoView: React.FC = () => {
         toast.success('¡Turno actualizado exitosamente!');
         navigate('/turnos');
       } else {
-        setError(response.data.message || 'No se pudo actualizar el turno.');
+        toast.error(response.data.message || 'No se pudo actualizar el turno.');
       }
     } catch (err: unknown) {
       console.error('Error al actualizar el turno:', err);
-      const mensajeError = (err as { response?: { data?: { message?: string } } })?.response?.data?.message || 'Ocurrió un error al guardar los cambios.';
-      setError(mensajeError);
+      const mensajeError = (err as { response?: { data?: { message?: string } } })?.response?.data?.message 
+        || 'Ocurrió un error al guardar los cambios.';
+      
+      toast.error(mensajeError);
     } finally {
       setGuardando(false);
     }
@@ -138,8 +142,6 @@ export const EditarTurnoView: React.FC = () => {
           onBack={() => navigate('/turnos')}
         />
 
-        {error && <div className="alert alert-danger">{error}</div>}
-
         <form onSubmit={handleSubmit}>
           
           <TurnoSelectField
@@ -149,7 +151,7 @@ export const EditarTurnoView: React.FC = () => {
             placeholder="Seleccione un paciente..."
             required
             options={pacientes.map((p: PacienteItem) => {
-              const pId = p.id || p.id || '';
+              const pId = p.id || '';
               return {
                 value: pId,
                 label: `${p.apellido.toUpperCase()}, ${p.nombre} - DNI: ${p.dni}`,
@@ -164,7 +166,7 @@ export const EditarTurnoView: React.FC = () => {
             placeholder="Seleccione una especialidad..."
             required
             options={especialidades.map((esp: EspecialidadItem) => ({
-              value: esp._id || esp._id || '',
+              value: esp._id || '',
               label: esp.nombre.toUpperCase(),
             }))}
           />

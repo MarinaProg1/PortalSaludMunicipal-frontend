@@ -59,7 +59,7 @@ export const ConfirmDeleteModal: React.FC<ConfirmDeleteModalProps> = ({
               disabled={cargando}
               style={{ borderRadius: '8px' }}
             >
-              {cargando ? 'Eliminando...' : 'Sí, Eliminar'}
+              {cargando ? 'Eliminando...' : 'Confirmar'}
             </button>
           </div>
 

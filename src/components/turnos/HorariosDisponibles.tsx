@@ -30,8 +30,9 @@ export const HorariosDisponibles: React.FC<HorariosDisponiblesProps> = ({
                 onClick={() => onSeleccionar(slot)}
                 className={`btn w-100 py-2 fw-semibold shadow-sm ${
                   esLibre
-                    ? 'btn-outline-success bg-success-subtle text-success border-success'
-                    : 'btn-outline-danger bg-danger-subtle text-danger border-danger opacity-75'
+                    ? 'btn-outline-primary text-dark border border-primary'
+                    : 'btn-outline-danger  text-danger border-danger'
+
                 }`}
                 style={{ borderRadius: '8px', fontSize: '0.9rem' }}
               >
