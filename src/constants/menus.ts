@@ -36,7 +36,7 @@ ADMIN: [
   ],
   
 RECEPCIONISTA: [
-    { id: 'turnos', label: 'Turnos', icon: BsCalendarCheck,path: '#' },
+    { id: 'turnos', label: 'Turnos', icon: BsCalendarCheck,path: '/turnos' },
     { id: 'horarios-atencion', label: 'Horarios de Atención', icon: BsCheckCircle,path: '/horarioAtencion' },
     { id: 'medicos', label: 'Médicos', icon: BsPeople,path: '#' },  
     { id: 'pacientes', label: 'Pacientes', icon: BsHeartPulse,path: '/pacientes' },

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { BsHeartPulse, BsJournalMedical, BsPencilSquare } from 'react-icons/bs';
+import { BsHeartPulse, BsJournalMedical, BsPencilSquare, BsCalendarPlus } from 'react-icons/bs';
 import { PageHeader } from '../../constants/PageHeader';
 import { pacienteService } from '../../services/paciente.service';
 import {
@@ -70,13 +70,22 @@ export const PacienteDetalle: React.FC = () => {
         icon={<BsHeartPulse className="me-2" style={{ color: '#00ACB2' }} />}
         onBack={() => navigate(-1)}
         rightContent={
-          <button
-            className="btn text-white fw-semibold d-flex align-items-center gap-2 shadow-sm"
-            style={{ backgroundColor: '#00ACB2', borderRadius: '10px' }}
-            onClick={() => navigate(`/pacientes/editar/${id}`)}
-          >
-            <BsPencilSquare size={18} /> Editar
-          </button>
+          <div className="d-flex gap-2">
+            <button
+              className="btn btn-outline-secondary fw-semibold d-flex align-items-center gap-2"
+              style={{ borderRadius: '10px' }}
+              onClick={() => navigate(`/turnos/nuevo?paciente=${id}`)}
+            >
+              <BsCalendarPlus size={18} /> Sacar turno
+            </button>
+            <button
+              className="btn text-white fw-semibold d-flex align-items-center gap-2 shadow-sm"
+              style={{ backgroundColor: '#00ACB2', borderRadius: '10px' }}
+              onClick={() => navigate(`/pacientes/editar/${id}`)}
+            >
+              <BsPencilSquare size={18} /> Editar
+            </button>
+          </div>
         }
       />
 

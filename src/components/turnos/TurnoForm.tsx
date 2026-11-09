@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { isAxiosError } from 'axios';
 import { BsCalendarPlus, BsCheckCircle } from 'react-icons/bs';
 import { TurnoFormSkeleton } from './TurnoFormSkeleton';
@@ -7,6 +8,8 @@ import type { OptionItem,  MedicoItem,  HorarioAtencionItem,  TurnoFormProps } f
 import { PageHeader } from '../../constants/PageHeader';
 
 export const TurnoForm: React.FC<TurnoFormProps> = ({ turnoId, onSuccess, onCancel }) => {
+  const [searchParams] = useSearchParams();
+
   const [pacientes, setPacientes] = useState<OptionItem[]>([]);
   const [medicos, setMedicos] = useState<MedicoItem[]>([]);
   const [especialidadesDisponibles, setEspecialidadesDisponibles] = useState<OptionItem[]>([]);
@@ -14,7 +17,7 @@ export const TurnoForm: React.FC<TurnoFormProps> = ({ turnoId, onSuccess, onCanc
   const [horariosAtencionMedico, setHorariosAtencionMedico] = useState<HorarioAtencionItem[]>([]);
 
   const [formData, setFormData] = useState({
-    paciente: '',
+    paciente: searchParams.get('paciente') || '',
     medico: '',
     especialidad: '',
     fecha: '',
