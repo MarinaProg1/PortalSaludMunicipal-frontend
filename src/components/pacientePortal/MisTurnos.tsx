@@ -16,7 +16,7 @@ const fechaDeTurno = (turno: MiTurno): Date => {
   return new Date(anio || 0, (mes || 1) - 1, dia || 1, hora || 0, minuto || 0);
 };
 
-const TarjetaTurno: React.FC<{ turno: MiTurno }> = ({ turno }) => (
+const TarjetaTurno: React.FC<{ turno: MiTurno; onVer: () => void }> = ({ turno, onVer }) => (
   <div className="card border-0 shadow-sm bg-white h-100" style={{ borderRadius: '12px' }}>
     <div className="card-body p-4">
       <div className="d-flex justify-content-between align-items-start gap-2 mb-3">
@@ -44,10 +44,19 @@ const TarjetaTurno: React.FC<{ turno: MiTurno }> = ({ turno }) => (
       </div>
 
       {turno.observaciones && (
-        <div className="p-2 rounded-3 bg-light small text-muted">
+        <div className="p-2 rounded-3 bg-light small text-muted mb-3">
           {turno.observaciones}
         </div>
       )}
+
+      <button
+        type="button"
+        className="btn btn-outline-secondary btn-sm fw-semibold w-100"
+        style={{ borderRadius: '8px' }}
+        onClick={onVer}
+      >
+        Ver detalle y recomendaciones
+      </button>
     </div>
   </div>
 );
@@ -117,7 +126,7 @@ export const MisTurnos: React.FC = () => {
               <div className="row g-3">
                 {proximos.map((turno, index) => (
                   <div className="col-12 col-md-6 col-xl-4" key={turno.id || turno._id || index}>
-                    <TarjetaTurno turno={turno} />
+                    <TarjetaTurno turno={turno} onVer={() => navigate(`/mis-turnos/${turno.id || turno._id}`)} />
                   </div>
                 ))}
               </div>
@@ -141,7 +150,7 @@ export const MisTurnos: React.FC = () => {
               <div className="row g-3">
                 {anteriores.map((turno, index) => (
                   <div className="col-12 col-md-6 col-xl-4" key={turno.id || turno._id || index}>
-                    <TarjetaTurno turno={turno} />
+                    <TarjetaTurno turno={turno} onVer={() => navigate(`/mis-turnos/${turno.id || turno._id}`)} />
                   </div>
                 ))}
               </div>

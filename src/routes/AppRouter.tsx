@@ -17,6 +17,7 @@ import { MedicoLista } from "../components/medicos/MedicoLista";
 import { MisTurnos } from "../components/pacientePortal/MisTurnos";
 import { MiPerfil } from "../components/pacientePortal/MiPerfil";
 import { TurnoPacienteForm } from "../components/pacientePortal/TurnoPacienteForm";
+import { DetalleTurnoPaciente } from "../components/pacientePortal/DetalleTurnoPaciente";
 import { RequireRole } from "./RequireRole";
 import NotFound from "../components/utils/NotFound";
 
@@ -86,6 +87,7 @@ const AppRouter = () => {
 
           <Route path="mis-turnos" element={<RequireRole allowed={["PACIENTE"]}><MisTurnos /></RequireRole>} />
           <Route path="mis-turnos/nuevo" element={<RequireRole allowed={["PACIENTE"]}><TurnoPacienteForm /></RequireRole>} />
+          <Route path="mis-turnos/:id" element={<RequireRole allowed={["PACIENTE"]}><DetalleTurnoPaciente /></RequireRole>} />
           <Route path="mi-perfil" element={<RequireRole allowed={["PACIENTE"]}><MiPerfil /></RequireRole>} />
 
           <Route path="horarioAtencion" element={<HorarioAtencionLista />} />

@@ -80,3 +80,23 @@ export interface NuevoTurnoPaciente {
   hora: string;
   observaciones?: string;
 }
+
+export interface ConsultaTurno {
+  id?: string;
+  _id?: string;
+  motivo?: string;
+  diagnostico?: string;
+  tratamiento?: string;
+  observaciones?: string;
+  estado?: string;
+  fecha?: string;
+  medico?: {
+    nombre?: string;
+    apellido?: string;
+  };
+}
+
+export interface DetalleTurnoPaciente {
+  turno: MiTurno;
+  consulta: ConsultaTurno | null;
+}
