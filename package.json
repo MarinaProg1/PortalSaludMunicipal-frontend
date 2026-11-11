@@ -10,14 +10,23 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@hookform/resolvers": "^7.0.2",
     "axios": "^1.21.0",
     "bootstrap": "^5.3.8",
     "react": "^19.3.1",
+<<<<<<< HEAD
     "react-bootstrap": "^2.10.10",
     "react-dom": "^19.3.1",
     "react-icons": "^5.7.0",
     "react-router-dom": "^7.18.5",
     "sonner": "^2.0.8"
+=======
+    "react-dom": "^19.3.1",
+    "react-hook-form": "^7.91.0",
+    "react-icons": "^5.7.0",
+    "react-router-dom": "^7.18.5",
+    "zod": "^4.6.7"
+>>>>>>> feature/medico
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
