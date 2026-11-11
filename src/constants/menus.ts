@@ -8,7 +8,8 @@ import {
   BsShieldLock, 
   BsHospital,
   BsJournalMedical,
-  BsCheckCircle
+  BsCheckCircle,
+  BsPersonCircle
 } from 'react-icons/bs';
 
 // Definimos los roles válidos en el sistema
@@ -28,7 +29,7 @@ export interface MenuItem {
   label: string;
   icon: IconType;
   badge?: string;
-  children?: SubMenuItem[]; // Opcional: para menús desplegables
+  children?: SubMenuItem[];
 }
 
 // Diccionario de menús tipado por rol
@@ -52,11 +53,11 @@ export const roleMenus: Record<UserRole, MenuItem[]> = {
         { id: 'horarios-nuevo', label: 'Configurar Horario', path: '/horarioAtencion/nuevo' },
       ]
     },
-    { id: 'medicos', label: 'Médicos', icon: BsPeople, path: '#' },
+    { id: 'medicos', label: 'Médicos', icon: BsPeople, path: '/medicos' },
     { id: 'pacientes', label: 'Pacientes', icon: BsHeartPulse, path: '/pacientes' },
     { id: 'usuarios', label: 'Usuarios del Sistema', icon: BsShieldLock, path: '#' },
     { id: 'especialidades', label: 'Especialidades', icon: BsHospital, path: '#' },
-    { id: 'obra-social', label: 'Obras Sociales', icon: BsCapsule, path: '#' },
+    { id: 'obra-social', label: 'Obras Sociales', icon: BsCapsule, path: '/obras-sociales' },
   ],
   
   RECEPCIONISTA: [
@@ -78,10 +79,10 @@ export const roleMenus: Record<UserRole, MenuItem[]> = {
         { id: 'horarios-nuevo', label: 'Configurar Horario', path: '/horarioAtencion/nuevo' },
       ]
     },
-    { id: 'medicos', label: 'Médicos', icon: BsPeople, path: '#' },  
-    { id: 'pacientes', label: 'Pacientes', icon: BsHeartPulse, path: '#' },
+    { id: 'medicos', label: 'Médicos', icon: BsPeople, path: '/medicos' },  
+    { id: 'pacientes', label: 'Pacientes', icon: BsHeartPulse, path: '/pacientes' },
     { id: 'especialidades', label: 'Especialidades', icon: BsHospital, path: '#' },
-    { id: 'obra-social', label: 'Obras Sociales', icon: BsCapsule, path: '#' },
+    { id: 'obra-social', label: 'Obras Sociales', icon: BsCapsule, path: '/obras-sociales' },
   ],
 
   MEDICO: [
@@ -93,8 +94,7 @@ export const roleMenus: Record<UserRole, MenuItem[]> = {
   ],
 
   PACIENTE: [
-    { id: 'turnos', label: 'Mis Turnos', icon: BsCalendarCheck, path: '#' },
-    { id: 'horarios-atencion', label: 'Horarios de Atención', icon: BsCheckCircle, path: '/horarioAtencion' },
-    { id: 'pacientes', label: 'Pacientes', icon: BsHeartPulse, path: '#' },
+    { id: 'mis-turnos', label: 'Mis Turnos', icon: BsCalendarCheck, path: '/mis-turnos' },
+    { id: 'mi-perfil', label: 'Mi Perfil', icon: BsPersonCircle, path: '/mi-perfil' },
   ]
 };

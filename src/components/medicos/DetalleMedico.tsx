@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { isAxiosError } from 'axios';
 import { BsCalendarEvent, BsArrowLeft, BsPerson, BsPersonBadge, BsClock } from 'react-icons/bs';
-import clientesAxios from '../config/axios';
+import clientesAxios from '../../config/axios';
 import { DetalleMedicoSkeleton } from './DetalleMedicoSkeleton';
 
 interface TurnoDetalle {

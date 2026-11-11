@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { isAxiosError } from 'axios';
 import { BsArrowLeft, BsCheckCircle, BsCalendarPlus} from 'react-icons/bs';
+import clientesAxios from '../../config/axios';
 import { MedicoFormSkeleton } from './MedicoFormSkeleton';
-import clientesAxios from '../config/axios';
 
 interface EspecialidadItem {
   id?: string;
