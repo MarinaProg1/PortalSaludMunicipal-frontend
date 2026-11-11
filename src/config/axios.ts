@@ -27,12 +27,19 @@ clientesAxios.interceptors.response.use(
         return response;
     },
     (error) => {
-        if (error.response && error.response.status === 401) {
+        const esIntentoDeLogin =
+            typeof error.config?.url === 'string' && error.config.url.includes('/auth/login');
+
+        // En el login, un 401 significa credenciales incorrectas: dejamos que la
+        // pantalla muestre el toast y NO recargamos (eso borraria el mensaje).
+        if (error.response && error.response.status === 401 && !esIntentoDeLogin) {
             console.warn("Token invalido o expirado. Cerrando sesion...");
 
             localStorage.removeItem('token');
 
-            window.location.href = '/login';
+            if (window.location.pathname !== '/login') {
+                window.location.href = '/login';
+            }
         }
 
         return Promise.reject(error);
