@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { roleMenus } from '../../constants/menus'; 
-import type { UserRole, MenuItem } from '../../constants/menus'; 
+import { roleMenus } from '../../constants/menus';
+import type { UserRole, MenuItem } from '../../constants/menus';
 import { Link, useLocation } from 'react-router-dom';
 import { BsList, BsChevronDown, BsChevronUp } from 'react-icons/bs';
 import logoGoya from '../../assets/logo.png';
+import { useAuth } from '../../context/AuthContext';
 
 interface SidebarProps {
   userRole: UserRole;
@@ -12,13 +13,13 @@ interface SidebarProps {
 export const Sidebar: React.FC<SidebarProps> = ({ userRole }) => {
   return (
     <>
-      {/* 1. Botón hamburguesa fijo superior para celulares (Modo Claro) */}
+      {/* 1. Botón hamburguesa fijo superior para celulares */}
       <nav className="navbar bg-light text-dark d-lg-none fixed-top px-3 shadow-sm border-bottom">
-        <button 
-          className="navbar-toggler border-0 text-dark" 
-          type="button" 
-          data-bs-toggle="offcanvas" 
-          data-bs-target="#sidebarOffcanvas" 
+        <button
+          className="navbar-toggler border-0 text-dark"
+          type="button"
+          data-bs-toggle="offcanvas"
+          data-bs-target="#sidebarOffcanvas"
           aria-controls="sidebarOffcanvas"
         >
           <BsList size={24} />
@@ -27,25 +28,25 @@ export const Sidebar: React.FC<SidebarProps> = ({ userRole }) => {
       </nav>
 
       {/* 2. Sidebar fijo para Escritorio */}
-      <div 
-        className="d-none d-lg-flex flex-column flex-shrink-0 p-3 bg-salud-claro text-dark vh-100 border-end shadow-sm" 
+      <div
+        className="d-none d-lg-flex flex-column flex-shrink-0 p-3 bg-salud-claro text-dark vh-100 border-end shadow-sm"
         style={{ width: '280px' }}
       >
         <SidebarContent userRole={userRole} />
       </div>
 
       {/* 3. Sidebar Offcanvas para Celulares */}
-      <div 
-        className="offcanvas offcanvas-start bg-light text-dark d-lg-none" 
-        tabIndex={-1} 
-        id="sidebarOffcanvas" 
+      <div
+        className="offcanvas offcanvas-start bg-light text-dark d-lg-none"
+        tabIndex={-1}
+        id="sidebarOffcanvas"
         aria-labelledby="sidebarOffcanvasLabel"
       >
         <div className="offcanvas-header border-bottom border-secondary-subtle">
           <h5 className="offcanvas-title fw-bold text-dark" id="sidebarOffcanvasLabel">Portal de Salud</h5>
           <button type="button" className="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
         </div>
-        <div className="offcanvas-body p-0">
+        <div className="offcanvas-body p-0 d-flex flex-column">
           <SidebarContent userRole={userRole} isMobile={true} />
         </div>
       </div>
@@ -60,7 +61,8 @@ interface SidebarContentProps {
 
 const SidebarContent: React.FC<SidebarContentProps> = ({ userRole, isMobile = false }) => {
   const location = useLocation();
-  const normalizedRole = userRole.toLowerCase() as UserRole;
+  const { logout } = useAuth();
+  const normalizedRole = (userRole || 'ADMIN').toUpperCase() as UserRole;
   const menuItems: MenuItem[] = roleMenus[normalizedRole] || roleMenus['ADMIN'] || [];
 
   // Estado para controlar qué grupo desplegable está abierto
@@ -76,8 +78,8 @@ const SidebarContent: React.FC<SidebarContentProps> = ({ userRole, isMobile = fa
       {!isMobile && (
         <div className="pb-3 mb-3 border-bottom border-dark border-opacity-25 text-center">
           <div className="navbar-brand d-flex align-items-center justify-content-center m-0">
-            <img 
-              src={logoGoya} 
+            <img
+              src={logoGoya}
               alt="Logo Portal Salud Goya"
               className="img-fluid"
               style={{ width: '150px', height: 'auto' }}
@@ -87,7 +89,10 @@ const SidebarContent: React.FC<SidebarContentProps> = ({ userRole, isMobile = fa
       )}
 
       {/* Lista de Navegación Dinámica */}
-      <ul className="nav nav-pills flex-column mb-auto gap-2">
+      <ul
+        className="nav nav-pills flex-column mb-auto gap-2"
+        style={{ minHeight: 0, overflowY: 'auto' }}
+      >
         {menuItems.map((item: MenuItem) => {
           const Icon = item.icon;
           const tieneHijos = item.children && item.children.length > 0;
@@ -164,11 +169,11 @@ const SidebarContent: React.FC<SidebarContentProps> = ({ userRole, isMobile = fa
 
       {/* Sección inferior de usuario (Perfil / Cerrar Sesión) */}
       <div className="dropdown">
-        <button 
-          className="btn d-flex align-items-center text-dark text-decoration-none dropdown-toggle w-100 border-0 bg-transparent shadow-none" 
+        <button
+          className="btn d-flex align-items-center text-dark text-decoration-none dropdown-toggle w-100 border-0 bg-transparent shadow-none"
           type="button"
-          id="dropdownUser1" 
-          data-bs-toggle="dropdown" 
+          id="dropdownUser1"
+          data-bs-toggle="dropdown"
           aria-expanded="false"
         >
           <div className="rounded-circle bg-gradient-salud text-white fw-bold d-flex align-items-center justify-content-center me-2" style={{ width: '32px', height: '32px' }}>
@@ -185,16 +190,15 @@ const SidebarContent: React.FC<SidebarContentProps> = ({ userRole, isMobile = fa
           </li>
           <li><hr className="dropdown-divider" /></li>
           <li>
-            <button 
-              className="dropdown-item text-danger bg-transparent border-0 w-100 text-start" 
-              onClick={() => { /* Lógica de logout futura */ }}
+            <button
+              className="dropdown-item text-danger bg-transparent border-0 w-100 text-start"
+              onClick={logout}
             >
               Cerrar sesión
             </button>
           </li>
         </ul>
       </div>
-
     </div>
   );
 };

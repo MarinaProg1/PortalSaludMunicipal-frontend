@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { isAxiosError } from 'axios';
 import { BsCalendarPlus, BsSearch, BsX } from 'react-icons/bs';
 import { TurnoFormSkeleton } from './TurnoFormSkeleton';
@@ -8,18 +9,21 @@ import { PageHeader } from '../../constants/PageHeader';
 import { toast } from 'sonner';
 
 export const TurnoForm: React.FC<TurnoFormProps> = ({ turnoId, onSuccess, onCancel }) => {
+  const [searchParams] = useSearchParams();
+
   const [pacientes, setPacientes] = useState<OptionItem[]>([]);
   const [medicos, setMedicos] = useState<MedicoItem[]>([]);
   const [especialidadesDisponibles, setEspecialidadesDisponibles] = useState<OptionItem[]>([]);
   const [horariosAtencionMedico, setHorariosAtencionMedico] = useState<HorarioAtencionItem[]>([]);
 
   const [formData, setFormData] = useState({
-    paciente: '',
+    paciente: searchParams.get('paciente') || '',
     medico: '',
     especialidad: '',
     fecha: '',
     hora: '',
-    estado: 'pendiente'
+    estado: 'pendiente',
+    observaciones: ''
   });
 
   // Estados específicos para los inputs de búsqueda interactiva
@@ -163,7 +167,8 @@ export const TurnoForm: React.FC<TurnoFormProps> = ({ turnoId, onSuccess, onCanc
             especialidad: especialidadId || '',
             fecha: dataTurno.fecha ? dataTurno.fecha.split('T')[0] : '',
             hora: dataTurno.hora || '',
-            estado: dataTurno.estado || 'pendiente'
+            estado: dataTurno.estado || 'pendiente',
+            observaciones: dataTurno.observaciones || ''
           });
 
         } else {
@@ -506,6 +511,19 @@ export const TurnoForm: React.FC<TurnoFormProps> = ({ turnoId, onSuccess, onCanc
                 <option value="finalizado">Finalizado</option>
                 <option value="atendido">Atendido</option>
               </select>
+            </div>
+
+            <div className="col-12">
+              <label className="form-label fw-semibold text-secondary small">Observaciones</label>
+              <textarea
+                className="form-control shadow-none"
+                name="observaciones"
+                rows={3}
+                maxLength={500}
+                placeholder="Observaciones del turno (opcional)"
+                value={formData.observaciones}
+                onChange={(e) => setFormData(prev => ({ ...prev, observaciones: e.target.value }))}
+              />
             </div>
 
           </div>

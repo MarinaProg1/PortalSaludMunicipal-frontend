@@ -25,6 +25,67 @@ border: #00ACB2 2px solid !important;
   background-color: rgba(62, 110, 98, 0.08) !important;
   color: #2b4d44 !important;
 }
+.sidebar-nav {
+  scrollbar-width: none;      /* Firefox */
+  -ms-overflow-style: none;   /* Edge / IE */
+}
+
+.sidebar-nav::-webkit-scrollbar {
+  display: none;              /* Chrome / Safari */
+}
+
+/* En pantallas bajas compactamos el sidebar para que entren
+   todas las opciones del menu y el boton Salir. */
+@media (max-height: 860px) {
+  div.sidebar-header {
+    padding-bottom: 0.5rem !important;
+    margin-bottom: 0.5rem !important;
+  }
+
+  img.sidebar-logo {
+    width: 120px !important;
+  }
+
+  ul.sidebar-nav {
+    gap: 0.5rem !important;
+  }
+
+  .sidebar-nav .nav-link {
+    padding-top: 0.4rem;
+    padding-bottom: 0.4rem;
+  }
+
+  hr.sidebar-divider {
+    margin: 0.5rem 0 !important;
+  }
+
+  div.sidebar-footer {
+    margin-top: 0.25rem !important;
+    padding-top: 0.25rem !important;
+  }
+}
+
+@media (max-height: 680px) {
+  div.sidebar-header {
+    padding-bottom: 0.25rem !important;
+    margin-bottom: 0.25rem !important;
+  }
+
+  img.sidebar-logo {
+    width: 95px !important;
+  }
+
+  ul.sidebar-nav {
+    gap: 0.25rem !important;
+  }
+
+  .sidebar-nav .nav-link {
+    padding-top: 0.3rem;
+    padding-bottom: 0.3rem;
+    font-size: 0.875rem;
+  }
+}
+
 .nav-link:not(.active) svg {
   color: #00ACB2 !important; 
 }

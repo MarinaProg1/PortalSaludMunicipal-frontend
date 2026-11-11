@@ -147,6 +147,16 @@ export const DetalleTurno: React.FC = () => {
             </div>
           </div>
 
+          {/* Observaciones */}
+          {turno.observaciones && (
+            <div className="col-12">
+              <div className="p-3 border border-secondary-subtle rounded-3 bg-white">
+                <span className="text-muted small d-block mb-1 fw-semibold">Observaciones</span>
+                <p className="mb-0 text-dark">{turno.observaciones}</p>
+              </div>
+            </div>
+          )}
+
         </div>
 
         {/* Pie de tarjeta */}
