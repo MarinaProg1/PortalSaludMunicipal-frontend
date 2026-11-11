@@ -11,6 +11,9 @@ import { ConfiguracionView } from './components/configuraciones/ConfiguracionVie
 import { MedicoLista } from "./pages/MedicoLista";
 import { MedicoForm } from "./pages/MedicoForm";
 
+import {EspecialidadesLista} from './components/especialidades/EspecialidadLista';
+import { EspecialidadForm } from './components/especialidades/EspecialidadForm';
+import { DetalleEspecialidad } from './components/especialidades/DetalleEspecialidad';
 
 // Componente envoltorio para capturar el ID de la URL en modo Edición
 const EdicionTurnoWrapper = () => {
@@ -42,7 +45,10 @@ export default function App() {
           <Route path="turnos/nuevo" element={<TurnoForm />} />
           <Route path="turno-detalle/:id" element={<DetalleTurno />} />
           <Route path="turnos/editar/:id" element={<EdicionTurnoWrapper />} />
-
+          <Route path="/especialidades" element={<EspecialidadesLista />} />
+          <Route path="/especialidades/nuevo" element={<EspecialidadForm />} />
+          <Route path="/especialidades/editar/:id" element={<EspecialidadForm />} />
+          <Route path="/especialidades/detalle/:id" element={<DetalleEspecialidad />} />
           <Route path="/horarioAtencion" element={<HorarioAtencionLista />} />
           <Route path="/horarioAtencion/nuevo" element={<HorarioAtencionForm />} />
           <Route path="/configuracion" element={<ConfiguracionView />} />
