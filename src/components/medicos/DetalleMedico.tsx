@@ -1,168 +1,185 @@
-import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { isAxiosError } from 'axios';
-import { BsCalendarEvent, BsArrowLeft, BsPerson, BsPersonBadge, BsClock } from 'react-icons/bs';
-import clientesAxios from '../../config/axios';
+import React, { useEffect, useState } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
+import { BsEnvelope, BsGeoAlt, BsPencil, BsPersonBadge, BsTelephone } from 'react-icons/bs';
+import { PageHeader } from '../../constants/PageHeader';
+import { medicoService } from '../../services/medico.service';
 import { DetalleMedicoSkeleton } from './DetalleMedicoSkeleton';
+import {
+  getEspecialidadesNombres,
+  getObraSocialNombre,
+  getTelefonoTexto,
+  type MedicoItem,
+} from './medico.schema';
 
-interface TurnoDetalle {
-  id: string;
-  paciente: { nombre: string; apellido: string; dni?: string; };
-  medico: { nombre: string; apellido: string; };
-  especialidad: { nombre: string; };
-  fecha: string;
-  hora: string;
-  estado: string;
-}
-
-export const DetalleTurno: React.FC = () => {
+export const DetalleMedico: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const [turno, setTurno] = useState<TurnoDetalle | null>(null);
+
+  const [medico, setMedico] = useState<MedicoItem | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchTurnoDetail = async () => {
+    let mounted = true;
+
+    (async () => {
+      if (!id) {
+        setError('No se indicó el médico a consultar.');
+        setLoading(false);
+        return;
+      }
+
       try {
         setLoading(true);
-        const response = await clientesAxios.get(`/turnos/${id}`);
-        const data = response.data;
-        const turnoData = data.turno || data.data || data;
-        setTurno(turnoData);
-      } catch (err: unknown) {
-        console.error('Error al cargar el detalle del turno:', err);
-        const backendMessage = isAxiosError<{ message?: string }>(err)
-          ? err.response?.data?.message || 'No se pudo cargar la información del turno.'
-          : 'No se pudo cargar la información del turno.';
-        setError(backendMessage);
+        const data = await medicoService.obtener(id);
+        if (!mounted) return;
+        if (!data) {
+          setError('No se encontró el médico solicitado.');
+        } else {
+          setMedico(data);
+        }
+      } catch (err) {
+        console.error('Error al cargar el detalle del médico:', err);
+        if (mounted) setError('No se pudo cargar la información del médico.');
       } finally {
-        setLoading(false);
+        if (mounted) setLoading(false);
       }
+    })();
+
+    return () => {
+      mounted = false;
     };
-    if (id) { fetchTurnoDetail(); }
   }, [id]);
 
-  // Estado de Carga
   if (loading) {
     return <DetalleMedicoSkeleton />;
   }
 
-  // Pantalla de Error
-  if (error || !turno) {
+  if (error || !medico) {
     return (
       <div className="container-fluid px-2 px-md-4 py-4">
-        <div className="card border-0 shadow-sm bg-white p-4 mx-auto" style={{ maxWidth: '700px', borderRadius: '12px' }}>
+        <div className="card border-0 shadow-sm bg-white p-4 mx-auto" style={{ maxWidth: '760px', borderRadius: '12px' }}>
           <div className="alert alert-danger mb-3" role="alert">
-            {error || 'No se encontró el turno solicitado.'}
+            {error || 'No se encontró el médico solicitado.'}
           </div>
-          <button className="btn btn-outline-secondary btn-sm d-flex align-items-center gap-1" onClick={() => navigate(-1)}>
-            <BsArrowLeft /> Volver
+          <button className="btn btn-outline-secondary btn-sm" onClick={() => navigate('/medicos')}>
+            Volver al listado
           </button>
         </div>
       </div>
     );
   }
 
-  // Color de etiqueta según estado
-  const getBadgeColor = (estado: string) => {
-    switch (estado?.toUpperCase()) {
-      case 'CONFIRMADO': return 'bg-success text-white';
-      case 'PENDIENTE': return 'bg-warning text-dark';
-      case 'CANCELADO': return 'bg-danger text-white';
-      default: return 'bg-secondary text-white';
-    }
-  };
+  const especialidades = getEspecialidadesNombres(medico);
+  const telefono = getTelefonoTexto(medico);
+  const obraSocial = getObraSocialNombre(medico);
+  const activo = medico.activo !== false;
+  const direccion = medico.direccion
+    ? [
+        medico.direccion.calle,
+        medico.direccion.numero,
+        medico.direccion.piso ? `Piso ${medico.direccion.piso}` : '',
+        medico.direccion.departamento ? `Depto. ${medico.direccion.departamento}` : '',
+        medico.direccion.barrio,
+      ]
+        .filter(Boolean)
+        .join(' ')
+    : '';
 
   return (
     <div className="container-fluid px-2 px-md-4 py-4">
-      <div className="card border-0 shadow-sm bg-white p-4 mx-auto" style={{ maxWidth: '700px', borderRadius: '12px' }}>
-        
-        {/* Cabecera */}
-        <div className="d-flex justify-content-between align-items-center mb-4 pb-3 border-bottom border-secondary-subtle">
-          <div>
-            <h3 className="fw-bold text-dark mb-1">
-              <BsCalendarEvent className="me-2" style={{ color: '#00ACB2' }} />
-              Detalle del Turno
-            </h3>
-            <p className="text-muted mb-0 small">Información completa de la cita médica registrada.</p>
-          </div>
-          <button className="btn btn-outline-secondary btn-sm d-flex align-items-center gap-1" onClick={() => navigate(-1)}>
-            <BsArrowLeft /> Volver
-          </button>
-        </div>
-
-        {/* Cuerpo de la Tarjeta */}
-        <div className="row g-4">
-
-            {/* Pie de tarjeta */}
-        <div className="d-flex justify-content-end mt-4 pt-3 border-top border-secondary-subtle">
-        <button
-             type="button"
-            className="btn text-white fw-semibold px-4 shadow-sm"
+      <PageHeader
+        titulo="Detalle del Médico"
+        subtitulo="Información completa del profesional registrado."
+        icon={<BsPersonBadge className="me-2" style={{ color: '#00ACB2' }} />}
+        onBack={() => navigate('/medicos')}
+        rightContent={
+          <button
+            className="btn btn-sm text-white fw-semibold d-flex align-items-center gap-1"
             style={{ backgroundColor: '#00ACB2', borderRadius: '8px' }}
-            onClick={() => navigate(-1)}
+            onClick={() => navigate(`/medicos/editar/${medico.id || medico._id}`)}
           >
-            Aceptar / Volver
-        </button>
+            <BsPencil /> Editar
+          </button>
+        }
+      />
 
+      <div className="card border-0 shadow-sm bg-white p-4 mx-auto" style={{ maxWidth: '760px', borderRadius: '12px' }}>
+        <div className="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-2 bg-light p-3 rounded-3 mb-4">
+          <div>
+            <h4 className="fw-bold text-dark mb-1">
+              {medico.apellido}, {medico.nombre}
+            </h4>
+            <span className="text-muted small">Matrícula N° {medico.numeroMatricula}</span>
+          </div>
+          <span className={`badge px-3 py-2 text-uppercase ${activo ? 'bg-success' : 'bg-danger'}`}>
+            {activo ? 'Activo' : 'Inactivo'}
+          </span>
         </div>
-          
-          {/* Estado */}
-          <div className="col-12 d-flex justify-content-between align-items-center bg-light p-3 rounded-3">
-            <span className="text-secondary fw-semibold small">Estado actual:</span>
-            <span className={`badge px-3 py-2 text-uppercase ${getBadgeColor(turno.estado)}`} style={{ fontSize: '0.85rem' }}>
-              {turno.estado}
-            </span>
-          </div>
 
-          {/* Paciente */}
+        <div className="row g-3">
           <div className="col-md-6">
-            <div className="p-3 border border-secondary-subtle rounded-3 h-100 bg-white">
-              <div className="d-flex align-items-center gap-2 mb-2 text-muted small fw-semibold">
-                <BsPerson size={16} style={{ color: '#00ACB2' }} /> PACIENTE
-              </div>
-              <h5 className="fw-bold text-dark mb-1">{turno.paciente?.nombre} {turno.paciente?.apellido}</h5>
-              {turno.paciente?.dni && <p className="text-muted small mb-0">DNI: {turno.paciente.dni}</p>}
+            <div className="p-3 border border-secondary-subtle rounded-3 h-100">
+              <div className="text-muted small fw-semibold mb-2">DNI</div>
+              <div className="text-dark fw-semibold">{medico.dni || '-'}</div>
             </div>
           </div>
 
-          {/* Médico y Especialidad */}
           <div className="col-md-6">
-            <div className="p-3 border border-secondary-subtle rounded-3 h-100 bg-white">
-              <div className="d-flex align-items-center gap-2 mb-2 text-muted small fw-semibold">
-                <BsPersonBadge size={16} style={{ color: '#00ACB2' }} /> PROFESIONAL
+            <div className="p-3 border border-secondary-subtle rounded-3 h-100">
+              <div className="text-muted small fw-semibold mb-2 d-flex align-items-center gap-1">
+                <BsEnvelope size={14} /> EMAIL
               </div>
-              <h5 className="fw-bold text-dark mb-1">Dr./Dra. {turno.medico?.nombre} {turno.medico?.apellido}</h5>
-              <p className="text-muted small mb-0 fw-medium" style={{ color: '#00ACB2' }}>{turno.especialidad?.nombre}</p>
+              <div className="text-dark">{medico.email || '-'}</div>
             </div>
           </div>
 
-          {/* Fecha y Hora */}
+          <div className="col-md-6">
+            <div className="p-3 border border-secondary-subtle rounded-3 h-100">
+              <div className="text-muted small fw-semibold mb-2 d-flex align-items-center gap-1">
+                <BsTelephone size={14} /> TELÉFONO
+              </div>
+              <div className="text-dark">{telefono || '-'}</div>
+            </div>
+          </div>
+
+          <div className="col-md-6">
+            <div className="p-3 border border-secondary-subtle rounded-3 h-100">
+              <div className="text-muted small fw-semibold mb-2">OBRA SOCIAL</div>
+              <div className="text-dark">{obraSocial || 'Sin obra social asignada'}</div>
+            </div>
+          </div>
+
           <div className="col-12">
-            <div className="p-3 border border-secondary-subtle rounded-3 bg-white d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-3">
-              <div className="d-flex align-items-center gap-3">
-                <div className="p-2 rounded-2 text-white" style={{ backgroundColor: '#00ACB2' }}>
-                  <BsClock size={20} />
+            <div className="p-3 border border-secondary-subtle rounded-3">
+              <div className="text-muted small fw-semibold mb-2">ESPECIALIDADES</div>
+              {especialidades.length > 0 ? (
+                <div className="d-flex flex-wrap gap-2">
+                  {especialidades.map((nombre) => (
+                    <span key={nombre} className="badge bg-info-subtle text-info-emphasis px-3 py-2">
+                      {nombre}
+                    </span>
+                  ))}
                 </div>
-                <div>
-                  <span className="text-muted small d-block">Fecha y Hora programada</span>
-                  <strong className="text-dark">
-                    {new Date(turno.fecha).toLocaleDateString('es-ES', { timeZone: 'UTC', year: 'numeric', month: 'long', day: 'numeric' })} - {turno.hora} hs
-                  </strong>
-                </div>
+              ) : (
+                <span className="text-muted">Sin especialidades cargadas</span>
+              )}
+            </div>
+          </div>
+
+          <div className="col-12">
+            <div className="p-3 border border-secondary-subtle rounded-3 d-flex align-items-start gap-2">
+              <BsGeoAlt className="mt-1" style={{ color: '#00ACB2' }} />
+              <div>
+                <div className="text-muted small fw-semibold mb-1">DIRECCIÓN</div>
+                <div className="text-dark">{direccion || '-'}</div>
               </div>
             </div>
           </div>
-        </div>
-
-        {/* Pie de tarjeta */}
-        <div className="d-flex justify-content-end mt-4 pt-3 border-top border-secondary-subtle">
-          {/* Acá van botones de editar / cancelar si querés */}
         </div>
       </div>
     </div>
   );
 };
 
-export default DetalleMedicoSkeleton;
+export default DetalleMedico;
