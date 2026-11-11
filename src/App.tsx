@@ -8,6 +8,8 @@ import { DetalleTurno } from './components/turnos/DetalleTurno';
 import { HorarioAtencionForm } from './components/horarios/HorarioAtencionForm';
 import { HorarioAtencionLista } from './components/horarios/HorarioAtencionLista';
 import { ConfiguracionView } from './components/configuraciones/ConfiguracionView';
+import { MedicoLista } from "./pages/MedicoLista";
+import { MedicoForm } from "./pages/MedicoForm";
 
 
 // Componente envoltorio para capturar el ID de la URL en modo Edición
@@ -44,6 +46,10 @@ export default function App() {
           <Route path="/horarioAtencion" element={<HorarioAtencionLista />} />
           <Route path="/horarioAtencion/nuevo" element={<HorarioAtencionForm />} />
           <Route path="/configuracion" element={<ConfiguracionView />} />
+
+          <Route path="/medicos" element={<MedicoLista />} />
+          <Route path="/medicos/nuevo" element={< MedicoForm />} />
+          <Route path="/medicos/:id/editar" element={< MedicoForm />} />
 
     
         </Route>
