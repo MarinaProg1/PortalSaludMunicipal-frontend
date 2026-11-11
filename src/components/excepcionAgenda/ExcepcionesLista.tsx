@@ -153,13 +153,13 @@ export const ExcepcionesLista: React.FC = () => {
 
                     <div className="small mb-3">
                       <div className="d-flex align-items-center gap-2 text-secondary mb-1">
-                        <BsCalendarEvent size={14} style={{ color: '#00ACB2' }} />
+                        <BsCalendarEvent size={14}  />
                         <span className="fw-semibold text-dark">Fecha: {formatearFecha(exc.fecha)}</span>
                       </div>
 
                       {exc.horaInicio && exc.horaFin && (
                         <div className="d-flex align-items-center gap-2 text-secondary mb-1">
-                          <BsClock size={14} style={{ color: '#00ACB2' }} />
+                          <BsClock size={14}  />
                           <span className="fw-semibold text-dark">Horario modificado: {exc.horaInicio} - {exc.horaFin} hs</span>
                         </div>
                       )}

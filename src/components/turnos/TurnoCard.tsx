@@ -55,11 +55,11 @@ export const TurnoCard: React.FC<TurnoCardProps> = ({
             </div>
             <div className="col-12 mt-2 d-flex align-items-center gap-3">
               <div className="d-flex align-items-center gap-1 text-secondary">
-                <BsCalendarEvent size={14} style={{ color: '#00ACB2' }} />
+                <BsCalendarEvent size={14} />
                 <span className="fw-semibold text-dark">{formatearFechaTurno(turno.fecha)}</span>
               </div>
               <div className="d-flex align-items-center gap-1 text-secondary">
-                <BsClock size={14} style={{ color: '#00ACB2' }} />
+                <BsClock size={14} />
                 <span className="fw-semibold text-dark">{turno.hora} hs</span>
               </div>
             </div>

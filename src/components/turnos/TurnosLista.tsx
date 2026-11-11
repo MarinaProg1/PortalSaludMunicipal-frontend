@@ -74,7 +74,7 @@ export const TurnosLista: React.FC = () => {
     navigate(`/turnos/editar/${id}`);
   };
 
-  // --- 🌟 MANEJO DE CANCELACIÓN ---
+  //MANEJO DE CANCELACIÓN 
   const handleOpenCancelModal = (id: string) => {
     setIdTurnoACancelar(id);
   };
@@ -104,7 +104,7 @@ export const TurnosLista: React.FC = () => {
     }
   };
 
-  // --- 🌟 MANEJO DE ELIMINACIÓN DEFINITIVA ---
+  //MANEJO DE ELIMINACIÓN DEFINITIVA 
   const handleOpenDeleteModal = (id: string) => {
     setIdTurnoAEliminar(id);
   };
@@ -184,7 +184,7 @@ export const TurnosLista: React.FC = () => {
         rightContent={
           <button 
             className="btn text-white fw-semibold d-flex align-items-center justify-content-center gap-2 shadow-sm"
-            style={{ backgroundColor: '#00ACB2', borderRadius: '10px', padding: '8px 16px' }}
+            style={{ backgroundColor: '#00ACB2', borderRadius: '6px', padding: '4px 8px' }}
             onClick={() => navigate('/turnos/asignar')} 
           >
             <BsPlusCircle size={18} />

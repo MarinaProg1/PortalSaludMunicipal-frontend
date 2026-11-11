@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { BsCalendarCheck, BsArrowLeft } from 'react-icons/bs';
+import { BsCalendarCheck, BsArrowLeft, BsLightningCharge } from 'react-icons/bs';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 import clientesAxios from '../../config/axios';
@@ -139,10 +139,36 @@ export const AsignarTurnoView: React.FC = () => {
     }
   };
 
-  // Al hacer clic en un slot libre
+  // Al hacer clic en un slot libre (Turno Normal)
   const handleSeleccionarSlotLibre = (hora: string) => {
     const nombreCompleto = encodeURIComponent(`Dr./Dra. ${medicoActivo?.nombre || ''} ${medicoActivo?.apellido || ''}`);
     navigate(`/turnos/nuevo?medico=${medicoActivo?.id}&nombre=${nombreCompleto}&especialidad=${especialidadSeleccionada}&fecha=${fechaSeleccionada}&hora=${hora}`);
+  };
+
+ // 🌟 Acción para registrar turno urgente / guardia con fecha y hora actual automáticas
+  const handleTurnoUrgente = () => {
+    if (!medicoActivo) {
+      toast.error('Debe seleccionar un médico profesional para registrar la urgencia.');
+      return;
+    }
+
+    const hoy = new Date();
+    
+    // Fecha actual (YYYY-MM-DD)
+    const anio = hoy.getFullYear();
+    const mes = String(hoy.getMonth() + 1).padStart(2, '0');
+    const dia = String(hoy.getDate()).padStart(2, '0');
+    const fechaHoyStr = `${anio}-${mes}-${dia}`;
+
+    // Hora actual (HH:mm) exigida por la base de datos
+    const horas = String(hoy.getHours()).padStart(2, '0');
+    const minutos = String(hoy.getMinutes()).padStart(2, '0');
+    const horaActualStr = `${horas}:${minutos}`;
+
+    const nombreCompleto = encodeURIComponent(`Dr./Dra. ${medicoActivo?.nombre || ''} ${medicoActivo?.apellido || ''}`);
+    
+    // Redirigimos pasando la fecha, la hora actual y urgencia=true
+    navigate(`/turnos/nuevo?medico=${medicoActivo?.id}&nombre=${nombreCompleto}&especialidad=${especialidadSeleccionada}&fecha=${fechaHoyStr}&hora=${horaActualStr}&urgencia=true`);
   };
 
   return (
@@ -155,7 +181,7 @@ export const AsignarTurnoView: React.FC = () => {
           icon={<BsCalendarCheck className="me-2" style={{ color: '#00ACB2' }} />}
         />
 
-        {/* 🌟 Botón de retorno rápido según el nivel de navegación actual */}
+        {/* Botón de retorno rápido según el nivel de navegación actual */}
         {medicoActivo && (
           <div className="mb-3">
             <button 
@@ -163,12 +189,10 @@ export const AsignarTurnoView: React.FC = () => {
               className="btn btn-outline-secondary btn-sm d-flex align-items-center gap-1 shadow-none"
               onClick={() => {
                 if (fechaSeleccionada) {
-                  // Si estamos viendo los horarios de un día, volvemos a mostrar el calendario limpio
                   setFechaSeleccionada('');
                   setTodosLosSlots([]);
                   setHorariosDisponibles([]);
                 } else {
-                  // Si estamos viendo el calendario, volvemos a la selección de médico/especialidad
                   setMedicoActivo(null);
                 }
               }}
@@ -178,7 +202,7 @@ export const AsignarTurnoView: React.FC = () => {
           </div>
         )}
 
-        {/* 🌟 PASO 1: Filtrar por Especialidad (Se oculta si ya se eligió un médico) */}
+        {/* PASO 1: Filtrar por Especialidad */}
         {!medicoActivo && (
           <div className="mb-4">
             <h5 className="fw-bold text-dark mb-3">1. Filtrar por Especialidad</h5>
@@ -197,7 +221,7 @@ export const AsignarTurnoView: React.FC = () => {
           </div>
         )}
 
-        {/*PASO 2: Seleccionar Profesional (Se oculta si ya se eligió un médico) */}
+        {/* PASO 2: Seleccionar Profesional */}
         {especialidadSeleccionada && !medicoActivo && (
           <div className="mb-4">
             <h5 className="fw-bold text-dark mb-3">2. Seleccionar Profesional</h5>
@@ -237,17 +261,28 @@ export const AsignarTurnoView: React.FC = () => {
           </div>
         )}
 
-        {/* PASO 3: Calendario Mensual y Horarios Disponibles */}
+        {/* PASO 3: Calendario Mensual, Horarios y Opción de Urgencia */}
         {medicoActivo && (
           <div className="mt-2 pt-3">
-            <div className="mb-3 p-3 bg-light rounded-3 d-flex align-items-center justify-content-between">
+            <div className="mb-3 p-3 bg-light rounded-3 d-flex flex-column flex-md-row align-items-start align-items-md-center justify-content-between gap-3">
               <div>
                 <span className="text-muted small d-block">Profesional seleccionado:</span>
                 <h5 className="fw-bold text-dark mb-0">Dr./Dra. {medicoActivo.nombre} {medicoActivo.apellido}</h5>
               </div>
+
+              {/* Botón de Turno Urgente / Guardia */}
+              <button
+                type="button"
+                className="btn btn-outline-danger fw-semibold d-flex align-items-center gap-2 shadow-sm px-2 py-1"
+                style={{ borderRadius: '8px' }}
+                onClick={handleTurnoUrgente}
+              >
+                <BsLightningCharge size={18} />
+                Registrar Turno Urgente 
+              </button>
             </div>
 
-            {/* Si ya hay un día seleccionado, ocultamos el calendario mensual para enfocar la vista en los horarios */}
+            {/* Calendario Mensual */}
             {!fechaSeleccionada && (
               <CalendarioMensual
                 titulo={`Agenda Mensual`}
@@ -261,7 +296,7 @@ export const AsignarTurnoView: React.FC = () => {
               />
             )}
 
-            {/* Si hay fecha seleccionada, mostramos los horarios disponibles en pantalla completa */}
+            {/* Horarios Disponibles */}
             {fechaSeleccionada && (
               <div className="mt-2">
                 <HorariosDisponibles
