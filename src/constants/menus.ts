@@ -86,9 +86,9 @@ export const roleMenus: Record<UserRole, MenuItem[]> = {
   ],
 
   MEDICO: [
-    { id: 'turnos', label: 'Mis Turnos', icon: BsCalendarCheck, path: '#' },
+    { id: 'turnos', label: 'Mis Turnos', icon: BsCalendarCheck, path: '/turnos' },
     { id: 'horarios-atencion', label: 'Horarios de Atención', icon: BsCheckCircle, path: '/horarioAtencion' },
-    { id: 'pacientes', label: 'Pacientes', icon: BsHeartPulse, path: '#' },
+    { id: 'pacientes', label: 'Pacientes', icon: BsHeartPulse, path: '/pacientes' },
     { id: 'consultas', label: 'Consultas Médicas', icon: BsJournalMedical, path: '#' },
     { id: 'historias-clinicas', label: 'Historia Clínica', icon: BsFileEarmarkText, path: '#' },
   ],

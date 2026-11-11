@@ -112,17 +112,17 @@ const AppRouter = () => {
           <Route path="mi-perfil" element={<RequireRole allowed={["PACIENTE"]}><MiPerfil /></RequireRole>} />
 
           <Route path="horarioAtencion" element={<HorarioAtencionLista />} />
-          <Route path="horarioAtencion/nuevo" element={<HorarioAtencionForm />} />
+          <Route path="horarioAtencion/nuevo" element={<RequireRole allowed={["ADMIN", "RECEPCIONISTA"]}><HorarioAtencionForm /></RequireRole>} />
           <Route path="configuracion" element={<ConfiguracionView />} />
 
           <Route path="obras-sociales" element={<RequireRole allowed={["ADMIN", "RECEPCIONISTA"]}><ObraSocialLista /></RequireRole>} />
           <Route path="obras-sociales/nuevo" element={<RequireRole allowed={["ADMIN", "RECEPCIONISTA"]}><ObraSocialForm /></RequireRole>} />
           <Route path="obras-sociales/editar/:id" element={<RequireRole allowed={["ADMIN", "RECEPCIONISTA"]}><EdicionObraSocialWrapper /></RequireRole>} />
 
-          <Route path="pacientes" element={<RequireRole allowed={["ADMIN", "RECEPCIONISTA"]}><PacienteLista /></RequireRole>} />
+          <Route path="pacientes" element={<RequireRole allowed={["ADMIN", "RECEPCIONISTA", "MEDICO"]}><PacienteLista /></RequireRole>} />
           <Route path="pacientes/nuevo" element={<RequireRole allowed={["ADMIN", "RECEPCIONISTA"]}><PacienteForm /></RequireRole>} />
           <Route path="pacientes/editar/:id" element={<RequireRole allowed={["ADMIN", "RECEPCIONISTA"]}><EdicionPacienteWrapper /></RequireRole>} />
-          <Route path="pacientes/:id" element={<RequireRole allowed={["ADMIN", "RECEPCIONISTA"]}><PacienteDetalle /></RequireRole>} />
+          <Route path="pacientes/:id" element={<RequireRole allowed={["ADMIN", "RECEPCIONISTA", "MEDICO"]}><PacienteDetalle /></RequireRole>} />
 
           <Route path="medicos" element={<RequireRole allowed={["ADMIN", "RECEPCIONISTA"]}><MedicoLista /></RequireRole>} />
           <Route path="medicos/nuevo" element={<RequireRole allowed={["ADMIN", "RECEPCIONISTA"]}><NuevoMedicoWrapper /></RequireRole>} />
