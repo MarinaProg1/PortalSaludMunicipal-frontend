@@ -1,0 +1,453 @@
+/* ============================================================
+   Tema del dashboard · Portal Salud
+   Azul clínico + acento turquesa · SIN glassmorphism
+   (el glass queda exclusivamente en el login)
+   ============================================================ */
+
+.app-shell {
+  --ps-navy-900: #04182b;
+  --ps-navy-800: #072a45;
+  --ps-navy-700: #0a3a5c;
+  --ps-blue-700: #0b4a73;
+  --ps-blue-600: #0e7fae;
+  --ps-turquoise: #00c2c7;
+  --ps-turquoise-bright: #4fe3e0;
+  --ps-turquoise-soft: #7ff2ea;
+  --ps-ink: #0b2f4a;
+  --ps-text: #1f4058;
+  --ps-muted: #6a869d;
+  --ps-border: #e1edf7;
+  --ps-border-strong: #cfe0ee;
+  --ps-surface: #ffffff;
+  --ps-canvas: #eef4f9;
+  --ps-canvas-soft: #f4f9fd;
+
+  background: var(--ps-canvas);
+}
+
+/* Las utilidades de Bootstrap que traían el fondo viejo */
+.app-shell .bg-light {
+  background-color: var(--ps-canvas) !important;
+}
+
+.app-shell .bg-white {
+  background-color: var(--ps-surface) !important;
+}
+
+/* ---------- Área principal ---------- */
+
+.app-main {
+  background:
+    radial-gradient(1100px 520px at 100% -10%, rgba(79, 227, 224, 0.14), transparent 60%),
+    radial-gradient(900px 480px at -10% 110%, rgba(14, 127, 174, 0.1), transparent 62%),
+    var(--ps-canvas);
+  color: var(--ps-text);
+}
+
+/* ---------- Sidebar ---------- */
+
+.app-sidebar {
+  position: relative;
+  width: 280px;
+  color: #e8f5ff;
+  background:
+    radial-gradient(120% 60% at 0% 0%, rgba(0, 194, 199, 0.22), transparent 58%),
+    radial-gradient(90% 50% at 100% 100%, rgba(14, 127, 174, 0.32), transparent 62%),
+    linear-gradient(180deg, var(--ps-navy-900) 0%, var(--ps-navy-800) 48%, var(--ps-navy-700) 100%);
+  border-right: 1px solid rgba(0, 194, 199, 0.22) !important;
+  border-radius: 0 26px 26px 0;
+  box-shadow: 22px 0 44px -38px rgba(4, 24, 43, 0.95);
+}
+
+.offcanvas.app-sidebar {
+  --bs-offcanvas-width: 300px;
+  --bs-offcanvas-bg: #061f36;
+  --bs-offcanvas-color: #e8f5ff;
+  --bs-offcanvas-border-color: rgba(79, 227, 224, 0.2);
+  border-radius: 0 22px 22px 0;
+}
+
+/* Chip blanco para el logo institucional */
+.app-sidebar__brand {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: fit-content;
+  max-width: 100%;
+  margin: 0 auto;
+  padding: 10px 16px;
+  border-radius: 14px;
+  background: #ffffff;
+  box-shadow: 0 16px 30px -20px rgba(0, 0, 0, 0.9);
+}
+
+.app-sidebar__brand img {
+  width: 146px;
+  height: auto;
+}
+
+.app-sidebar__brand-wrap {
+  border-color: rgba(255, 255, 255, 0.12) !important;
+}
+
+.app-sidebar__header {
+  border-color: rgba(255, 255, 255, 0.12) !important;
+}
+
+.app-sidebar__header .offcanvas-title {
+  color: #ffffff !important;
+  letter-spacing: 0.02em;
+}
+
+.app-sidebar__header .btn-close {
+  filter: invert(1) grayscale(1) brightness(1.8);
+  opacity: 0.8;
+}
+
+.app-sidebar__divider {
+  border-color: rgba(255, 255, 255, 0.14) !important;
+  opacity: 1;
+}
+
+/* Navegación */
+.app-sidebar .nav-link {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.62rem 0.8rem;
+  border-radius: 12px;
+  color: rgba(232, 245, 255, 0.78) !important;
+  font-weight: 600;
+  transition: background-color 0.18s ease, color 0.18s ease, transform 0.18s ease;
+}
+
+.app-sidebar .nav-link:hover,
+.app-sidebar .hover-bg-light:hover {
+  background-color: rgba(79, 227, 224, 0.1) !important;
+  color: #ffffff !important;
+}
+
+.app-sidebar .nav-link svg {
+  color: var(--ps-turquoise-soft) !important;
+  flex: 0 0 auto;
+}
+
+.app-sidebar .nav-link.active {
+  background: linear-gradient(135deg, #7ff2ea 0%, #2ed3d6 45%, #12a7c2 100%) !important;
+  color: #04283c !important;
+  font-weight: 700;
+  box-shadow: 0 14px 26px -16px rgba(0, 194, 199, 0.9);
+}
+
+.app-sidebar .nav-link.active svg {
+  color: #04283c !important;
+}
+
+.app-sidebar .nav-parent-active {
+  background: rgba(79, 227, 224, 0.12) !important;
+  color: #ffffff !important;
+  box-shadow: inset 3px 0 0 var(--ps-turquoise-soft);
+}
+
+.app-sidebar .nav-link.text-secondary {
+  color: rgba(214, 236, 250, 0.66) !important;
+}
+
+.app-sidebar .nav-link.text-info {
+  color: var(--ps-turquoise-soft) !important;
+}
+
+/* Submenús */
+.app-sidebar ul.nav .nav-link {
+  border-radius: 10px;
+}
+
+.app-sidebar .border-start {
+  border-color: rgba(79, 227, 224, 0.22) !important;
+}
+
+.app-sidebar .badge {
+  border-radius: 999px;
+  font-weight: 700;
+}
+
+/* Usuario / cerrar sesión */
+.app-sidebar .dropdown-toggle {
+  color: #e8f5ff !important;
+  border-radius: 12px;
+  padding: 0.45rem 0.55rem !important;
+}
+
+.app-sidebar .dropdown-toggle:hover {
+  background: rgba(79, 227, 224, 0.1) !important;
+}
+
+.app-sidebar .dropdown-toggle strong {
+  color: #ffffff;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+}
+
+/* ---------- Barra superior (mobile) ---------- */
+
+.app-topbar {
+  background: linear-gradient(120deg, var(--ps-navy-900) 0%, var(--ps-blue-700) 100%) !important;
+  border-bottom: 1px solid rgba(79, 227, 224, 0.24) !important;
+}
+
+.app-topbar .navbar-toggler,
+.app-topbar .navbar-brand {
+  color: #ffffff !important;
+}
+
+/* ---------- Encabezado de página ---------- */
+
+.page-header {
+  padding: 1.15rem 1.4rem !important;
+  border: 1px solid var(--ps-border) !important;
+  border-radius: 18px;
+  background: linear-gradient(120deg, #ffffff 0%, #f6fbfe 100%);
+  box-shadow: 0 18px 34px -30px rgba(4, 24, 43, 0.55);
+}
+
+.page-header h3 {
+  color: var(--ps-ink) !important;
+  font-size: 1.45rem;
+  letter-spacing: -0.015em;
+}
+
+.page-header h3 svg {
+  color: var(--ps-turquoise) !important;
+}
+
+.page-header p {
+  color: var(--ps-muted) !important;
+}
+
+/* ---------- Tarjetas ---------- */
+
+.app-main .card {
+  background: var(--ps-surface);
+  border: 1px solid var(--ps-border) !important;
+  border-radius: 16px !important;
+  box-shadow: 0 16px 32px -30px rgba(4, 24, 43, 0.55) !important;
+}
+
+.app-main .card-header,
+.app-main .card-footer {
+  background: var(--ps-canvas-soft) !important;
+  border-color: var(--ps-border) !important;
+}
+
+/* ---------- Tablas ---------- */
+
+.app-main .table {
+  --bs-table-bg: transparent;
+  margin-bottom: 0;
+}
+
+.app-main .table > thead th {
+  padding-top: 0.85rem;
+  padding-bottom: 0.85rem;
+  background: #f1f8fd !important;
+  border-bottom: 1px solid var(--ps-border) !important;
+  color: #3f6480 !important;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.07em;
+}
+
+.app-main .table > tbody > tr > td {
+  border-color: #edf4fa !important;
+  color: var(--ps-text);
+  padding-top: 0.85rem;
+  padding-bottom: 0.85rem;
+}
+
+.app-main .table-hover > tbody > tr:hover > * {
+  background-color: #f5fbfe !important;
+}
+
+/* ---------- Botones ---------- */
+
+.app-main .btn,
+.modal .btn {
+  border-radius: 10px;
+  font-weight: 600;
+}
+
+.app-main .btn-primary,
+.modal .btn-primary,
+.btn[style*="rgb(0, 172, 178)"],
+.btn[style*="rgb(0,172,178)"] {
+  background: linear-gradient(135deg, #22d0d4 0%, #0fa3c4 55%, #0b7fa0 100%) !important;
+  border: 0 !important;
+  color: #ffffff !important;
+  box-shadow: 0 14px 24px -16px rgba(0, 194, 199, 0.85);
+}
+
+.app-main .btn-primary:hover,
+.modal .btn-primary:hover,
+.btn[style*="rgb(0, 172, 178)"]:hover {
+  filter: brightness(1.07);
+  transform: translateY(-1px);
+}
+
+.app-main .btn-outline-secondary {
+  --bs-btn-color: #3f6a8a;
+  --bs-btn-border-color: var(--ps-border-strong);
+  --bs-btn-hover-bg: #eaf6fb;
+  --bs-btn-hover-border-color: #b9d8ea;
+  --bs-btn-hover-color: #14425f;
+  --bs-btn-active-bg: #dceff8;
+  --bs-btn-active-border-color: #a9cee2;
+  --bs-btn-active-color: #14425f;
+  background: #ffffff;
+}
+
+.btn-action-edit {
+  border: 1px solid #bfe6ea !important;
+  color: #0e8fa5 !important;
+  background: #f2fbfc !important;
+}
+
+.btn-action-edit:hover {
+  background: #e2f7f9 !important;
+  color: #0b7085 !important;
+  border-color: #a5dbdf !important;
+}
+
+/* ---------- Formularios ---------- */
+
+.app-main .form-control,
+.app-main .form-select,
+.modal .form-control,
+.modal .form-select {
+  border-color: var(--ps-border-strong);
+  border-radius: 10px;
+  color: var(--ps-text);
+}
+
+.app-main .form-control:focus,
+.app-main .form-select:focus,
+.modal .form-control:focus,
+.modal .form-select:focus {
+  border-color: #3ad7d9;
+  box-shadow: 0 0 0 0.22rem rgba(0, 194, 199, 0.16);
+}
+
+.app-main .form-label,
+.modal .form-label {
+  color: #42607a;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.app-main .input-group-text,
+.modal .input-group-text {
+  border-color: var(--ps-border-strong);
+  color: var(--ps-muted);
+}
+
+.app-main .form-text,
+.app-main .text-muted {
+  color: var(--ps-muted) !important;
+}
+
+/* ---------- Badges ---------- */
+
+.app-main .badge,
+.modal .badge {
+  border-radius: 999px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+}
+
+/* ---------- Dropdowns / modales ---------- */
+
+.app-shell .dropdown-menu {
+  border: 1px solid var(--ps-border);
+  border-radius: 12px;
+  box-shadow: 0 22px 44px -28px rgba(4, 24, 43, 0.6);
+}
+
+.modal-content {
+  border: 1px solid var(--ps-border);
+  border-radius: 16px;
+  box-shadow: 0 30px 60px -34px rgba(4, 24, 43, 0.7);
+}
+
+/* ---------- Detalles finos ---------- */
+
+.app-main a {
+  color: var(--ps-blue-600);
+}
+
+.app-main a:hover {
+  color: #0b6f95;
+}
+
+.app-main hr {
+  border-color: var(--ps-border);
+  opacity: 1;
+}
+
+.app-shell ::selection {
+  background: rgba(0, 194, 199, 0.25);
+}
+
+.app-main::-webkit-scrollbar,
+.app-shell ::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+.app-main::-webkit-scrollbar-thumb,
+.app-shell ::-webkit-scrollbar-thumb {
+  background: #c6dcea;
+  border: 3px solid transparent;
+  background-clip: content-box;
+  border-radius: 999px;
+}
+
+.app-main::-webkit-scrollbar-track,
+.app-shell ::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* ---------- Responsive ---------- */
+
+@media (max-width: 991.98px) {
+  .app-sidebar {
+    border-radius: 0;
+    box-shadow: none;
+  }
+
+  .app-main {
+    padding: 1rem !important;
+  }
+
+  .page-header {
+    padding: 1rem 1.1rem !important;
+    border-radius: 16px;
+  }
+}
+
+@media (max-width: 575.98px) {
+  .app-main {
+    padding: 0.75rem !important;
+  }
+
+  .page-header h3 {
+    font-size: 1.25rem;
+  }
+}
+
+/* ---------- Accesibilidad ---------- */
+
+@media (prefers-reduced-motion: reduce) {
+  .app-sidebar .nav-link,
+  .app-main .btn {
+    transition: none;
+  }
+}

@@ -14,9 +14,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ userRole }) => {
   return (
     <>
       {/* 1. Botón hamburguesa fijo superior para celulares */}
-      <nav className="navbar bg-light text-dark d-lg-none fixed-top px-3 shadow-sm border-bottom">
+      <nav className="navbar app-topbar text-white d-lg-none fixed-top px-3 shadow-sm">
         <button
-          className="navbar-toggler border-0 text-dark"
+          className="navbar-toggler border-0 text-white"
           type="button"
           data-bs-toggle="offcanvas"
           data-bs-target="#sidebarOffcanvas"
@@ -24,12 +24,12 @@ export const Sidebar: React.FC<SidebarProps> = ({ userRole }) => {
         >
           <BsList size={24} />
         </button>
-        <span className="navbar-brand mb-0 h6 text-light fw-bold">SALITA MUNICIPAL</span>
+        <span className="navbar-brand mb-0 h6 text-white fw-bold">SALITA MUNICIPAL</span>
       </nav>
 
       {/* 2. Sidebar fijo para Escritorio */}
       <div
-        className="d-none d-lg-flex flex-column flex-shrink-0 p-3 bg-salud-claro text-dark vh-100 border-end shadow-sm"
+        className="d-none d-lg-flex flex-column flex-shrink-0 p-3 app-sidebar vh-100"
         style={{ width: '280px' }}
       >
         <SidebarContent userRole={userRole} />
@@ -37,13 +37,13 @@ export const Sidebar: React.FC<SidebarProps> = ({ userRole }) => {
 
       {/* 3. Sidebar Offcanvas para Celulares */}
       <div
-        className="offcanvas offcanvas-start bg-light text-dark d-lg-none"
+        className="offcanvas offcanvas-start app-sidebar app-sidebar--mobile d-lg-none"
         tabIndex={-1}
         id="sidebarOffcanvas"
         aria-labelledby="sidebarOffcanvasLabel"
       >
-        <div className="offcanvas-header border-bottom border-secondary-subtle">
-          <h5 className="offcanvas-title fw-bold text-dark" id="sidebarOffcanvasLabel">Portal de Salud</h5>
+        <div className="offcanvas-header app-sidebar__header border-bottom">
+          <h5 className="offcanvas-title fw-bold" id="sidebarOffcanvasLabel">Portal de Salud</h5>
           <button type="button" className="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
         </div>
         <div className="offcanvas-body p-0 d-flex flex-column">
@@ -76,13 +76,12 @@ const SidebarContent: React.FC<SidebarContentProps> = ({ userRole, isMobile = fa
     <div className="d-flex flex-column h-100 p-1">
       {/* Título de la marca (solo en escritorio) */}
       {!isMobile && (
-        <div className="pb-3 mb-3 border-bottom border-dark border-opacity-25 text-center">
-          <div className="navbar-brand d-flex align-items-center justify-content-center m-0">
+        <div className="app-sidebar__brand-wrap pb-3 mb-3 border-bottom text-center">
+          <div className="app-sidebar__brand">
             <img
               src={logoGoya}
               alt="Logo Portal Salud Goya"
-              className="img-fluid"
-              style={{ width: '150px', height: 'auto' }}
+              className="img-fluid sidebar-logo"
             />
           </div>
         </div>
@@ -125,11 +124,22 @@ const SidebarContent: React.FC<SidebarContentProps> = ({ userRole, isMobile = fa
           }
 
           // Si TIENE sub-ítems, se renderiza como un menú desplegable (acordeón)
+          const grupoActivo = Boolean(
+            item.children?.some(
+              (sub) =>
+                sub.path &&
+                sub.path !== '#' &&
+                (location.pathname === sub.path || location.pathname.startsWith(`${sub.path}/`)),
+            ),
+          );
+
           return (
             <li key={item.id} className="nav-item">
               <button
                 type="button"
-                className="nav-link d-flex align-items-center justify-content-between text-dark w-100 border-0 bg-transparent py-2"
+                className={`nav-link d-flex align-items-center justify-content-between w-100 border-0 py-2 ${
+                  grupoActivo ? 'nav-parent-active' : 'text-dark'
+                }`}
                 onClick={() => toggleSubmenu(item.id)}
               >
                 <span className="d-flex align-items-center gap-2">
@@ -165,7 +175,7 @@ const SidebarContent: React.FC<SidebarContentProps> = ({ userRole, isMobile = fa
         })}
       </ul>
 
-      <hr className="border-dark" />
+      <hr className="app-sidebar__divider" />
 
       {/* Sección inferior de usuario (Perfil / Cerrar Sesión) */}
       <div className="dropdown">

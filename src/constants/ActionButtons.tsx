@@ -24,9 +24,9 @@ export const ActionButtons: React.FC<ActionButtonsProps> = ({ onView, onEdit, on
       {onEdit && (
         <button 
           onClick={onEdit} 
-          className="btn btn-sm btn-outline-warning d-flex align-items-center justify-content-center p-2 shadow-sm"
+          className="btn btn-sm btn-action-edit d-flex align-items-center justify-content-center p-2 shadow-sm"
           title="Modificar"
-          style={{ borderRadius: '8px', borderColor: '#ff9450', color: '#ff9450' }}
+          style={{ borderRadius: '8px' }}
         >
           <BsPencilSquare size={16} />
         </button>

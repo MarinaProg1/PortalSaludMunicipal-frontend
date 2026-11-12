@@ -11,7 +11,7 @@ interface PageHeaderProps {
 
 export const PageHeader: React.FC<PageHeaderProps> = ({ titulo, subtitulo, icon, onBack, rightContent }) => {
   return (
-    <div className="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center  gap-3 mb-4 p-3 border-bottom border-secondary-subtle w-100">
+    <div className="page-header d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3 mb-4 w-100">
       <div>
         <h3 className="fw-bold text-dark mb-1">
           {icon}
