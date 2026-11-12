@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { BsPeople, BsSearch } from 'react-icons/bs';
+import { BsPeople, BsPlusCircle, BsSearch } from 'react-icons/bs';
 import { PageHeader } from '../../constants/PageHeader';
+import { ActionButtons } from '../../constants/ActionButtons';
+import { MedicoSkeleton } from './MedicoSkeleton';
 import { medicoService } from '../../services/medico.service';
-import { getEspecialidadesNombres, type MedicoItem } from './medico.schema';
+import { getEspecialidadesNombres, getMedicoId, getTelefonoTexto, type MedicoItem } from './medico.schema';
 import toast from 'react-hot-toast';
 
 export const MedicoLista: React.FC = () => {
@@ -11,6 +13,7 @@ export const MedicoLista: React.FC = () => {
   const [items, setItems] = useState<MedicoItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [busqueda, setBusqueda] = useState('');
+  const [eliminando, setEliminando] = useState<string | null>(null);
 
   useEffect(() => {
     let mounted = true;
@@ -38,9 +41,7 @@ export const MedicoLista: React.FC = () => {
     if (!termino) return true;
 
     const especialidades = getEspecialidadesNombres(m).join(' ').toLowerCase();
-    const telefono = m.telefono
-      ? `${m.telefono.codigoArea || ''} ${m.telefono.numero || ''}`.toLowerCase()
-      : '';
+    const telefono = getTelefonoTexto(m).toLowerCase();
 
     return (
       `${m.nombre} ${m.apellido}`.toLowerCase().includes(termino) ||
@@ -52,6 +53,23 @@ export const MedicoLista: React.FC = () => {
     );
   });
 
+  const handleEliminar = async (id: string, nombre: string) => {
+    if (!id) return;
+    if (!window.confirm(`¿Desactivar al médico ${nombre}?`)) return;
+
+    try {
+      setEliminando(id);
+      await medicoService.eliminar(id);
+      setItems((prev) => prev.filter((m) => getMedicoId(m) !== id));
+      toast.success('Médico desactivado');
+    } catch (e) {
+      console.error(e);
+      toast.error('No se pudo desactivar el médico');
+    } finally {
+      setEliminando(null);
+    }
+  };
+
   return (
     <div className="container-fluid px-2 px-md-4 py-4">
       <PageHeader
@@ -59,6 +77,15 @@ export const MedicoLista: React.FC = () => {
         subtitulo="Profesionales registrados en el sistema."
         icon={<BsPeople className="me-2" style={{ color: '#00ACB2' }} />}
         onBack={() => navigate(-1)}
+        rightContent={
+          <button
+            className="btn btn-sm text-white fw-semibold d-flex align-items-center gap-1"
+            style={{ backgroundColor: '#00ACB2', borderRadius: '8px' }}
+            onClick={() => navigate('/medicos/nuevo')}
+          >
+            <BsPlusCircle /> Nuevo médico
+          </button>
+        }
       />
 
       <div className="card border-0 shadow-sm mb-4 bg-white" style={{ borderRadius: '12px' }}>
@@ -80,7 +107,7 @@ export const MedicoLista: React.FC = () => {
       </div>
 
       {loading ? (
-        <div className="text-center py-5 text-muted">Cargando...</div>
+        <MedicoSkeleton />
       ) : filtrados.length > 0 ? (
         <div className="card border-0 shadow-sm bg-white overflow-hidden" style={{ borderRadius: '12px' }}>
           <div className="table-responsive">
@@ -93,19 +120,18 @@ export const MedicoLista: React.FC = () => {
                   <th className="py-3">DNI</th>
                   <th className="py-3">Email</th>
                   <th className="py-3">Teléfono</th>
-                  <th className="py-3 px-4">Estado</th>
+                  <th className="py-3">Estado</th>
+                  <th className="py-3 px-4 text-end">Acciones</th>
                 </tr>
               </thead>
               <tbody>
                 {filtrados.map((m) => {
-                  const id = m.id || m._id || `${m.dni}-${m.numeroMatricula}`;
+                  const id = getMedicoId(m) || `${m.dni}-${m.numeroMatricula}`;
                   const especialidades = getEspecialidadesNombres(m);
-                  const telefono = m.telefono
-                    ? `${m.telefono.codigoArea || ''} ${m.telefono.numero || ''}`.trim()
-                    : '';
+                  const telefono = getTelefonoTexto(m);
 
                   return (
-                    <tr key={id}>
+                    <tr key={id} style={{ opacity: eliminando === id ? 0.5 : 1 }}>
                       <td className="px-4 fw-semibold text-dark">
                         {m.apellido}, {m.nombre}
                       </td>
@@ -116,7 +142,7 @@ export const MedicoLista: React.FC = () => {
                       <td className="text-muted">{m.dni || '-'}</td>
                       <td className="text-muted">{m.email || '-'}</td>
                       <td className="text-muted">{telefono || '-'}</td>
-                      <td className="px-4">
+                      <td>
                         <span
                           className={`badge px-2 py-1 ${
                             m.activo === false
@@ -126,6 +152,13 @@ export const MedicoLista: React.FC = () => {
                         >
                           {m.activo === false ? 'INACTIVO' : 'ACTIVO'}
                         </span>
+                      </td>
+                      <td className="px-4">
+                        <ActionButtons
+                          onView={() => navigate(`/medicos/${id}`)}
+                          onEdit={() => navigate(`/medicos/editar/${id}`)}
+                          onDelete={() => handleEliminar(id, `${m.apellido}, ${m.nombre}`)}
+                        />
                       </td>
                     </tr>
                   );
