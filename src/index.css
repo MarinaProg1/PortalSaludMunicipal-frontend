@@ -7,23 +7,26 @@ html, body, #root {
   width: 100%;
   height: 100%;
   overflow: hidden;
-  background-color: #eef4f9;
+  background-color: #04182b;
 }
 .bg-salud-claro {
   background: linear-gradient(180deg, #04182b 0%, #072a45 48%, #0a3a5c 100%) !important;
   border-radius: 0 26px 26px 0 !important;
   border: 0 !important;
-  border-right: 1px solid rgba(0, 194, 199, 0.22) !important;
+  border-right: 1px solid rgba(111, 240, 230, 0.24) !important;
 }
 
 .bg-gradient-salud {
-  background: linear-gradient(135deg, #2ed3d6 0%, #0e7fae 100%) !important;
-  color: #ffffff !important;
+  background: linear-gradient(135deg, #6ff0e6 0%, #22d3d6 44%, #0fa3c4 100%) !important;
+  color: #042a3d !important;
 }
 
 .hover-bg-light:hover {
-  background-color: rgba(0, 194, 199, 0.12) !important;
-  color: #0b4a73 !important;
+  background-color: rgba(111, 240, 230, 0.12) !important;
+  color: #ffffff !important;
+}
+.bg-gradient-salud:hover {
+  color: #042a3d !important;
 }
 .sidebar-nav {
   scrollbar-width: none;      /* Firefox */

@@ -42,48 +42,6 @@
   box-sizing: border-box;
 }
 
-/* ---------- Logo institucional ---------- */
-
-.ps-logo {
-  display: inline-flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.ps-logo-mark {
-  flex: 0 0 auto;
-  filter: drop-shadow(0 10px 22px rgba(0, 194, 199, 0.28));
-}
-
-.ps-logo-text {
-  display: flex;
-  flex-direction: column;
-  line-height: 1.05;
-}
-
-.ps-logo-name {
-  font-size: 1.22rem;
-  font-weight: 600;
-  letter-spacing: 0.2px;
-  color: #ffffff;
-  white-space: nowrap;
-}
-
-.ps-logo-name strong {
-  font-weight: 800;
-  color: #57ece0;
-}
-
-.ps-logo-sub {
-  margin-top: 4px;
-  font-size: 0.6rem;
-  font-weight: 700;
-  letter-spacing: 0.34em;
-  color: rgba(255, 255, 255, 0.62);
-  text-transform: uppercase;
-  white-space: nowrap;
-}
-
 /* ---------- Fondo decorativo ---------- */
 
 .login-backdrop {

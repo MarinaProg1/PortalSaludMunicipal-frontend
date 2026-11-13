@@ -3,7 +3,7 @@ import { roleMenus } from '../../constants/menus';
 import type { UserRole, MenuItem } from '../../constants/menus';
 import { Link, useLocation } from 'react-router-dom';
 import { BsList, BsChevronDown, BsChevronUp } from 'react-icons/bs';
-import logoGoya from '../../assets/logo.png';
+import { LogoPortalSalud } from '../brand/LogoPortalSalud';
 import { useAuth } from '../../context/AuthContext';
 
 interface SidebarProps {
@@ -78,11 +78,7 @@ const SidebarContent: React.FC<SidebarContentProps> = ({ userRole, isMobile = fa
       {!isMobile && (
         <div className="app-sidebar__brand-wrap pb-3 mb-3 border-bottom text-center">
           <div className="app-sidebar__brand">
-            <img
-              src={logoGoya}
-              alt="Logo Portal Salud Goya"
-              className="img-fluid sidebar-logo"
-            />
+            <LogoPortalSalud />
           </div>
         </div>
       )}
