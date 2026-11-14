@@ -23,6 +23,12 @@ import { DetalleTurnoPaciente } from "../components/pacientePortal/DetalleTurnoP
 import { RequireRole } from "./RequireRole";
 import NotFound from "../components/utils/NotFound";
 import { ConfiguracionView } from "../components/configuraciones/ConfiguracionView";
+import { EspecialidadLista } from "../components/especialidades/EspecialidadLista";
+import { EspecialidadForm } from "../components/especialidades/EspecialidadForm";
+import { DetalleEspecialidad } from "../components/especialidades/DetalleEspecialidad";
+import { HistorialMedicoLista } from "../components/historialMedico/HistorialMedicoLista";
+import { HistorialMedicoForm } from "../components/historialMedico/HistorialMedicoForm";
+import { DetalleHistorialMedico } from "../components/historialMedico/DetalleHistorialMedico";
 
 const EdicionTurnoWrapper = () => {
   const { id } = useParams<{ id: string }>();
@@ -87,6 +93,7 @@ const HomeRedirect = () => {  const { rol } = useAuth();
   return <Navigate to={destino} replace />;
 };
 
+
 const AppRouter = () => {
   const { isAuthenticated } = useAuth();
 
@@ -128,6 +135,17 @@ const AppRouter = () => {
           <Route path="medicos/nuevo" element={<RequireRole allowed={["ADMIN", "RECEPCIONISTA"]}><NuevoMedicoWrapper /></RequireRole>} />
           <Route path="medicos/editar/:id" element={<RequireRole allowed={["ADMIN", "RECEPCIONISTA"]}><EdicionMedicoWrapper /></RequireRole>} />
           <Route path="medicos/:id" element={<RequireRole allowed={["ADMIN", "RECEPCIONISTA"]}><DetalleMedico /></RequireRole>} />
+
+          <Route path="especialidades" element={<EspecialidadLista />} />
+          <Route path="especialidades/nuevo" element={<EspecialidadForm />} />
+          <Route path="especialidades/editar/:id" element={<EspecialidadForm />} />
+          <Route path="especialidades/:id" element={<DetalleEspecialidad />} />
+
+          <Route path="historial-medico" element={<HistorialMedicoLista />} />
+          <Route path="historial-medico/nuevo/:turnoId" element={<HistorialMedicoForm />} />
+          <Route path="historial-medico/editar/:id" element={<HistorialMedicoForm />} />
+          <Route path="historial-medico/:id" element={<DetalleHistorialMedico />} />
+        
         </Route>
 
         <Route path="*" element={<NotFound />} />
