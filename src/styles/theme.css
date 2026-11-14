@@ -602,6 +602,56 @@
   color: #f2f9ff !important;
 }
 
+/* Badges "subtle" de Bootstrap: eran chips claros sobre el tema oscuro */
+.app-main .badge.bg-success-subtle,
+.modal .badge.bg-success-subtle {
+  background: rgba(25, 195, 125, 0.18) !important;
+  border: 1px solid rgba(84, 224, 164, 0.35);
+  color: #7ff0c0 !important;
+}
+
+.app-main .badge.bg-primary-subtle,
+.modal .badge.bg-primary-subtle {
+  background: rgba(111, 240, 230, 0.16) !important;
+  border: 1px solid rgba(111, 240, 230, 0.32);
+  color: #9ff8f1 !important;
+}
+
+.app-main .badge.bg-warning-subtle,
+.modal .badge.bg-warning-subtle {
+  background: rgba(255, 193, 7, 0.18) !important;
+  border: 1px solid rgba(255, 206, 84, 0.35);
+  color: #ffdf8e !important;
+}
+
+.app-main .badge.bg-info-subtle,
+.modal .badge.bg-info-subtle {
+  background: rgba(63, 208, 224, 0.16) !important;
+  border: 1px solid rgba(63, 208, 224, 0.34);
+  color: #a8f2f9 !important;
+}
+
+.app-main .badge.bg-danger-subtle,
+.modal .badge.bg-danger-subtle {
+  background: rgba(255, 90, 90, 0.16) !important;
+  border: 1px solid rgba(255, 138, 138, 0.34);
+  color: #ffb3bb !important;
+}
+
+.app-main .badge.bg-secondary-subtle,
+.modal .badge.bg-secondary-subtle {
+  background: rgba(255, 255, 255, 0.12) !important;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  color: #d7e6f2 !important;
+}
+
+/* Avatar con iniciales: el blanco sobre turquesa no llegaba al contraste mínimo */
+.app-main .rounded-circle[style*='rgb(0, 172, 178)'],
+.app-main .rounded-circle[style*='rgb(0,172,178)'] {
+  background-image: linear-gradient(135deg, #6ff0e6 0%, #22d3d6 44%, #0fa3c4 100%) !important;
+  color: #042a3d !important;
+}
+
 /* ---------- Alertas ---------- */
 
 .app-main .alert {
