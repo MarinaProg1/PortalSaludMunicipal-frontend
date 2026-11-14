@@ -10,6 +10,7 @@ import {
   BsPersonBadge,
 } from 'react-icons/bs';
 import { PageHeader } from '../../constants/PageHeader';
+import { useAuth } from '../../context/AuthContext';
 import { pacienteService } from '../../services/paciente.service';
 import {
   getObraSocialNombre,
@@ -25,6 +26,8 @@ import toast from 'react-hot-toast';
 export const PacienteDetalle: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { rol } = useAuth();
+  const puedeAdministrar = ['ADMIN', 'RECEPCIONISTA'].includes((rol || '').toUpperCase());
   const [paciente, setPaciente] = useState<PacienteItem | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -125,6 +128,7 @@ export const PacienteDetalle: React.FC = () => {
               className="btn text-white fw-semibold d-flex align-items-center gap-2 shadow-sm"
               style={{ backgroundColor: '#00ACB2', borderRadius: '10px' }}
               onClick={() => navigate(`/pacientes/editar/${id}`)}
+              hidden={!puedeAdministrar}
             >
               <BsPencilSquare size={18} /> Editar
             </button>

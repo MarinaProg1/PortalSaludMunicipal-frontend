@@ -1,0 +1,1006 @@
+/* ============================================================
+   Tema del dashboard · Portal Salud
+   Mismo lenguaje visual que el login: azul clínico + turquesa,
+   fondo con orbes y paneles tipo tarjeta.
+   SIN glassmorphism: el backdrop-filter queda solo en el login.
+   ============================================================ */
+
+.app-shell {
+  --ps-navy-900: #04182b;
+  --ps-navy-800: #072a45;
+  --ps-navy-700: #0a3a5c;
+  --ps-blue-700: #0b4a73;
+  --ps-blue-500: #0e7fae;
+  --ps-turquoise: #00c2c7;
+  --ps-turquoise-soft: #6ff0e6;
+  --ps-turquoise-bright: #9ff8f1;
+
+  --ps-text: #eaf5ff;
+  --ps-text-strong: #ffffff;
+  --ps-muted: #a8c4da;
+  --ps-muted-soft: #8fb0c9;
+
+  --ps-line: rgba(255, 255, 255, 0.12);
+  --ps-line-strong: rgba(255, 255, 255, 0.2);
+  --ps-turquoise-line: rgba(111, 240, 230, 0.24);
+
+  --ps-panel: linear-gradient(
+    158deg,
+    rgba(255, 255, 255, 0.14) 0%,
+    rgba(255, 255, 255, 0.05) 48%,
+    rgba(255, 255, 255, 0.09) 100%
+  );
+  --ps-panel-strong: linear-gradient(
+    158deg,
+    rgba(255, 255, 255, 0.18) 0%,
+    rgba(255, 255, 255, 0.07) 48%,
+    rgba(255, 255, 255, 0.12) 100%
+  );
+  --ps-shadow: 0 42px 90px -32px rgba(0, 8, 20, 0.88),
+    0 0 0 1px rgba(111, 240, 230, 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  --ps-shadow-soft: 0 30px 60px -40px rgba(0, 8, 20, 0.9),
+    inset 0 1px 0 rgba(255, 255, 255, 0.16);
+
+  position: relative;
+  isolation: isolate;
+  color: var(--ps-text);
+  color-scheme: dark;
+  background:
+    radial-gradient(1200px 700px at 8% 12%, rgba(0, 194, 199, 0.28), transparent 58%),
+    radial-gradient(1000px 700px at 92% 88%, rgba(14, 127, 174, 0.5), transparent 62%),
+    radial-gradient(800px 500px at 50% -10%, rgba(111, 240, 230, 0.16), transparent 60%),
+    linear-gradient(135deg, var(--ps-navy-900) 0%, var(--ps-navy-800) 42%, #0a3a5c 72%, var(--ps-blue-700) 100%);
+  background-attachment: fixed;
+}
+
+/* Grilla decorativa (igual al login, pero sin blur) */
+.app-shell::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+  background-size: 54px 54px;
+  mask-image: radial-gradient(circle at 38% 26%, #000 0%, transparent 74%);
+  -webkit-mask-image: radial-gradient(circle at 38% 26%, #000 0%, transparent 74%);
+  opacity: 0.6;
+}
+
+/* Orbes de color (radiales, sin filtros) */
+.app-shell::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(520px 520px at 4% 2%, rgba(111, 240, 230, 0.24), transparent 64%),
+    radial-gradient(620px 620px at 100% 100%, rgba(46, 160, 220, 0.22), transparent 66%),
+    radial-gradient(320px 320px at 76% 22%, rgba(159, 248, 241, 0.12), transparent 68%);
+}
+
+/* Utilidades de Bootstrap que traían el fondo claro */
+.app-shell .bg-light {
+  background-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+.app-shell .bg-white {
+  background-color: #0b3552 !important;
+}
+
+.app-shell .bg-light-subtle {
+  background-color: rgba(111, 240, 230, 0.1) !important;
+}
+
+.app-shell .bg-body,
+.app-shell .bg-body-tertiary {
+  background-color: transparent !important;
+}
+
+/* Mismas utilidades, pero dentro del área clara */
+.app-main .bg-white {
+  background-color: #fffdf8 !important;
+}
+
+.app-main .bg-light {
+  background-color: #f3eee4 !important;
+}
+
+.app-main .bg-light-subtle {
+  background-color: #eefaf9 !important;
+}
+
+.app-main .bg-body,
+.app-main .bg-body-tertiary {
+  background-color: transparent !important;
+}
+
+/* ---------- Área principal ---------- */
+
+/* El contenido pasa a blanco hueso; el sidebar y la barra mobile
+   conservan el azul clínico oscuro. */
+.app-shell > .flex-grow-1 {
+  background:
+    radial-gradient(1200px 700px at 8% 8%, rgba(0, 194, 199, 0.09), transparent 60%),
+    radial-gradient(1000px 700px at 96% 92%, rgba(14, 127, 174, 0.08), transparent 62%),
+    linear-gradient(160deg, #faf7f1 0%, #f5f0e7 58%, #f1ece2 100%);
+  background-attachment: fixed;
+}
+
+.app-main {
+  --ps-text: #22333f;
+  --ps-text-strong: #102a3c;
+  --ps-muted: #586d7b;
+  --ps-muted-soft: #687d8c;
+
+  --ps-line: #e7e0d3;
+  --ps-line-strong: #d8d0c1;
+  --ps-turquoise-line: rgba(0, 154, 160, 0.24);
+
+  --ps-panel: linear-gradient(158deg, #ffffff 0%, #fdfaf5 100%);
+  --ps-panel-strong: linear-gradient(158deg, #ffffff 0%, #f7f2e9 100%);
+  --ps-shadow: 0 30px 60px -34px rgba(38, 51, 63, 0.35),
+    0 0 0 1px rgba(0, 154, 160, 0.05),
+    inset 0 1px 0 #ffffff;
+  --ps-shadow-soft: 0 18px 40px -30px rgba(38, 51, 63, 0.32),
+    inset 0 1px 0 #ffffff;
+
+  color: var(--ps-text);
+  color-scheme: light;
+  background: transparent;
+}
+
+/* ---------- Sidebar ---------- */
+
+.app-sidebar {
+  position: relative;
+  width: 280px;
+  color: #eaf6ff;
+  background:
+    radial-gradient(120% 60% at 0% 0%, rgba(0, 194, 199, 0.24), transparent 58%),
+    radial-gradient(90% 50% at 100% 100%, rgba(14, 127, 174, 0.3), transparent 62%),
+    linear-gradient(
+      158deg,
+      rgba(255, 255, 255, 0.16) 0%,
+      rgba(255, 255, 255, 0.05) 48%,
+      rgba(255, 255, 255, 0.09) 100%
+    );
+  border-right: 1px solid var(--ps-turquoise-line) !important;
+  border-radius: 0 26px 26px 0;
+  box-shadow: 34px 0 70px -50px rgba(0, 8, 20, 0.95),
+    inset 0 1px 0 rgba(255, 255, 255, 0.16);
+}
+
+.offcanvas.app-sidebar {
+  --bs-offcanvas-width: 300px;
+  --bs-offcanvas-bg: #04182b;
+  --bs-offcanvas-color: #eaf6ff;
+  --bs-offcanvas-border-color: var(--ps-turquoise-line);
+  background:
+    radial-gradient(120% 60% at 0% 0%, rgba(0, 194, 199, 0.22), transparent 58%),
+    linear-gradient(180deg, #04182b 0%, #072a45 48%, #0a3a5c 100%);
+  border-radius: 0 22px 22px 0;
+}
+
+/* Marca: mismo isotipo que el login */
+.app-sidebar__brand {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: fit-content;
+  max-width: 100%;
+  margin: 0 auto;
+  padding: 2px 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.app-sidebar__brand .ps-logo {
+  gap: 10px;
+}
+
+.app-sidebar__brand .ps-logo-mark {
+  width: 46px;
+  height: 46px;
+}
+
+.app-sidebar__brand .ps-logo-name {
+  font-size: 1.06rem;
+}
+
+.app-sidebar__brand-wrap {
+  border-color: rgba(255, 255, 255, 0.12) !important;
+}
+
+.app-sidebar__header {
+  border-color: rgba(255, 255, 255, 0.12) !important;
+}
+
+.app-sidebar__header .offcanvas-title {
+  color: #ffffff !important;
+  letter-spacing: 0.02em;
+}
+
+.app-sidebar__header .btn-close {
+  filter: invert(1) grayscale(1) brightness(1.8);
+  opacity: 0.8;
+}
+
+.app-sidebar__divider {
+  border-color: rgba(255, 255, 255, 0.14) !important;
+  opacity: 1;
+}
+
+/* Navegación */
+.app-sidebar .nav-link {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.62rem 0.8rem;
+  border-radius: 13px;
+  color: rgba(232, 245, 255, 0.8) !important;
+  font-weight: 600;
+  transition: background-color 0.18s ease, color 0.18s ease, transform 0.18s ease;
+}
+
+.app-sidebar .nav-link:hover,
+.app-sidebar .hover-bg-light:hover {
+  background-color: rgba(111, 240, 230, 0.12) !important;
+  color: #ffffff !important;
+}
+
+.app-sidebar .nav-link svg {
+  color: var(--ps-turquoise-bright) !important;
+  flex: 0 0 auto;
+}
+
+.app-sidebar .nav-link.active {
+  background: linear-gradient(135deg, #6ff0e6 0%, #22d3d6 44%, #0fa3c4 100%) !important;
+  color: #042a3d !important;
+  font-weight: 800;
+  box-shadow: 0 20px 36px -18px rgba(0, 194, 199, 0.8),
+    inset 0 1px 0 rgba(255, 255, 255, 0.5);
+}
+
+.app-sidebar .nav-link.active svg {
+  color: #042a3d !important;
+}
+
+.app-sidebar .nav-parent-active {
+  background: rgba(111, 240, 230, 0.14) !important;
+  color: #ffffff !important;
+  box-shadow: inset 3px 0 0 var(--ps-turquoise-soft);
+}
+
+.app-sidebar .nav-link.text-secondary {
+  color: rgba(214, 236, 250, 0.7) !important;
+}
+
+.app-sidebar .nav-link.text-info {
+  color: var(--ps-turquoise-soft) !important;
+}
+
+/* Submenús */
+.app-sidebar ul.nav .nav-link {
+  border-radius: 11px;
+}
+
+.app-sidebar .border-start {
+  border-color: rgba(111, 240, 230, 0.26) !important;
+}
+
+.app-sidebar .badge {
+  border-radius: 999px;
+  font-weight: 700;
+}
+
+.app-sidebar .badge.bg-light {
+  background: rgba(4, 42, 61, 0.35) !important;
+  border-color: rgba(255, 255, 255, 0.22) !important;
+  color: #d8f5ff !important;
+}
+
+.app-sidebar .badge.bg-light.text-success {
+  background: rgba(4, 42, 61, 0.45) !important;
+  color: var(--ps-turquoise-bright) !important;
+}
+
+/* Usuario / cerrar sesión */
+.app-sidebar .dropdown-toggle {
+  color: #eaf6ff !important;
+  border-radius: 13px;
+  padding: 0.45rem 0.55rem !important;
+}
+
+.app-sidebar .dropdown-toggle:hover {
+  background: rgba(111, 240, 230, 0.12) !important;
+}
+
+.app-sidebar .dropdown-toggle strong {
+  color: #ffffff;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+}
+
+.app-sidebar .dropdown-toggle small {
+  color: var(--ps-muted) !important;
+}
+
+/* ---------- Barra superior (mobile) ---------- */
+
+.app-topbar {
+  background: linear-gradient(120deg, #04182b 0%, #0b4a73 100%) !important;
+  border-bottom: 1px solid var(--ps-turquoise-line) !important;
+  box-shadow: 0 18px 40px -30px rgba(0, 8, 20, 0.95);
+}
+
+.app-topbar .navbar-toggler,
+.app-topbar .navbar-brand {
+  color: #ffffff !important;
+}
+
+/* ---------- Encabezado de página ---------- */
+
+.page-header {
+  padding: 1.15rem 1.4rem !important;
+  border: 1px solid var(--ps-line) !important;
+  border-radius: 22px;
+  background: var(--ps-panel);
+  box-shadow: var(--ps-shadow-soft);
+}
+
+.page-header h3 {
+  color: var(--ps-text-strong) !important;
+  font-size: 1.45rem;
+  font-weight: 800;
+  letter-spacing: -0.015em;
+}
+
+.page-header h3 svg {
+  color: #0b8f96 !important;
+}
+
+.page-header p {
+  color: var(--ps-muted) !important;
+}
+
+/* ---------- Tarjetas ---------- */
+
+.app-main .card,
+.app-main .accordion-item {
+  color: var(--ps-text);
+  background: var(--ps-panel) !important;
+  border: 1px solid var(--ps-line) !important;
+  border-radius: 20px !important;
+  box-shadow: var(--ps-shadow-soft) !important;
+}
+
+.app-main .card-header,
+.app-main .card-footer {
+  color: var(--ps-text);
+  background: #f8f3ea !important;
+  border-color: var(--ps-line) !important;
+}
+
+/* ---------- Tipografía ---------- */
+
+.app-main :is(h1, h2, h3, h4, h5, h6) {
+  color: var(--ps-text-strong);
+}
+
+.app-main .text-dark:not(.badge),
+.app-main .text-body {
+  color: #1d3341 !important;
+}
+
+.app-main .text-muted,
+.app-main .form-text {
+  color: var(--ps-muted) !important;
+}
+
+.app-main .text-secondary {
+  color: #566b7a !important;
+}
+
+.app-main .text-black-50 {
+  color: var(--ps-muted-soft) !important;
+}
+
+.app-main .fw-semibold,
+.app-main .fw-bold,
+.app-main strong {
+  color: inherit;
+}
+
+/* ---------- Tablas ---------- */
+
+.app-main .table {
+  --bs-table-bg: transparent;
+  --bs-table-color: var(--ps-text);
+  --bs-table-border-color: var(--ps-line);
+  margin-bottom: 0;
+}
+
+.app-main .table > thead th,
+.app-main .table-light th {
+  padding-top: 0.85rem;
+  padding-bottom: 0.85rem;
+  background: #f2ece1 !important;
+  border-bottom: 1px solid var(--ps-line) !important;
+  color: #4a6577 !important;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.07em;
+}
+
+.app-main .table > tbody > tr > td {
+  border-color: var(--ps-line) !important;
+  color: var(--ps-text);
+  padding-top: 0.85rem;
+  padding-bottom: 0.85rem;
+}
+
+.app-main .table-hover > tbody > tr:hover > * {
+  background-color: rgba(0, 178, 184, 0.08) !important;
+  color: #102a3c;
+}
+
+.app-main .table-responsive {
+  border-radius: 14px;
+}
+
+/* ---------- Botones ---------- */
+
+.app-main .btn,
+.modal .btn {
+  border-radius: 13px;
+  font-weight: 600;
+}
+
+.app-main .btn-primary,
+.modal .btn-primary,
+.btn[style*='rgb(0, 172, 178)'],
+.btn[style*='rgb(0,172,178)'] {
+  background: linear-gradient(135deg, #6ff0e6 0%, #22d3d6 44%, #0fa3c4 100%) !important;
+  border: 0 !important;
+  color: #042a3d !important;
+  font-weight: 800;
+  box-shadow: 0 20px 36px -15px rgba(0, 194, 199, 0.72),
+    inset 0 1px 0 rgba(255, 255, 255, 0.5);
+}
+
+.app-main .btn-primary:hover,
+.modal .btn-primary:hover,
+.btn[style*='rgb(0, 172, 178)']:hover {
+  transform: translateY(-2px);
+  filter: brightness(1.05);
+  box-shadow: 0 26px 44px -16px rgba(0, 194, 199, 0.82),
+    inset 0 1px 0 rgba(255, 255, 255, 0.55);
+}
+
+.app-main .btn-outline-secondary,
+.app-main .btn-outline-dark,
+.modal .btn-outline-secondary {
+  --bs-btn-color: #34495a;
+  --bs-btn-border-color: #d8d0c1;
+  --bs-btn-hover-bg: #f2ece1;
+  --bs-btn-hover-border-color: #c9bfae;
+  --bs-btn-hover-color: #102a3c;
+  --bs-btn-active-bg: #ece5d8;
+  --bs-btn-active-border-color: #c0b5a2;
+  --bs-btn-active-color: #102a3c;
+  --bs-btn-disabled-color: #9aa8b3;
+  --bs-btn-disabled-border-color: #e7e0d3;
+  background: #ffffff;
+}
+
+.app-main .btn-outline-primary,
+.modal .btn-outline-primary {
+  --bs-btn-color: #0a7f86;
+  --bs-btn-border-color: rgba(10, 127, 134, 0.32);
+  --bs-btn-hover-bg: rgba(0, 194, 199, 0.12);
+  --bs-btn-hover-border-color: rgba(10, 127, 134, 0.45);
+  --bs-btn-hover-color: #075f66;
+  --bs-btn-active-bg: rgba(0, 194, 199, 0.18);
+  --bs-btn-active-border-color: rgba(10, 127, 134, 0.5);
+  --bs-btn-active-color: #075f66;
+}
+
+.app-main .btn-outline-danger {
+  --bs-btn-color: #b3453f;
+  --bs-btn-border-color: rgba(179, 69, 63, 0.3);
+  --bs-btn-hover-bg: #fbeceb;
+  --bs-btn-hover-border-color: #dda39f;
+  --bs-btn-hover-color: #8f2f2a;
+  --bs-btn-active-bg: #f7dddb;
+  --bs-btn-active-border-color: #d18d88;
+  --bs-btn-active-color: #8f2f2a;
+}
+
+.btn-action-edit {
+  border: 1px solid rgba(10, 127, 134, 0.3) !important;
+  color: #0a7f86 !important;
+  background: #eefafa !important;
+}
+
+.btn-action-edit:hover {
+  background: #e0f5f6 !important;
+  color: #075f66 !important;
+  border-color: rgba(10, 127, 134, 0.45) !important;
+}
+
+.app-main .btn-light {
+  background: #f1ece2 !important;
+  border-color: #e3dccd !important;
+  color: #33475a !important;
+}
+
+.app-main .btn-close,
+.modal .btn-close {
+  filter: none;
+}
+
+/* ---------- Formularios ---------- */
+
+.app-main .form-control,
+.app-main .form-select,
+.modal .form-control,
+.modal .form-select {
+  border: 1px solid #d8d0c1;
+  border-radius: 13px;
+  background-color: #ffffff;
+  color: #1c2f3d;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6);
+}
+
+.app-main .form-control::placeholder,
+.modal .form-control::placeholder {
+  color: #8b9aa7;
+  font-weight: 400;
+}
+
+.app-main .form-control:focus,
+.app-main .form-select:focus,
+.modal .form-control:focus,
+.modal .form-select:focus {
+  border-color: #12a7ae;
+  background-color: #ffffff;
+  color: #102a3c;
+  box-shadow: 0 0 0 4px rgba(0, 194, 199, 0.16),
+    inset 0 1px 0 rgba(255, 255, 255, 0.7);
+}
+
+.app-main .form-control:disabled,
+.app-main .form-control[readonly],
+.app-main .form-select:disabled {
+  background-color: #f3eee4;
+  color: var(--ps-muted);
+}
+
+.app-main .form-select {
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%235a6b7a' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right 0.85rem center;
+  background-size: 15px 11px;
+}
+
+.modal .form-select {
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%235a6b7a' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right 0.85rem center;
+  background-size: 15px 11px;
+}
+
+.app-main .form-label,
+.modal .form-label {
+  margin-bottom: 0.4rem;
+  color: #5a6b7a;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.app-main .input-group-text,
+.modal .input-group-text {
+  border-color: #d8d0c1;
+  background: #f5f0e7;
+  color: #445a68;
+}
+
+.app-main .form-check-input {
+  background-color: #ffffff;
+  border-color: #b9b0a2;
+}
+
+.app-main .form-check-input:checked {
+  background-color: var(--ps-turquoise);
+  border-color: var(--ps-turquoise);
+}
+
+.app-main .form-check-label {
+  color: #33475a;
+}
+
+.app-main .form-range::-webkit-slider-runnable-track {
+  background-color: #ded7c9;
+}
+
+/* ---------- Badges ---------- */
+
+.app-main .badge,
+.modal .badge {
+  border-radius: 999px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+}
+
+.app-main .badge.bg-light,
+.modal .badge.bg-light {
+  background: #f0ebe1 !important;
+  border-color: #ddd5c7 !important;
+  color: #2b3d4a !important;
+}
+
+.app-main .badge.bg-white {
+  background: #ffffff !important;
+  border: 1px solid #e0d9cc;
+  color: #2b3d4a !important;
+}
+
+/* Badges "subtle" de Bootstrap sobre el área clara */
+.app-main .badge.bg-success-subtle,
+.modal .badge.bg-success-subtle {
+  background: #e6f7ee !important;
+  border: 1px solid #b9e6cf;
+  color: #0f6b46 !important;
+}
+
+.app-main .badge.bg-primary-subtle,
+.modal .badge.bg-primary-subtle {
+  background: #e6f6f7 !important;
+  border: 1px solid #b8e3e5;
+  color: #0a6b71 !important;
+}
+
+.app-main .badge.bg-warning-subtle,
+.modal .badge.bg-warning-subtle {
+  background: #fff5e0 !important;
+  border: 1px solid #f0d9a8;
+  color: #8a5a00 !important;
+}
+
+.app-main .badge.bg-info-subtle,
+.modal .badge.bg-info-subtle {
+  background: #e5f6f9 !important;
+  border: 1px solid #b6e2ea;
+  color: #0b6573 !important;
+}
+
+.app-main .badge.bg-danger-subtle,
+.modal .badge.bg-danger-subtle {
+  background: #fdeaea !important;
+  border: 1px solid #f3c3c3;
+  color: #9b2c2c !important;
+}
+
+.app-main .badge.bg-secondary-subtle,
+.modal .badge.bg-secondary-subtle {
+  background: #f1f0ec !important;
+  border: 1px solid #d9d5cb;
+  color: #46525c !important;
+}
+
+/* Avatar con iniciales: el blanco sobre turquesa no llegaba al contraste mínimo */
+.app-main .rounded-circle[style*='rgb(0, 172, 178)'],
+.app-main .rounded-circle[style*='rgb(0,172,178)'] {
+  background-image: linear-gradient(135deg, #6ff0e6 0%, #22d3d6 44%, #0fa3c4 100%) !important;
+  color: #042a3d !important;
+}
+
+/* Chips/íconos con fondo turquesa fijo: texto oscuro para contraste */
+.app-main .text-white[style*='rgb(0, 172, 178)'],
+.app-main .text-white[style*='rgb(0,172,178)'] {
+  color: #042a3d !important;
+}
+
+/* ---------- Alertas ---------- */
+
+.app-main .alert {
+  border-radius: 14px;
+  border-width: 1px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+.app-main .alert-danger {
+  background: #fdeceb;
+  border-color: #f0c4c1;
+  color: #8f2f2a;
+}
+
+.app-main .alert-warning {
+  background: #fff6e2;
+  border-color: #efd9a8;
+  color: #7d5600;
+}
+
+.app-main .alert-info {
+  background: #e8f8f9;
+  border-color: #bce4e8;
+  color: #0a6269;
+}
+
+.app-main .alert-success {
+  background: #e9f8f1;
+  border-color: #bfe7d3;
+  color: #0f6343;
+}
+
+.app-main .alert-light {
+  background: #f7f2e9;
+  border-color: var(--ps-line);
+  color: var(--ps-text);
+}
+
+/* ---------- Dropdowns / modales / offcanvas ---------- */
+
+.app-shell .dropdown-menu {
+  background: #0b3552;
+  border: 1px solid var(--ps-line);
+  border-radius: 14px;
+  box-shadow: 0 34px 70px -40px rgba(0, 8, 20, 0.95);
+}
+
+.app-shell .dropdown-item {
+  color: #e6f3ff;
+  border-radius: 9px;
+}
+
+.app-shell .dropdown-item:hover,
+.app-shell .dropdown-item:focus {
+  background: rgba(111, 240, 230, 0.14);
+  color: #ffffff;
+}
+
+.app-shell .dropdown-divider {
+  border-color: var(--ps-line);
+}
+
+.modal-content {
+  background: linear-gradient(158deg, #ffffff 0%, #fbf7ef 100%);
+  border: 1px solid #e7e0d3;
+  border-radius: 22px;
+  color: #22333f;
+  box-shadow: 0 42px 90px -38px rgba(38, 51, 63, 0.5),
+    inset 0 1px 0 #ffffff;
+}
+
+.modal-header,
+.modal-footer {
+  border-color: #e7e0d3;
+}
+
+.modal-title {
+  color: #102a3c;
+}
+
+.modal .btn-close {
+  filter: none;
+}
+
+/* ---------- Listas, tabs y paginación ---------- */
+
+.app-main .list-group-item {
+  background: transparent;
+  border-color: var(--ps-line);
+  color: var(--ps-text);
+}
+
+.app-main .list-group-item-action:hover {
+  background: rgba(0, 178, 184, 0.08);
+  color: #102a3c;
+}
+
+.app-main .nav-tabs {
+  border-color: var(--ps-line);
+}
+
+.app-main .nav-tabs .nav-link {
+  color: var(--ps-muted);
+  border-color: transparent;
+}
+
+.app-main .nav-tabs .nav-link.active {
+  background: #f2ece1;
+  border-color: var(--ps-line) var(--ps-line) transparent;
+  color: #102a3c;
+}
+
+.app-main .page-link {
+  background: #ffffff;
+  border-color: var(--ps-line);
+  color: #33475a;
+}
+
+.app-main .page-item.active .page-link {
+  background: linear-gradient(135deg, #6ff0e6 0%, #22d3d6 44%, #0fa3c4 100%);
+  border-color: transparent;
+  color: #042a3d;
+}
+
+/* ---------- Detalles finos ---------- */
+
+.app-main a {
+  color: #0a7f86;
+}
+
+.app-main a:hover {
+  color: #075f66;
+}
+
+.app-main hr {
+  border-color: var(--ps-line);
+  opacity: 1;
+}
+
+.app-main .border,
+.app-main .border-top,
+.app-main .border-bottom,
+.app-main .border-start,
+.app-main .border-end,
+.app-main .border-secondary-subtle {
+  border-color: var(--ps-line) !important;
+}
+
+.app-main .border-info {
+  border-color: var(--ps-turquoise-line) !important;
+}
+
+.app-main .shadow-sm,
+.app-main .shadow {
+  box-shadow: 0 14px 30px -26px rgba(38, 51, 63, 0.5) !important;
+}
+
+.app-shell ::selection {
+  background: rgba(0, 194, 199, 0.35);
+  color: #ffffff;
+}
+
+.app-main ::selection {
+  background: rgba(0, 194, 199, 0.24);
+  color: #102a3c;
+}
+
+.app-main::-webkit-scrollbar,
+.app-shell ::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+.app-main::-webkit-scrollbar-thumb,
+.app-shell ::-webkit-scrollbar-thumb {
+  background: rgba(159, 248, 241, 0.35);
+  border: 3px solid transparent;
+  background-clip: content-box;
+  border-radius: 999px;
+}
+
+.app-main::-webkit-scrollbar-thumb {
+  background: rgba(10, 127, 134, 0.3);
+  background-clip: content-box;
+}
+
+.app-main::-webkit-scrollbar-track,
+.app-shell ::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* ---------- Responsive ---------- */
+
+@media (max-width: 991.98px) {
+  .app-sidebar {
+    border-radius: 0;
+    box-shadow: none;
+  }
+
+  .app-main {
+    padding: 1rem !important;
+  }
+
+  .page-header {
+    padding: 1rem 1.1rem !important;
+    border-radius: 18px;
+  }
+}
+
+@media (max-width: 575.98px) {
+  .app-main {
+    padding: 0.75rem !important;
+  }
+
+  .page-header h3 {
+    font-size: 1.25rem;
+  }
+
+  .app-main .card {
+    border-radius: 16px !important;
+  }
+}
+
+/* ---------- Página 404 ---------- */
+/* NotFound se renderiza fuera de .app-shell, por eso se reestiliza
+   desde #root para no modificar el componente compartido. */
+
+#root > .container {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  display: flex;
+  width: 100%;
+  max-width: none;
+  padding: 0;
+  overflow-y: auto;
+  color: #22333f;
+  color-scheme: light;
+  background:
+    radial-gradient(1200px 700px at 8% 8%, rgba(0, 194, 199, 0.09), transparent 60%),
+    radial-gradient(1000px 700px at 96% 92%, rgba(14, 127, 174, 0.08), transparent 62%),
+    linear-gradient(160deg, #faf7f1 0%, #f5f0e7 58%, #f1ece2 100%);
+  background-attachment: fixed;
+}
+
+#root > .container > .row {
+  width: 100%;
+  margin: auto;
+  padding: clamp(24px, 6vh, 56px) clamp(16px, 4vw, 40px);
+}
+
+#root > .container .card.bg-white {
+  border: 1px solid #e7e0d3 !important;
+  border-radius: 26px !important;
+  color: #22333f !important;
+  background: linear-gradient(158deg, #ffffff 0%, #fdfaf5 100%) !important;
+  box-shadow:
+    0 42px 90px -38px rgba(38, 51, 63, 0.45),
+    inset 0 1px 0 #ffffff;
+}
+
+#root > .container .text-dark {
+  color: #102a3c !important;
+}
+
+#root > .container .text-muted {
+  color: #586d7b !important;
+}
+
+#root > .container .rounded-circle {
+  background-color: rgba(0, 154, 160, 0.12) !important;
+  border: 1px solid rgba(0, 154, 160, 0.28);
+}
+
+#root > .container .btn[style*='rgb(0, 172, 178)'] {
+  border: 0 !important;
+  background-image: linear-gradient(135deg, #6ff0e6 0%, #22d3d6 44%, #0fa3c4 100%) !important;
+  background-color: transparent !important;
+  color: #042a3d !important;
+  box-shadow:
+    0 20px 36px -15px rgba(0, 194, 199, 0.72),
+    inset 0 1px 0 rgba(255, 255, 255, 0.5);
+}
+
+#root > .container .btn[style*='rgb(0, 172, 178)']:hover {
+  filter: brightness(1.05);
+}
+
+/* ---------- Accesibilidad ---------- */
+
+@media (prefers-reduced-motion: reduce) {
+  .app-sidebar .nav-link,
+  .app-main .btn {
+    transition: none;
+  }
+}

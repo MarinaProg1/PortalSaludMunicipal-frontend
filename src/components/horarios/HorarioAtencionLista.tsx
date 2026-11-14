@@ -3,12 +3,15 @@ import { ActionButtons } from '../../constants/ActionButtons';
 import {  BsPlusCircle,  BsSearch,  BsClockHistory,  BsChevronDown,  BsChevronUp,  BsCalendarCheck } from 'react-icons/bs';
 import { useNavigate } from 'react-router-dom';
 import clientesAxios from '../../config/axios';
+import { useAuth } from '../../context/AuthContext';
 import { HorarioAtencionSkeleton } from './HorarioAtencionSkeleton';
 import type { HorarioItem, MedicoAgrupado } from './horario.schema';
 
 
 export const HorarioAtencionLista: React.FC = () => {
   const navigate = useNavigate();
+  const { rol } = useAuth();
+  const puedeAdministrar = ['ADMIN', 'RECEPCIONISTA'].includes((rol || '').toUpperCase());
   const [horarios, setHorarios] = useState<HorarioItem[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -138,6 +141,7 @@ export const HorarioAtencionLista: React.FC = () => {
           className="btn text-white fw-semibold d-flex align-items-center justify-content-center gap-2 shadow-sm"
           style={{ backgroundColor: '#00ACB2', borderRadius: '10px', padding: '10px 18px' }}
           onClick={() => navigate('/horarioAtencion/nuevo')}
+          hidden={!puedeAdministrar}
         >
           <BsPlusCircle size={18} />
           Nuevo Horario
@@ -247,8 +251,8 @@ export const HorarioAtencionLista: React.FC = () => {
                                 <td className="text-end px-3">
                                   <ActionButtons 
                                     onView={() => handleView(horarioId)}
-                                    onEdit={() => handleEdit(horarioId)}
-                                    onDelete={() => handleDelete(horarioId)}
+                                    onEdit={puedeAdministrar ? () => handleEdit(horarioId) : undefined}
+                                    onDelete={puedeAdministrar ? () => handleDelete(horarioId) : undefined}
                                   />
                                 </td>
                               </tr>

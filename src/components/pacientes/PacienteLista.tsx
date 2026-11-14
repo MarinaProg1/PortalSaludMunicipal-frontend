@@ -7,10 +7,13 @@ import { pacienteService } from '../../services/paciente.service';
 import { obraSocialService } from '../../services/obraSocial.service';
 import { getPacienteId, type PacienteItem } from './paciente.schema';
 import type { ObraSocialItem } from '../obrasSociales/obraSocial.schema';
+import { useAuth } from '../../context/AuthContext';
 import toast from 'react-hot-toast';
 
 export const PacienteLista: React.FC = () => {
   const navigate = useNavigate();
+  const { rol } = useAuth();
+  const puedeAdministrar = ['ADMIN', 'RECEPCIONISTA'].includes((rol || '').toUpperCase());
   const [items, setItems] = useState<PacienteItem[]>([]);
   const [obras, setObras] = useState<ObraSocialItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -83,13 +86,15 @@ export const PacienteLista: React.FC = () => {
         icon={<BsHeartPulse className="me-2" style={{ color: '#00ACB2' }} />}
         onBack={() => navigate(-1)}
         rightContent={
-          <button
-            className="btn text-white fw-semibold d-flex align-items-center gap-2 shadow-sm"
-            style={{ backgroundColor: '#00ACB2', borderRadius: '10px' }}
-            onClick={() => navigate('/pacientes/nuevo')}
-          >
-            <BsPlusCircle size={18} /> Nuevo Paciente
-          </button>
+          puedeAdministrar ? (
+            <button
+              className="btn text-white fw-semibold d-flex align-items-center gap-2 shadow-sm"
+              style={{ backgroundColor: '#00ACB2', borderRadius: '10px' }}
+              onClick={() => navigate('/pacientes/nuevo')}
+            >
+              <BsPlusCircle size={18} /> Nuevo Paciente
+            </button>
+          ) : undefined
         }
       />
 
@@ -147,8 +152,8 @@ export const PacienteLista: React.FC = () => {
                       <td className="text-end px-4">
                         <ActionButtons
                           onView={() => navigate(`/pacientes/${id}`)}
-                          onEdit={() => navigate(`/pacientes/editar/${id}`)}
-                          onDelete={() => handleDelete(id)}
+                          onEdit={puedeAdministrar ? () => navigate(`/pacientes/editar/${id}`) : undefined}
+                          onDelete={puedeAdministrar ? () => handleDelete(id) : undefined}
                         />
                       </td>
                     </tr>
