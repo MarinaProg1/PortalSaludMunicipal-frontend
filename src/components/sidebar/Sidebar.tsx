@@ -24,7 +24,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ userRole }) => {
         >
           <BsList size={24} />
         </button>
-        <span className="navbar-brand mb-0 h6 text-white fw-bold">SALITA MUNICIPAL</span>
+        <span className="navbar-brand mb-0 h6 text-white fw-bold">PORTAL SALUD</span>
       </nav>
 
       {/* 2. Sidebar fijo para Escritorio */}
