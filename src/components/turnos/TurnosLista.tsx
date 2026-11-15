@@ -8,9 +8,14 @@ import type { TurnoItem } from './turno.schema';
 import { PageHeader } from '../../constants/PageHeader';
 import { toast } from 'sonner';
 import { isAxiosError } from 'axios';
+import { useAuth } from '../../context/AuthContext';
 
 export const TurnosLista: React.FC = () => {
   const navigate = useNavigate();
+  const { rol } = useAuth();
+  const rolActual = (rol || '').toUpperCase();
+  const esMedico = rolActual === 'MEDICO';
+  const puedeAdministrar = ['ADMIN', 'RECEPCIONISTA'].includes(rolActual);
   const [turnos, setTurnos] = useState<TurnoItem[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -57,7 +62,8 @@ export const TurnosLista: React.FC = () => {
   }, []);
 
   const handleView = (id: string) => {
-    navigate(`/turno-detalle/${id}`);
+    // El medico abre la pantalla de atencion en lugar del detalle administrativo.
+    navigate(esMedico ? `/atencion/${id}` : `/turno-detalle/${id}`);
   };
 
   const handleEdit = (id: string) => {
@@ -79,6 +85,12 @@ export const TurnosLista: React.FC = () => {
 
   // Función para marcar turno como atendido
   const handleMarcarAtendido = async (id: string) => {
+    // El medico atiende desde la pantalla clinica (carga consulta + cierra turno).
+    if (esMedico) {
+      navigate(`/atencion/${id}`);
+      return;
+    }
+
     try {
       const response = await clientesAxios.patch(`/turnos/${id}/atendido`);
       
@@ -156,14 +168,16 @@ export const TurnosLista: React.FC = () => {
         icon={<BsCalendarCheck className="me-2" style={{ color: '#00ACB2' }} />}
         onBack={() => navigate(-1)}
         rightContent={
-          <button 
-            className="btn text-white fw-semibold d-flex align-items-center justify-content-center gap-2 shadow-sm"
-            style={{ backgroundColor: '#00ACB2', borderRadius: '10px', padding: '8px 16px' }}
-            onClick={() => navigate('/turnos/nuevo')} 
-          >
-            <BsPlusCircle size={18} />
-            Asignar Nuevo Turno
-          </button>
+          puedeAdministrar ? (
+            <button
+              className="btn text-white fw-semibold d-flex align-items-center justify-content-center gap-2 shadow-sm"
+              style={{ backgroundColor: '#00ACB2', borderRadius: '10px', padding: '8px 16px' }}
+              onClick={() => navigate('/turnos/nuevo')}
+            >
+              <BsPlusCircle size={18} />
+              Asignar Nuevo Turno
+            </button>
+          ) : undefined
         }
       />
 
@@ -199,6 +213,8 @@ export const TurnosLista: React.FC = () => {
           {turnosFiltrados.map((turno) => {
             const estadoLower = turno.estado?.toLowerCase() || '';
             const turnoEsDeHoy = esDeHoy(turno.fecha);
+            const estaActivo = estadoLower === 'pendiente' || estadoLower === 'confirmado';
+            const puedeAtender = estaActivo && (esMedico || turnoEsDeHoy || Boolean(turno.vencido));
 
             return (
               <div className="col-12 col-md-6" key={turno.id}>
@@ -213,14 +229,21 @@ export const TurnosLista: React.FC = () => {
                           {turno.paciente?.nombre} {turno.paciente?.apellido}
                         </h6>
                       </div>
-                      <span className={`badge px-2 py-1 text-uppercase ${
-                        estadoLower === 'confirmado' ? 'bg-success-subtle text-success' :
-                        estadoLower === 'pendiente' ? 'bg-warning-subtle text-warning text-dark' :
-                        estadoLower === 'atendido' ? 'bg-info-subtle text-info fw-bold' :
-                        'bg-danger-subtle text-danger'
-                      }`}>
-                        {turno.estado}
-                      </span>
+                      <div className="d-flex flex-column align-items-end gap-1">
+                        <span className={`badge px-2 py-1 text-uppercase ${
+                          estadoLower === 'confirmado' ? 'bg-success-subtle text-success' :
+                          estadoLower === 'pendiente' ? 'bg-warning-subtle text-warning text-dark' :
+                          estadoLower === 'atendido' || estadoLower === 'finalizado' ? 'bg-info-subtle text-info fw-bold' :
+                          'bg-danger-subtle text-danger'
+                        }`}>
+                          {turno.estado}
+                        </span>
+                        {turno.vencido && (
+                          <span className="badge bg-danger-subtle text-danger text-uppercase">
+                            Vencido
+                          </span>
+                        )}
+                      </div>
                     </div>
 
                     <hr className="my-2 border-secondary-subtle" />
@@ -254,26 +277,26 @@ export const TurnosLista: React.FC = () => {
                   {/* Pie de tarjeta: Botón de Atender + Botones de Acción */}
                   <div className="d-flex align-items-center justify-content-between pt-2 border-top border-secondary-subtle">
                     
-                    {/*Botón Se muestra únicamente si NO está atendido Y la fecha es estrictamente HOY */}
+                    {/*Botón Atender: el medico abre la pantalla clinica; el personal cierra el turno */}
                     <div>
-                      {estadoLower !== 'atendido' && turnoEsDeHoy && (
+                      {puedeAtender && (
                         <button
                           className="btn btn-sm btn-outline-success d-flex align-items-center gap-1 px-2 py-1 fw-semibold"
                           style={{ borderRadius: '6px', fontSize: '0.8rem' }}
                           onClick={() => handleMarcarAtendido(turno.id)}
-                          title="Marcar turno como atendido"
+                          title={esMedico ? 'Abrir atención del paciente' : 'Marcar turno como atendido'}
                         >
                           <BsCheckCircle size={14} />
-                          Atender
+                          {esMedico ? 'Atender' : turno.vencido ? 'Cerrar vencido' : 'Atender'}
                         </button>
                       )}
                     </div>
 
-                    {/* Botones estándar (Ver, Editar, Eliminar) */}
-                    <ActionButtons 
+                    {/* Botones estándar (Ver siempre; Editar/Eliminar solo ADMIN y RECEPCIONISTA) */}
+                    <ActionButtons
                       onView={() => handleView(turno.id)}
-                      onEdit={() => handleEdit(turno.id)}
-                      onDelete={() => handleDelete(turno.id)}
+                      onEdit={puedeAdministrar ? () => handleEdit(turno.id) : undefined}
+                      onDelete={puedeAdministrar ? () => handleDelete(turno.id) : undefined}
                     />
 
                   </div>

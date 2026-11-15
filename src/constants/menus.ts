@@ -1,13 +1,11 @@
 import type { IconType } from 'react-icons';
 import { 
   BsCalendarCheck, 
-  BsFileEarmarkText, 
   BsHeartPulse, 
   BsCapsule, 
   BsPeople, 
   BsShieldLock, 
   BsHospital,
-  BsJournalMedical,
   BsCheckCircle,
   BsPersonCircle
 } from 'react-icons/bs';
@@ -86,11 +84,17 @@ export const roleMenus: Record<UserRole, MenuItem[]> = {
   ],
 
   MEDICO: [
-    { id: 'turnos', label: 'Mis Turnos', icon: BsCalendarCheck, path: '/turnos' },
+    {
+      id: 'pacientes-grupo',
+      label: 'Pacientes',
+      icon: BsHeartPulse,
+      children: [
+        { id: 'pacientes-por-atender', label: 'Por atender', path: '/mis-pacientes/por-atender' },
+        { id: 'pacientes-atendidos', label: 'Atendidos', path: '/mis-pacientes/atendidos' },
+        { id: 'pacientes-listado', label: 'Todos mis pacientes', path: '/pacientes' },
+      ]
+    },
     { id: 'horarios-atencion', label: 'Horarios de Atención', icon: BsCheckCircle, path: '/horarioAtencion' },
-    { id: 'pacientes', label: 'Pacientes', icon: BsHeartPulse, path: '/pacientes' },
-    { id: 'consultas', label: 'Consultas Médicas', icon: BsJournalMedical, path: '#' },
-    { id: 'historias-clinicas', label: 'Historia Clínica', icon: BsFileEarmarkText, path: '#' },
   ],
 
   PACIENTE: [

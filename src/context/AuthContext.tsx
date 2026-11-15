@@ -62,7 +62,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       window.location.href = "/cambiar-password";
     } else {
       const payload = decodeJwt(newToken);
-      const destino = (payload?.rol || "").toUpperCase() === "PACIENTE" ? "/mis-turnos" : "/turnos";
+      const rolActual = (payload?.rol || "").toUpperCase();
+      const destino =
+        rolActual === "PACIENTE"
+          ? "/mis-turnos"
+          : rolActual === "MEDICO"
+            ? "/mis-pacientes/por-atender"
+            : "/turnos";
       window.location.href = destino;
     }
   };
