@@ -22,13 +22,13 @@ import { TurnoPacienteForm } from "../components/pacientePortal/TurnoPacienteFor
 import { DetalleTurnoPaciente } from "../components/pacientePortal/DetalleTurnoPaciente";
 import { RequireRole } from "./RequireRole";
 import NotFound from "../components/utils/NotFound";
-import { ConfiguracionView } from "../components/configuraciones/ConfiguracionView";
 import { EspecialidadesLista } from "../components/especialidades/EspecialidadLista";
 import { EspecialidadForm } from "../components/especialidades/EspecialidadForm";
 import { DetalleEspecialidad } from "../components/especialidades/DetalleEspecialidad";
 import { HistorialMedicoLista } from "../components/historialMedico/HistorialMedicoLista";
 import { HistorialMedicoForm } from "../components/historialMedico/HistorialMedicoForm";
 import { DetalleHistorialMedico } from "../components/historialMedico/DetalleHistorialMedico";
+import { PerfilView } from "../components/Perfil/PerfilView";
 
 const EdicionTurnoWrapper = () => {
   const { id } = useParams<{ id: string }>();
@@ -120,7 +120,7 @@ const AppRouter = () => {
 
           <Route path="horarioAtencion" element={<HorarioAtencionLista />} />
           <Route path="horarioAtencion/nuevo" element={<RequireRole allowed={["ADMIN", "RECEPCIONISTA"]}><HorarioAtencionForm /></RequireRole>} />
-          <Route path="configuracion" element={<ConfiguracionView />} />
+          <Route path="perfil" element={<PerfilView />} />
 
           <Route path="obras-sociales" element={<RequireRole allowed={["ADMIN", "RECEPCIONISTA"]}><ObraSocialLista /></RequireRole>} />
           <Route path="obras-sociales/nuevo" element={<RequireRole allowed={["ADMIN", "RECEPCIONISTA"]}><ObraSocialForm /></RequireRole>} />

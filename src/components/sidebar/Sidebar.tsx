@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { roleMenus } from '../../constants/menus';
 import type { UserRole, MenuItem } from '../../constants/menus';
 import { Link, useLocation } from 'react-router-dom';
@@ -9,8 +9,12 @@ import { useAuth } from '../../context/AuthContext';
 interface SidebarProps {
   userRole: UserRole;
 }
+interface SidebarContentProps {
+  userRole: UserRole;
+  isMobile?: boolean;
+}
 
-export const Sidebar: React.FC<SidebarProps> = ({ userRole }) => {
+export function Sidebar({ userRole }: SidebarProps) {
   return (
     <>
       {/* 1. Botón hamburguesa fijo superior para celulares */}
@@ -52,14 +56,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ userRole }) => {
       </div>
     </>
   );
-};
-
-interface SidebarContentProps {
-  userRole: UserRole;
-  isMobile?: boolean;
 }
 
-const SidebarContent: React.FC<SidebarContentProps> = ({ userRole, isMobile = false }) => {
+function SidebarContent({ userRole, isMobile = false }: SidebarContentProps) {
   const location = useLocation();
   const { logout } = useAuth();
   const normalizedRole = (userRole || 'ADMIN').toUpperCase() as UserRole;
@@ -69,7 +68,7 @@ const SidebarContent: React.FC<SidebarContentProps> = ({ userRole, isMobile = fa
   const [menuAbierto, setMenuAbierto] = useState<string | null>(null);
 
   const toggleSubmenu = (id: string) => {
-    setMenuAbierto(prev => (prev === id ? null : id));
+    setMenuAbierto((prev) => (prev === id ? null : id));
   };
 
   return (
@@ -190,7 +189,7 @@ const SidebarContent: React.FC<SidebarContentProps> = ({ userRole, isMobile = fa
 
         <ul className="dropdown-menu shadow w-100" aria-labelledby="dropdownUser1">
           <li>
-            <Link className="dropdown-item" to="/configuracion" {...(isMobile ? { 'data-bs-dismiss': 'offcanvas' } : {})}>
+            <Link className="dropdown-item" to="/perfil" {...(isMobile ? { 'data-bs-dismiss': 'offcanvas' } : {})}>
               Configuración
             </Link>
           </li>
@@ -207,4 +206,4 @@ const SidebarContent: React.FC<SidebarContentProps> = ({ userRole, isMobile = fa
       </div>
     </div>
   );
-};
+}
