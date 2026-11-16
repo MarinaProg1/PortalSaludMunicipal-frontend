@@ -32,6 +32,15 @@ clientesAxios.interceptors.response.use(
         const esIntentoDeLogin =
             typeof error.config?.url === 'string' && error.config.url.includes('/auth/login');
 
+        // 403 con codigo: el backend exige cambiar la contrasena antes de seguir.
+        const codigo = error.response?.data?.data?.code;
+        if (error.response?.status === 403 && codigo === 'DEBE_CAMBIAR_PASSWORD') {
+            if (window.location.pathname !== '/cambiar-password') {
+                window.location.href = '/cambiar-password';
+            }
+            return Promise.reject(error);
+        }
+
         // En el login, un 401 significa credenciales incorrectas: dejamos que la
         // pantalla muestre el toast y NO recargamos (eso borraria el mensaje).
         if (error.response && error.response.status === 401 && !esIntentoDeLogin) {

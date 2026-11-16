@@ -28,12 +28,14 @@ export const PacienteDetalle: React.FC = () => {
   const navigate = useNavigate();
   const { rol } = useAuth();
   const puedeAdministrar = ['ADMIN', 'RECEPCIONISTA'].includes((rol || '').toUpperCase());
+  const esMedico = (rol || '').toUpperCase() === 'MEDICO';
   const [paciente, setPaciente] = useState<PacienteItem | null>(null);
   const [loading, setLoading] = useState(true);
 
   const [turnos, setTurnos] = useState<PacienteTurno[]>([]);
   const [consultas, setConsultas] = useState<PacienteConsulta[]>([]);
-  const [verHistorial, setVerHistorial] = useState(false);
+  // El medico necesita el historial clinico completo desde el primer render.
+  const [verHistorial, setVerHistorial] = useState(esMedico);
   const [cargandoHistorial, setCargandoHistorial] = useState(true);
 
   useEffect(() => {
@@ -117,13 +119,15 @@ export const PacienteDetalle: React.FC = () => {
         onBack={() => navigate(-1)}
         rightContent={
           <div className="d-flex gap-2">
-            <button
-              className="btn btn-outline-secondary fw-semibold d-flex align-items-center gap-2"
-              style={{ borderRadius: '10px' }}
-              onClick={() => navigate(`/turnos/nuevo?paciente=${id}`)}
-            >
-              <BsCalendarPlus size={18} /> Sacar turno
-            </button>
+            {puedeAdministrar && (
+              <button
+                className="btn btn-outline-secondary fw-semibold d-flex align-items-center gap-2"
+                style={{ borderRadius: '10px' }}
+                onClick={() => navigate(`/turnos/nuevo?paciente=${id}`)}
+              >
+                <BsCalendarPlus size={18} /> Sacar turno
+              </button>
+            )}
             <button
               className="btn text-white fw-semibold d-flex align-items-center gap-2 shadow-sm"
               style={{ backgroundColor: '#00ACB2', borderRadius: '10px' }}
@@ -187,21 +191,25 @@ export const PacienteDetalle: React.FC = () => {
                   <BsJournalMedical style={{ color: '#00ACB2' }} />
                   <h6 className="fw-bold text-dark mb-0">Turnos y consultas</h6>
                 </div>
-                <button
-                  type="button"
-                  className="btn btn-outline-secondary btn-sm fw-semibold"
-                  style={{ borderRadius: '8px' }}
-                  onClick={() => setVerHistorial((valor) => !valor)}
-                  disabled={cargandoHistorial}
-                >
-                  {verHistorial ? 'Ver últimos 30 días' : 'Ver historial completo'}
-                </button>
+                {!esMedico && (
+                  <button
+                    type="button"
+                    className="btn btn-outline-secondary btn-sm fw-semibold"
+                    style={{ borderRadius: '8px' }}
+                    onClick={() => setVerHistorial((valor) => !valor)}
+                    disabled={cargandoHistorial}
+                  >
+                    {verHistorial ? 'Ver últimos 30 días' : 'Ver historial completo'}
+                  </button>
+                )}
               </div>
 
               <small className="text-muted d-block mb-3">
-                {verHistorial
-                  ? 'Mostrando todo el historial de turnos.'
-                  : 'Mostrando turnos futuros y los de los últimos 30 días.'}
+                {esMedico
+                  ? 'Historial clínico completo del paciente.'
+                  : verHistorial
+                    ? 'Mostrando todo el historial de turnos.'
+                    : 'Mostrando turnos futuros y los de los últimos 30 días.'}
               </small>
 
               {cargandoHistorial ? (
@@ -234,9 +242,16 @@ export const PacienteDetalle: React.FC = () => {
                             </span>
                             <span className="text-muted">{turno.especialidad?.nombre || '-'}</span>
                           </div>
-                          <span className={`badge px-2 py-1 text-uppercase ${estadoTurnoClase(turno.estado || '')}`}>
-                            {turno.estado || '-'}
-                          </span>
+                          <div className="d-flex flex-column align-items-end gap-1">
+                            <span className={`badge px-2 py-1 text-uppercase ${estadoTurnoClase(turno.estado || '')}`}>
+                              {turno.estado || '-'}
+                            </span>
+                            {turno.vencido && (
+                              <span className="badge bg-danger-subtle text-danger text-uppercase">
+                                Vencido
+                              </span>
+                            )}
+                          </div>
                         </div>
 
                         {turno.observaciones && (

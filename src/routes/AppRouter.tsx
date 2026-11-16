@@ -29,6 +29,9 @@ import { HistorialMedicoLista } from "../components/historialMedico/HistorialMed
 import { HistorialMedicoForm } from "../components/historialMedico/HistorialMedicoForm";
 import { DetalleHistorialMedico } from "../components/historialMedico/DetalleHistorialMedico";
 import { PerfilView } from "../components/Perfil/PerfilView";
+import { MisPacientes } from "../components/medico/MisPacientes";
+import { AtencionPaciente } from "../components/medico/AtencionPaciente";
+
 
 const EdicionTurnoWrapper = () => {
   const { id } = useParams<{ id: string }>();
@@ -88,8 +91,15 @@ const EdicionMedicoWrapper = () => {
   );
 };
 
-const HomeRedirect = () => {  const { rol } = useAuth();
-  const destino = (rol || "").toUpperCase() === "PACIENTE" ? "/mis-turnos" : "/turnos";
+const HomeRedirect = () => {
+  const { rol } = useAuth();
+  const rolActual = (rol || "").toUpperCase();
+  const destino =
+    rolActual === "PACIENTE"
+      ? "/mis-turnos"
+      : rolActual === "MEDICO"
+        ? "/mis-pacientes/por-atender"
+        : "/turnos";
   return <Navigate to={destino} replace />;
 };
 
@@ -109,9 +119,13 @@ const AppRouter = () => {
         >
           <Route index element={<HomeRedirect />} />
           <Route path="turnos" element={<RequireRole allowed={["ADMIN", "RECEPCIONISTA", "MEDICO"]}><TurnosLista /></RequireRole>} />
-          <Route path="turnos/nuevo" element={<RequireRole allowed={["ADMIN", "RECEPCIONISTA", "MEDICO"]}><TurnoForm /></RequireRole>} />
+          <Route path="turnos/nuevo" element={<RequireRole allowed={["ADMIN", "RECEPCIONISTA"]}><TurnoForm /></RequireRole>} />
           <Route path="turno-detalle/:id" element={<RequireRole allowed={["ADMIN", "RECEPCIONISTA", "MEDICO"]}><DetalleTurno /></RequireRole>} />
-          <Route path="turnos/editar/:id" element={<RequireRole allowed={["ADMIN", "RECEPCIONISTA", "MEDICO"]}><EdicionTurnoWrapper /></RequireRole>} />
+          <Route path="turnos/editar/:id" element={<RequireRole allowed={["ADMIN", "RECEPCIONISTA"]}><EdicionTurnoWrapper /></RequireRole>} />
+
+          <Route path="mis-pacientes" element={<Navigate to="/mis-pacientes/por-atender" replace />} />
+          <Route path="mis-pacientes/:bandeja" element={<RequireRole allowed={["MEDICO"]}><MisPacientes /></RequireRole>} />
+          <Route path="atencion/:turnoId" element={<RequireRole allowed={["MEDICO"]}><AtencionPaciente /></RequireRole>} />
 
           <Route path="mis-turnos" element={<RequireRole allowed={["PACIENTE"]}><MisTurnos /></RequireRole>} />
           <Route path="mis-turnos/nuevo" element={<RequireRole allowed={["PACIENTE"]}><TurnoPacienteForm /></RequireRole>} />

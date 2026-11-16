@@ -1,11 +1,13 @@
 import { useState } from "react";
 import { BsShieldLock } from "react-icons/bs";
 import { authService } from "../../services/authService";
+import { useAuth } from "../../context/AuthContext";
 import { LogoPortalSalud } from "../../components/brand/LogoPortalSalud";
 import toast from "react-hot-toast";
 import "./CambiarPassword.css";
 
 const CambiarPassword = () => {
+  const { login } = useAuth();
   const [passwordActual, setPasswordActual] = useState("");
   const [nuevaPassword, setNuevaPassword] = useState("");
   const [confirmarPassword, setConfirmarPassword] = useState("");
@@ -19,8 +21,8 @@ const CambiarPassword = () => {
       return;
     }
 
-    if (nuevaPassword.length < 6) {
-      toast.error("La nueva contraseña debe tener al menos 6 caracteres");
+    if (nuevaPassword.length < 8) {
+      toast.error("La nueva contraseña debe tener al menos 8 caracteres");
       return;
     }
 
@@ -28,8 +30,13 @@ const CambiarPassword = () => {
     try {
       const response = await authService.cambiarPassword({ passwordActual, nuevaPassword });
       if (response.ok || response.success) {
+        const nuevoToken = (response.data as { token?: string } | undefined)?.token;
         toast.success(response.message || "Contraseña actualizada");
-        window.location.href = "/";
+        if (nuevoToken) {
+          login(nuevoToken, false);
+        } else {
+          window.location.href = "/login";
+        }
       } else {
         toast.error(response.message || "No se pudo cambiar la contraseña");
       }
@@ -81,10 +88,10 @@ const CambiarPassword = () => {
               value={nuevaPassword}
               onChange={(e) => setNuevaPassword(e.target.value)}
               autoComplete="new-password"
-              minLength={6}
+              minLength={8}
               required
             />
-            <span className="ps-auth-hint">Mínimo 6 caracteres.</span>
+            <span className="ps-auth-hint">Mínimo 8 caracteres.</span>
           </div>
 
           <div className="ps-auth-control">
@@ -95,7 +102,7 @@ const CambiarPassword = () => {
               value={confirmarPassword}
               onChange={(e) => setConfirmarPassword(e.target.value)}
               autoComplete="new-password"
-              minLength={6}
+              minLength={8}
               required
             />
           </div>

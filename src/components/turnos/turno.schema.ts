@@ -60,23 +60,30 @@ export interface TurnoDetalle {
 
 export interface TurnoItem {
   id: string;
+  _id?: string;
   medico?: {
-    id: string; 
+    id?: string;
+    _id?: string;
     nombre: string;
     apellido: string;
   };
   paciente?: {
-    id: string;
+    id?: string;
+    _id?: string;
     nombre: string;
     apellido: string;
+    dni?: string;
   };
   especialidad?: {
-    id: string;
+    id?: string;
+    _id?: string;
     nombre: string;
   };
   fecha: string;
   hora: string;
-  estado: 'PENDIENTE' | 'CONFIRMADO' | 'CANCELADO' | 'ATENDIDO';
+  estado: 'PENDIENTE' | 'CONFIRMADO' | 'CANCELADO' | 'ATENDIDO' | 'FINALIZADO';
   observaciones?: string;
+  // true cuando el turno sigue pendiente/confirmado pero su fecha ya pasó.
+  vencido?: boolean;
   activo: boolean;
 }

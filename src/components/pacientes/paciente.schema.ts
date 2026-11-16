@@ -69,6 +69,7 @@ export interface PacienteTurno {
   hora: string;
   estado?: string;
   observaciones?: string;
+  vencido?: boolean;
   medico?: {
     nombre?: string;
     apellido?: string;
