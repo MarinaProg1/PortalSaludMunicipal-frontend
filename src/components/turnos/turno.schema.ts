@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { z } from 'zod';
 
 
@@ -23,21 +24,6 @@ export interface OptionItem {
 export interface MedicoItem extends OptionItem {
   especialidades?: OptionItem[];
 }
-
-export interface HorarioAtencionItem {
-  diaSemana: string;
-  horaInicio: string;
-  horaFin: string;
-  duracionTurnoMinutos: number;
-  activo?: boolean;
-}
-
-export interface TurnoFormProps {
-  turnoId?: string; 
-  onSuccess?: () => void; 
-  onCancel?: () => void;  
-}
-
 export interface TurnoDetalle {
   id: string;
   paciente: {
@@ -86,4 +72,78 @@ export interface TurnoItem {
   // true cuando el turno sigue pendiente/confirmado pero su fecha ya pasó.
   vencido?: boolean;
   activo: boolean;
+}
+export interface PacienteItem {
+  id: string;
+  nombre: string;
+  apellido: string;
+  dni?: string;
+}
+
+
+export interface EspecialidadItem {
+
+  _id: string;
+  nombre: string;
+}
+
+export interface MedicoItem {
+  id: string;
+  nombre: string;
+  apellido: string;
+}
+
+export interface DiaMesDisponibilidad {
+  fecha: string; // "2026-11-01"
+  diaNum: number;
+  tieneDisponibilidad: boolean;
+  totalLibres: number;
+}
+export interface CalendarioMensualProps {
+  titulo: string;
+  anio: number;
+  mes: number;
+  dias: DiaMesDisponibilidad[];
+  fechaSeleccionada: string;
+  loading: boolean;
+  onCambiarMes: (direccion: 'prev' | 'next') => void;
+  onSeleccionarFecha: (fecha: string) => void;
+}
+export interface HorariosDisponiblesProps {
+  fecha: string;
+  todosLosSlots: string[];
+  horariosDisponibles: string[];
+  loading: boolean;
+  onSeleccionar: (hora: string) => void;
+}
+export interface TurnoFormProps {
+  turnoId?: string; 
+  onSuccess?: () => void; 
+  onCancel?: () => void;  
+}
+export interface TurnoCardProps {
+  turno: TurnoItem;
+  onView: () => void;
+  onEdit: () => void;
+  onDelete: () => void;
+  onCancel?: () => void;
+  onMarkAttended: () => void;
+}
+export interface TurnoSelectOption {
+  value: string;
+  label: string;
+}
+
+export interface TurnoSelectFieldProps {
+  label: string;
+  value: string;
+  options: TurnoSelectOption[];
+  placeholder: string;
+  onChange: (value: string) => void;
+  className?: string;
+  selectClassName?: string;
+  labelIcon?: ReactNode;
+  required?: boolean;
+  disabled?: boolean;
+  helpText?: ReactNode;
 }

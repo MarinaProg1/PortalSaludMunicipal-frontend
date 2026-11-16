@@ -1,13 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ActionButtons } from '../../constants/ActionButtons';
-import { BsPlusCircle, BsSearch, BsCalendarCheck, BsCalendarEvent, BsClock, BsCheckCircle } from 'react-icons/bs';
+import { BsPlusCircle, BsSearch, BsCalendarCheck } from 'react-icons/bs';
 import clientesAxios from '../../config/axios';
 import { TurnosSkeleton } from './TurnosSkeleton';
 import type { TurnoItem } from './turno.schema';
 import { PageHeader } from '../../constants/PageHeader';
 import { toast } from 'sonner';
 import { isAxiosError } from 'axios';
+import { TurnoCard } from './TurnoCard';
+import { esFechaDeHoy } from './turno.utils';
+import { ConfirmDeleteModal } from '../../constants/ConfirmDeleteModal';
 import { useAuth } from '../../context/AuthContext';
 
 export const TurnosLista: React.FC = () => {
@@ -15,11 +17,17 @@ export const TurnosLista: React.FC = () => {
   const { rol } = useAuth();
   const rolActual = (rol || '').toUpperCase();
   const esMedico = rolActual === 'MEDICO';
-  const puedeAdministrar = ['ADMIN', 'RECEPCIONISTA'].includes(rolActual);
+  //const puedeAdministrar = ['ADMIN', 'RECEPCIONISTA'].includes(rolActual);
   const [turnos, setTurnos] = useState<TurnoItem[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [busqueda, setBusqueda] = useState('');
+
+  const [idTurnoACancelar, setIdTurnoACancelar] = useState<string | null>(null);
+  const [cancelando, setCancelando] = useState<boolean>(false);
+
+  const [idTurnoAEliminar, setIdTurnoAEliminar] = useState<string | null>(null);
+  const [eliminando, setEliminando] = useState<boolean>(false);
 
   useEffect(() => {
     let isMounted = true;
@@ -70,16 +78,56 @@ export const TurnosLista: React.FC = () => {
     navigate(`/turnos/editar/${id}`);
   };
 
-  const handleDelete = async (id: string) => {
-    if (confirm('¿Estás seguro de cancelar/eliminar este turno?')) {
-      try {
-        await clientesAxios.delete(`/turnos/${id}`);
-        setTurnos(turnos.filter(t => t.id !== id));
-        toast.success('Turno eliminado correctamente.');
-      } catch (err) {
-        console.error('Error al eliminar el turno:', err);
-        toast.error('Hubo un error al intentar eliminar el registro.');
-      }
+  //MANEJO DE CANCELACIÓN 
+  const handleOpenCancelModal = (id: string) => {
+    setIdTurnoACancelar(id);
+  };
+
+  const handleConfirmCancel = async () => {
+    if (!idTurnoACancelar) return;
+
+    setCancelando(true);
+    try {
+      const response = await clientesAxios.patch(`/turnos/${idTurnoACancelar}/cancelar`);
+      
+      // Actualizamos el estado del turno a CANCELADO localmente
+      setTurnos(prevTurnos => 
+        prevTurnos.map(t => t.id === idTurnoACancelar ? { ...t, estado: response.data?.data?.estado || 'CANCELADO' } : t)
+      );
+
+      toast.success(response.data?.message || 'Turno cancelado correctamente.');
+      setIdTurnoACancelar(null);
+    } catch (err: unknown) {
+      console.error('Error al cancelar el turno:', err);
+      const mensaje = isAxiosError<{ message?: string }>(err)
+        ? err.response?.data?.message || 'Hubo un error al intentar cancelar el turno.'
+        : 'Hubo un error al intentar cancelar el turno.';
+      toast.error(mensaje);
+    } finally {
+      setCancelando(false);
+    }
+  };
+
+  //MANEJO DE ELIMINACIÓN DEFINITIVA 
+  const handleOpenDeleteModal = (id: string) => {
+    setIdTurnoAEliminar(id);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!idTurnoAEliminar) return;
+
+    setEliminando(true);
+    try {
+      await clientesAxios.delete(`/turnos/${idTurnoAEliminar}`);
+      // Removemos el turno definitivamente de la lista
+      setTurnos(prevTurnos => prevTurnos.filter(t => t.id !== idTurnoAEliminar));
+      toast.success('Turno eliminado definitivamente de la base de datos.');
+      setIdTurnoAEliminar(null);
+    } catch (err) {
+      console.error('Error al eliminar el turno:', err);
+      toast.error('Hubo un error al intentar eliminar el registro.');
+    } finally {
+      setEliminando(false);
     }
   };
 
@@ -108,27 +156,7 @@ export const TurnosLista: React.FC = () => {
     }
   };
 
-  // Función auxiliar para formatear la fecha visualmente
-  const formatearFecha = (fechaStr: string) => {
-    if (!fechaStr) return '';
-    return fechaStr.split('T')[0];
-  };
-
-  // Valida por texto plano (YYYY-MM-DD) si la fecha del turno es exactamente hoy
-  const esDeHoy = (fechaStr: string) => {
-    if (!fechaStr) return false;
-    const fechaTurnoStr = fechaStr.split('T')[0];
-
-    const hoyObj = new Date();
-    const anio = hoyObj.getFullYear();
-    const mes = String(hoyObj.getMonth() + 1).padStart(2, '0');
-    const dia = String(hoyObj.getDate()).padStart(2, '0');
-    const hoyStr = `${anio}-${mes}-${dia}`;
-
-    return fechaTurnoStr === hoyStr;
-  };
-
- const turnosFiltrados = Array.isArray(turnos) 
+  const turnosFiltrados = Array.isArray(turnos) 
     ? turnos
         .filter(t => {
           const nombrePaciente = `${t.paciente?.nombre || ''} ${t.paciente?.apellido || ''}`.toLowerCase();
@@ -138,15 +166,12 @@ export const TurnosLista: React.FC = () => {
           return nombrePaciente.includes(termino) || nombreMedico.includes(termino);
         })
         .sort((a, b) => {
-          const esHoyA = esDeHoy(a.fecha);
-          const esHoyB = esDeHoy(b.fecha);
+          const esHoyA = esFechaDeHoy(a.fecha);
+          const esHoyB = esFechaDeHoy(b.fecha);
 
-          // 1. Si el turno 'a' es de hoy y 'b' no, 'a' va primero (-1)
           if (esHoyA && !esHoyB) return -1;
-          // 2. Si el turno 'b' es de hoy y 'a' no, 'b' va primero (1)
           if (!esHoyA && esHoyB) return 1;
 
-          // 3. Si ambos son de hoy (o ninguno lo es), los ordenamos cronológicamente (de menor a mayor fecha/hora)
           const fechaA = new Date(a.fecha).getTime();
           const fechaB = new Date(b.fecha).getTime();
 
@@ -154,7 +179,6 @@ export const TurnosLista: React.FC = () => {
             return fechaA - fechaB;
           }
 
-          // Opcional: Si tienen la misma fecha, los ordenamos por hora si la propiedad existe
           return (a.hora || '').localeCompare(b.hora || '');
         })
     : [];
@@ -168,16 +192,14 @@ export const TurnosLista: React.FC = () => {
         icon={<BsCalendarCheck className="me-2" style={{ color: '#00ACB2' }} />}
         onBack={() => navigate(-1)}
         rightContent={
-          puedeAdministrar ? (
-            <button
-              className="btn text-white fw-semibold d-flex align-items-center justify-content-center gap-2 shadow-sm"
-              style={{ backgroundColor: '#00ACB2', borderRadius: '10px', padding: '8px 16px' }}
-              onClick={() => navigate('/turnos/nuevo')}
-            >
-              <BsPlusCircle size={18} />
-              Asignar Nuevo Turno
-            </button>
-          ) : undefined
+          <button 
+            className="btn text-white fw-semibold d-flex align-items-center justify-content-center gap-2 shadow-sm"
+            style={{ backgroundColor: '#00ACB2', borderRadius: '6px', padding: '4px 8px' }}
+            onClick={() => navigate('/turnos/asignar')} 
+          >
+            <BsPlusCircle size={18} />
+            Asignar Nuevo Turno
+          </button>
         }
       />
 
@@ -210,101 +232,35 @@ export const TurnosLista: React.FC = () => {
       ) : turnosFiltrados.length > 0 ? (
         
         <div className="row g-3">
-          {turnosFiltrados.map((turno) => {
-            const estadoLower = turno.estado?.toLowerCase() || '';
-            const turnoEsDeHoy = esDeHoy(turno.fecha);
-            const estaActivo = estadoLower === 'pendiente' || estadoLower === 'confirmado';
-            const puedeAtender = estaActivo && (esMedico || turnoEsDeHoy || Boolean(turno.vencido));
+          {turnosFiltrados.map((turno) => (
+            <TurnoCard
+              key={turno.id}
+              turno={turno}
+              onView={() => handleView(turno.id)}
+              onEdit={() => handleEdit(turno.id)}
+              onCancel={() => handleOpenCancelModal(turno.id)}    
+              onDelete={() => handleOpenDeleteModal(turno.id)}     
+              onMarkAttended={() => handleMarcarAtendido(turno.id)}
+            />
+          ))}
 
-            return (
-              <div className="col-12 col-md-6" key={turno.id}>
-                <div className="card border-0 shadow-sm p-3 bg-white h-100 d-flex flex-column justify-content-between" style={{ borderRadius: '12px', transition: 'transform 0.2s' }}>
-                  
-                  <div>
-                    {/* Cabecera de la tarjeta: Paciente y Estado */}
-                    <div className="d-flex justify-content-between align-items-start mb-2">
-                      <div>
-                        <span className="text-muted small d-block">Paciente</span>
-                        <h6 className="fw-bold text-dark mb-0 fs-5">
-                          {turno.paciente?.nombre} {turno.paciente?.apellido}
-                        </h6>
-                      </div>
-                      <div className="d-flex flex-column align-items-end gap-1">
-                        <span className={`badge px-2 py-1 text-uppercase ${
-                          estadoLower === 'confirmado' ? 'bg-success-subtle text-success' :
-                          estadoLower === 'pendiente' ? 'bg-warning-subtle text-warning text-dark' :
-                          estadoLower === 'atendido' || estadoLower === 'finalizado' ? 'bg-info-subtle text-info fw-bold' :
-                          'bg-danger-subtle text-danger'
-                        }`}>
-                          {turno.estado}
-                        </span>
-                        {turno.vencido && (
-                          <span className="badge bg-danger-subtle text-danger text-uppercase">
-                            Vencido
-                          </span>
-                        )}
-                      </div>
-                    </div>
+          <ConfirmDeleteModal 
+            isOpen={idTurnoACancelar !== null}
+            titulo="Confirmar Cancelación de Turno"
+            mensaje="¿Estás seguro de que deseas cancelar este turno? Su estado cambiará a cancelado."
+            cargando={cancelando}
+            onClose={() => setIdTurnoACancelar(null)}
+            onConfirm={handleConfirmCancel}
+          />
 
-                    <hr className="my-2 border-secondary-subtle" />
-
-                    {/* Detalles del turno */}
-                    <div className="row g-2 small mb-3">
-                      <div className="col-6">
-                        <span className="text-muted d-block">Médico</span>
-                        <span className="fw-medium text-dark">
-                          Dr./Dra. {turno.medico?.nombre} {turno.medico?.apellido}
-                        </span>
-                      </div>
-                      <div className="col-6">
-                        <span className="text-muted d-block">Especialidad</span>
-                        <span className="fw-medium text-dark">{turno.especialidad?.nombre}</span>
-                      </div>
-                      
-                      <div className="col-12 mt-2 d-flex align-items-center gap-3">
-                        <div className="d-flex align-items-center gap-1 text-secondary">
-                          <BsCalendarEvent size={14} style={{ color: '#00ACB2' }} />
-                          <span className="fw-semibold text-dark">{formatearFecha(turno.fecha)}</span>
-                        </div>
-                        <div className="d-flex align-items-center gap-1 text-secondary">
-                          <BsClock size={14} style={{ color: '#00ACB2' }} />
-                          <span className="fw-semibold text-dark">{turno.hora} hs</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Pie de tarjeta: Botón de Atender + Botones de Acción */}
-                  <div className="d-flex align-items-center justify-content-between pt-2 border-top border-secondary-subtle">
-                    
-                    {/*Botón Atender: el medico abre la pantalla clinica; el personal cierra el turno */}
-                    <div>
-                      {puedeAtender && (
-                        <button
-                          className="btn btn-sm btn-outline-success d-flex align-items-center gap-1 px-2 py-1 fw-semibold"
-                          style={{ borderRadius: '6px', fontSize: '0.8rem' }}
-                          onClick={() => handleMarcarAtendido(turno.id)}
-                          title={esMedico ? 'Abrir atención del paciente' : 'Marcar turno como atendido'}
-                        >
-                          <BsCheckCircle size={14} />
-                          {esMedico ? 'Atender' : turno.vencido ? 'Cerrar vencido' : 'Atender'}
-                        </button>
-                      )}
-                    </div>
-
-                    {/* Botones estándar (Ver siempre; Editar/Eliminar solo ADMIN y RECEPCIONISTA) */}
-                    <ActionButtons
-                      onView={() => handleView(turno.id)}
-                      onEdit={puedeAdministrar ? () => handleEdit(turno.id) : undefined}
-                      onDelete={puedeAdministrar ? () => handleDelete(turno.id) : undefined}
-                    />
-
-                  </div>
-
-                </div>
-              </div>
-            );
-          })}
+          <ConfirmDeleteModal 
+            isOpen={idTurnoAEliminar !== null}
+            titulo="Eliminar Turno Definitivamente"
+            mensaje="¡Atención! Esta acción borrará el registro por completo de la base de datos y no se puede deshacer."
+            cargando={eliminando}
+            onClose={() => setIdTurnoAEliminar(null)}
+            onConfirm={handleConfirmDelete}
+          />
         </div>
 
       ) : (

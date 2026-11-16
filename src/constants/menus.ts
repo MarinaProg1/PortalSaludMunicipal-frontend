@@ -39,7 +39,7 @@ export const roleMenus: Record<UserRole, MenuItem[]> = {
       icon: BsCalendarCheck, 
       children: [
         { id: 'turnos-lista', label: 'Ver Listado', path: '/turnos' },
-        { id: 'turnos-nuevo', label: 'Asignar Nuevo', path: '/turnos/nuevo' },
+        { id: 'turnos-nuevo', label: 'Asignar Nuevo', path: '/turnos/asignar' },
       ]
     },
     { 
@@ -49,6 +49,7 @@ export const roleMenus: Record<UserRole, MenuItem[]> = {
       children: [
         { id: 'horarios-lista', label: 'Ver Agendas', path: '/horarioAtencion' },
         { id: 'horarios-nuevo', label: 'Configurar Horario', path: '/horarioAtencion/nuevo' },
+        { id: 'excepciones-agenda', label: 'Excepciones de agenda', path: '/excepciones' },
       ]
     },
     { id: 'medicos', label: 'Médicos', icon: BsPeople, path: '/medicos' },

@@ -44,6 +44,14 @@ export interface HorarioApiResponse {
   duracionTurnoMinutos?: number;
 }
 
+export interface DiaDisponibilidad {
+  fecha: string;
+  diaNum: number;
+  nombreDia: string;
+  tieneDisponibilidad: boolean;
+  totalLibres: number;
+}
+
 export interface MedicoInfo {
   _id: string;
   nombre: string;
@@ -65,4 +73,33 @@ export interface MedicoAgrupado {
   medicoId: string;
   medicoNombreCompleto: string;
   horarios: HorarioItem[];
+}
+export interface BloqueTurnoConfigProps {
+  titulo: string;
+  idCheck: string;
+  activo: boolean;
+  onToggleActivo: (checked: boolean) => void;
+  horaInicio: string;
+  horaFin: string;
+  onCambioHoraInicio: (val: string) => void;
+  onCambioHoraFin: (val: string) => void;
+  yaGuardado: boolean;
+}
+export interface DiaAgendaItemProps {
+  diaKey: string;
+  label: string;
+  diaConf: DiaConfig;
+  onToggleDia: () => void;
+  onTurnoChange: (turno: 'manana' | 'tarde', field: 'activo' | 'horaInicio' | 'horaFin', value: unknown) => void;
+  yaExisteEnBD: (turno: 'manana' | 'tarde') => boolean;
+}
+export interface MedicoAgendaDesplegableProps {
+  mesActual: Date;
+  diasMes: DiaDisponibilidad[];
+  cargandoMes: boolean;
+  fechaSeleccionada: string;
+  slotsDisponibles: string[];
+  cargandoSlots: boolean;
+  onCambiarMes: (direccion: 'anterior' | 'siguiente') => void;
+  onSeleccionarDia: (fecha: string, tieneDisponibilidad: boolean) => void;
 }
