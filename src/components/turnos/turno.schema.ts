@@ -78,6 +78,12 @@ export interface PacienteItem {
   nombre: string;
   apellido: string;
   dni?: string;
+  telefono?: string | {
+    tipo?: string;
+    codigoArea?: string;
+    numero?: string;
+  };
+  email?: string;
 }
 
 
@@ -100,14 +106,14 @@ export interface DiaMesDisponibilidad {
   totalLibres: number;
 }
 export interface CalendarioMensualProps {
-  titulo: string;
-  anio: number;
-  mes: number;
-  dias: DiaMesDisponibilidad[];
-  fechaSeleccionada: string;
-  loading: boolean;
-  onCambiarMes: (direccion: 'prev' | 'next') => void;
-  onSeleccionarFecha: (fecha: string) => void;
+  titulo?: string;
+  anio?: number;
+  mes?: number;
+  dias?: DiaMesDisponibilidad[];
+  fechaSeleccionada?: string;
+  loading?: boolean;
+  onCambiarMes?: (direccion: 'prev' | 'next') => void;
+  onSeleccionarFecha?: (fecha: string) => void;
 }
 export interface HorariosDisponiblesProps {
   fecha: string;

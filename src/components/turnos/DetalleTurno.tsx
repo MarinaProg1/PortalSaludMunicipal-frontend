@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { isAxiosError } from 'axios';
 import { BsCalendarEvent, BsArrowLeft, BsPerson, BsPersonBadge, BsClock } from 'react-icons/bs';
@@ -7,8 +7,7 @@ import { DetalleTurnoSkeleton } from './DetalleTurnoSkeleton';
 import type { TurnoDetalle } from './turno.schema';
 import { PageHeader } from '../../constants/PageHeader';
 
-
-export const DetalleTurno: React.FC = () => {
+export const DetalleTurno = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
 
@@ -43,12 +42,9 @@ export const DetalleTurno: React.FC = () => {
   }, [id]);
 
   if (loading) {
-    return (
-     <DetalleTurnoSkeleton />
-    );
+    return <DetalleTurnoSkeleton />;
   }
 
-  // Pantalla de Error
   if (error || !turno) {
     return (
       <div className="container-fluid px-2 px-md-4 py-4">
@@ -77,7 +73,7 @@ export const DetalleTurno: React.FC = () => {
   return (
     <div className="container-fluid px-2 px-md-4 py-4">
       <div className="card border-0 shadow-sm bg-white p-4 mx-auto" style={{ maxWidth: '700px', borderRadius: '12px' }}>
-  
+ 
         <PageHeader 
           titulo="Detalle del Turno"
           subtitulo="Información completa de la cita médica registrada."
@@ -173,5 +169,3 @@ export const DetalleTurno: React.FC = () => {
     </div>
   );
 };
-
-export default DetalleTurno;

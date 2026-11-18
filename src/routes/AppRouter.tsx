@@ -4,7 +4,6 @@ import CambiarPassword from "../pages/auth/CambiarPassword";
 import { useAuth } from "../context/AuthContext";
 import LayoutPrincipal from "../components/layout/LayoutPrincipal";
 import { TurnosLista } from "../components/turnos/TurnosLista";
-import { TurnoForm } from "../components/turnos/TurnoForm";
 import { DetalleTurno } from "../components/turnos/DetalleTurno";
 import { HorarioAtencionLista } from "../components/horarios/HorarioAtencionLista";
 import { HorarioAtencionForm } from "../components/horarios/HorarioAtencionForm";
@@ -19,6 +18,8 @@ import { DetalleMedico } from "../components/medicos/DetalleMedico";
 import { MisTurnos } from "../components/pacientePortal/MisTurnos";
 import { MiPerfil } from "../components/pacientePortal/MiPerfil";
 import { TurnoPacienteForm } from "../components/pacientePortal/TurnoPacienteForm";
+import { AsignarTurnoView } from "../components/turnos/AsignarTurnoView";
+import { TurnoForm } from "../components/turnos/TurnoForm";
 import { DetalleTurnoPaciente } from "../components/pacientePortal/DetalleTurnoPaciente";
 import { RequireRole } from "./RequireRole";
 import NotFound from "../components/utils/NotFound";
@@ -31,20 +32,15 @@ import { DetalleHistorialMedico } from "../components/historialMedico/DetalleHis
 import { PerfilView } from "../components/Perfil/PerfilView";
 import { MisPacientes } from "../components/medico/MisPacientes";
 import { AtencionPaciente } from "../components/medico/AtencionPaciente";
+import { CrearExcepcionView } from "../components/excepcionAgenda/CrearExcepcionView";
+import { ExcepcionesLista } from "../components/excepcionAgenda/ExcepcionesLista";
+import { TurnosHome } from "../components/turnos/TurnosHome";
+import { TurnosPorFecha } from "../components/turnos/TurnosPorFecha";
+import { TurnosHistoricos } from "../components/turnos/TurnosHistoricos";
+import { TurnosDelDia } from "../components/turnos/TurnosDelDia";
+import { TurnosAReprogramar } from "../components/turnos/TurnosAReprogramar";
+import { EditarTurnoView } from "../components/turnos/EditarTurnoView";
 
-
-const EdicionTurnoWrapper = () => {
-  const { id } = useParams<{ id: string }>();
-  const navigate = useNavigate();
-
-  return (
-    <TurnoForm
-      turnoId={id}
-      onSuccess={() => navigate("/turnos")}
-      onCancel={() => navigate(-1)}
-    />
-  );
-};
 
 const EdicionObraSocialWrapper = () => {
   const { id } = useParams<{ id: string }>();
@@ -118,10 +114,16 @@ const AppRouter = () => {
           element={isAuthenticated ? <LayoutPrincipal /> : <Navigate to="/login" replace />}
         >
           <Route index element={<HomeRedirect />} />
-          <Route path="turnos" element={<RequireRole allowed={["ADMIN", "RECEPCIONISTA", "MEDICO"]}><TurnosLista /></RequireRole>} />
+
+          <Route path="turnos" element={<TurnosHome />} />
+          <Route path="turnos/lista" element={<TurnosLista />} />
+          <Route path="/turnos/del-dia" element={<TurnosDelDia />} />
+          <Route path="turnos/por-fecha" element={<TurnosPorFecha />} />
+          <Route path="turnos/historicos" element={<TurnosHistoricos />} />
+          <Route path="turnos/asignar" element={<RequireRole allowed={["ADMIN", "RECEPCIONISTA", "MEDICO"]}><AsignarTurnoView/></RequireRole>}/>
           <Route path="turnos/nuevo" element={<RequireRole allowed={["ADMIN", "RECEPCIONISTA"]}><TurnoForm /></RequireRole>} />
           <Route path="turno-detalle/:id" element={<RequireRole allowed={["ADMIN", "RECEPCIONISTA", "MEDICO"]}><DetalleTurno /></RequireRole>} />
-          <Route path="turnos/editar/:id" element={<RequireRole allowed={["ADMIN", "RECEPCIONISTA"]}><EdicionTurnoWrapper /></RequireRole>} />
+          <Route path="turnos/editar/:id" element={<RequireRole allowed={["ADMIN", "RECEPCIONISTA"]}><EditarTurnoView/></RequireRole>} />
 
           <Route path="mis-pacientes" element={<Navigate to="/mis-pacientes/por-atender" replace />} />
           <Route path="mis-pacientes/:bandeja" element={<RequireRole allowed={["MEDICO"]}><MisPacientes /></RequireRole>} />
@@ -159,7 +161,10 @@ const AppRouter = () => {
           <Route path="historial-medico/nuevo/:turnoId" element={<HistorialMedicoForm />} />
           <Route path="historial-medico/editar/:id" element={<HistorialMedicoForm />} />
           <Route path="historial-medico/:id" element={<DetalleHistorialMedico />} />
-        
+
+          <Route path="excepcion-horario" element ={<ExcepcionesLista/>}/>
+          <Route path="excepcion-crear" element ={<CrearExcepcionView/>}/>
+          <Route path="reprogramar-turno" element={<TurnosAReprogramar/>}/>
         </Route>
 
         <Route path="*" element={<NotFound />} />

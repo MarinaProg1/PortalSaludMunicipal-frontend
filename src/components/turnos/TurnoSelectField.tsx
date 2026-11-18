@@ -1,7 +1,7 @@
-import {type FC,useState, useRef, useEffect, useMemo } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import type { TurnoSelectFieldProps } from './turno.schema';
 
-export const TurnoSelectField: FC<TurnoSelectFieldProps> = ({
+export const TurnoSelectField = ({
   label,
   value,
   options,
@@ -12,15 +12,14 @@ export const TurnoSelectField: FC<TurnoSelectFieldProps> = ({
   required = false,
   disabled = false,
   helpText,
-}) => {
+}: TurnoSelectFieldProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const wrapperRef = useRef<HTMLDivElement>(null);
 
-  // Obtenemos el objeto seleccionado completo
+
   const selectedOption = options.find((opt) => opt.value === value);
 
-  // Filtramos las opciones según lo que escribe el usuario
   const filteredOptions = useMemo(() => {
     if (!searchTerm) return options;
     return options.filter((opt) =>
@@ -28,7 +27,6 @@ export const TurnoSelectField: FC<TurnoSelectFieldProps> = ({
     );
   }, [options, searchTerm]);
 
-  // Manejar el click fuera del componente para cerrar la lista
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (wrapperRef.current && !wrapperRef.current.contains(event.target as Node)) {
@@ -50,7 +48,7 @@ export const TurnoSelectField: FC<TurnoSelectFieldProps> = ({
       {/* Input visual para buscar */}
       <input
         type="text"
-        className="form-control" // Cambiamos form-select por form-control
+        className="form-control"
         placeholder={selectedOption ? selectedOption.label : placeholder}
         value={isOpen ? searchTerm : (selectedOption ? selectedOption.label : '')}
         onChange={(e) => {

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate, useParams } from 'react-router-dom';
 import { BsCalendarPlus, BsPerson, BsClock, BsHeartPulse } from 'react-icons/bs';
 import { toast } from 'sonner';
@@ -7,7 +7,7 @@ import { PageHeader } from '../../constants/PageHeader';
 import type { PacienteItem, EspecialidadItem, TurnoFormProps } from './turno.schema';
 import { SelectField } from '../../constants/SelectField';
 
-export const TurnoForm: React.FC<TurnoFormProps> = ({ turnoId, onSuccess, onCancel }) => {
+export const TurnoForm = ({ turnoId, onSuccess, onCancel }: TurnoFormProps) => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { id: idParam } = useParams<{ id: string }>();
@@ -48,7 +48,7 @@ export const TurnoForm: React.FC<TurnoFormProps> = ({ turnoId, onSuccess, onCanc
         setEspecialidades(Array.isArray(dataEsp) ? dataEsp : []);
 
         // Si viene una especialidad por URL pero es el nombre en vez de ID, la buscamos y resolvemos
-       if (especialidadUrl && especialidadUrl.length !== 24 && Array.isArray(dataEsp)) {
+        if (especialidadUrl && especialidadUrl.length !== 24 && Array.isArray(dataEsp)) {
           const encontrada = dataEsp.find(
             (esp: EspecialidadItem) => esp.nombre?.toLowerCase() === especialidadUrl.toLowerCase()
           );
@@ -185,40 +185,38 @@ export const TurnoForm: React.FC<TurnoFormProps> = ({ turnoId, onSuccess, onCanc
             required
             selectClassName="form-select shadow-none"
             options={pacientes.map((pac: PacienteItem) => {
-              const pacId = pac.id || pac.id;
+              const pacId = pac.id || '';
               return {
                 value: pacId,
                 label: `${pac.apellido}, ${pac.nombre} ${pac.dni ? `- DNI: ${pac.dni}` : ''}`,
               };
             })}
           />
-         <div className="mb-4">
-             <label className="form-label fw-semibold d-flex align-items-center text-secondary small">
-             <BsHeartPulse className="me-1" />
+
+          <div className="mb-4">
+            <label className="form-label fw-semibold d-flex align-items-center text-secondary small">
+              <BsHeartPulse className="me-1" />
               Especialidad del Turno
-         </label>
-  
-         <input
-               type="text"
-               className="form-control shadow-none bg-light text-secondary fw-medium"
-               value={
-                 especialidades.find((esp: EspecialidadItem) => (esp._id || esp._id) === especialidadSeleccionada)?.nombre || 'Cargando especialidad...'
-               }
-               readOnly
-               disabled
-          />
-  
-          <div className="form-text text-muted" style={{ fontSize: '0.75rem' }}>
-            La especialidad elegida.
+            </label>
+            <input
+              type="text"
+              className="form-control shadow-none bg-light text-secondary fw-medium"
+              value={
+                especialidades.find((esp: EspecialidadItem) => (esp._id) === especialidadSeleccionada)?.nombre || 'Cargando especialidad...'
+              }
+              readOnly
+              disabled
+            />
+            <div className="form-text text-muted" style={{ fontSize: '0.75rem' }}>
+              La especialidad elegida.
+            </div>
           </div>
-        </div>
+
           {/* Botones de acción */}
           <div className="d-flex justify-content-end gap-2 pt-3 border-top">
             <button 
               type="button" 
               className="btn btn-outline-danger text-danger border-danger px-3" 
-
-              
               onClick={handleCancelar}
               disabled={submitting}
             >

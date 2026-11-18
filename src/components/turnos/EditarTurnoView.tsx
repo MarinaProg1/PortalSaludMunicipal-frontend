@@ -2,13 +2,22 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import clientesAxios from '../../config/axios';
 import { toast } from 'sonner';
-import { BsCalendarCheck } from 'react-icons/bs';
+import { BsCalendarCheck, BsChatText, BsTag } from 'react-icons/bs';
 import type { PacienteItem, MedicoItem, EspecialidadItem } from './turno.schema';
 import { TurnoFormSkeleton } from './TurnoFormSkeleton';
 import { TurnoSelectField } from './TurnoSelectField';
 import { PageHeader } from '../../constants/PageHeader'; 
 
-export const EditarTurnoView: React.FC = () => {
+const EstadoTurno = {
+  PENDIENTE: 'PENDIENTE',
+  CONFIRMADO: 'CONFIRMADO',
+  ATENDIDO: 'ATENDIDO',
+  CANCELADO: 'CANCELADO',
+} as const;
+
+type EstadoTurnoType = typeof EstadoTurno[keyof typeof EstadoTurno];
+
+export const EditarTurnoView = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
 
@@ -26,6 +35,8 @@ export const EditarTurnoView: React.FC = () => {
   const [especialidadId, setEspecialidadId] = useState<string>('');
   const [fecha, setFecha] = useState<string>('');
   const [hora, setHora] = useState<string>('');
+  const [estado, setEstado] = useState<EstadoTurnoType>(EstadoTurno.PENDIENTE);
+  const [observaciones, setObservaciones] = useState<string>('');
 
   // 1. Cargar datos iniciales (Listas de selectores + Datos del Turno actual)
   useEffect(() => {
@@ -69,6 +80,8 @@ export const EditarTurnoView: React.FC = () => {
           }
           
           setHora(turno.hora || '');
+          setEstado(turno.estado || EstadoTurno.PENDIENTE);
+          setObservaciones(turno.observaciones || '');
         } else {
           toast.error('No se pudo cargar la información del turno.');
         }
@@ -106,6 +119,8 @@ export const EditarTurnoView: React.FC = () => {
         especialidad: especialidadId,
         fecha,
         hora,
+        estado,
+        observaciones,
       };
 
       const response = await clientesAxios.put(`/turnos/${id}`, datosActualizados);
@@ -132,12 +147,12 @@ export const EditarTurnoView: React.FC = () => {
   }
 
   return (
-    <div className="container py-4" style={{ maxWidth: '700px' }}>
+    <div className="container py-4" style={{ maxWidth: '750px' }}>
       <div className="card border-0 shadow-sm p-4 bg-white" style={{ borderRadius: '12px' }}>
 
         <PageHeader 
           titulo="Editar Turno Médico"
-          subtitulo="Confirme los datos del paciente y la cita médica."
+          subtitulo="Modifica los datos del paciente, fecha, estado u observaciones de la cita."
           icon={<BsCalendarCheck className="me-2" style={{ color: '#00ACB2' }} />}
           onBack={() => navigate('/turnos')}
         />
@@ -189,7 +204,7 @@ export const EditarTurnoView: React.FC = () => {
               <label className="form-label fw-semibold text-secondary small">Fecha del Turno</label>
               <input 
                 type="date" 
-                className="form-control" 
+                className="form-control shadow-none" 
                 value={fecha} 
                 onChange={(e) => setFecha(e.target.value)} 
                 required 
@@ -200,7 +215,7 @@ export const EditarTurnoView: React.FC = () => {
               <label className="form-label fw-semibold text-secondary small">Hora (Ej: 08:30)</label>
               <input 
                 type="text" 
-                className="form-control" 
+                className="form-control shadow-none" 
                 value={hora} 
                 onChange={(e) => setHora(e.target.value)} 
                 placeholder="08:30" 
@@ -209,8 +224,40 @@ export const EditarTurnoView: React.FC = () => {
             </div>
           </div>
 
+          {/* Estado del Turno */}
+          <div className="mb-3">
+            <label className="form-label fw-semibold text-secondary small">
+              <BsTag className="me-1" /> Estado del Turno
+            </label>
+            <select 
+              className="form-select shadow-none"
+              value={estado}
+              onChange={(e) => setEstado(e.target.value as EstadoTurnoType)}
+              required
+            >
+              <option value={EstadoTurno.PENDIENTE}>Pendiente</option>
+              <option value={EstadoTurno.CONFIRMADO}>Confirmado</option>
+              <option value={EstadoTurno.ATENDIDO}>Atendido</option>
+              <option value={EstadoTurno.CANCELADO}>Cancelado</option>
+            </select>
+          </div>
+
+          {/* Observaciones */}
+          <div className="mb-4">
+            <label className="form-label fw-semibold text-secondary small">
+              <BsChatText className="me-1" /> Observaciones / Motivo
+            </label>
+            <textarea 
+              className="form-control shadow-none" 
+              rows={3}
+              value={observaciones}
+              onChange={(e) => setObservaciones(e.target.value)}
+              placeholder="Ingrese notas adicionales u observaciones..."
+            ></textarea>
+          </div>
+
           {/* Botones de Acción */}
-          <div className="d-flex justify-content-end gap-2 mt-4 pt-3 border-top">
+          <div className="d-flex justify-content-end gap-2 pt-3 border-top">
             <button 
               type="button" 
               className="btn btn-light px-4" 
@@ -221,7 +268,7 @@ export const EditarTurnoView: React.FC = () => {
             </button>
             <button 
               type="submit" 
-              className="btn text-white fw-semibold px-4" 
+              className="btn text-white fw-semibold px-4 shadow-sm" 
               style={{ backgroundColor: '#00ACB2' }}
               disabled={guardando}
             >

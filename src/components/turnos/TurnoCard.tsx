@@ -1,21 +1,20 @@
-import React from 'react';
 import { ActionButtons } from '../../constants/ActionButtons';
 import { BsCalendarEvent, BsCheckCircle, BsClock, BsXCircle } from 'react-icons/bs';
-import type { TurnoCardProps} from './turno.schema';
+import type { TurnoCardProps } from './turno.schema';
 import { esFechaDeHoy, formatearFechaTurno } from './turno.utils';
 
-
-export const TurnoCard: React.FC<TurnoCardProps> = ({
+export const TurnoCard = ({
   turno,
   onView,
   onEdit,
   onDelete,
   onCancel,
   onMarkAttended,
-}) => {
+}: TurnoCardProps) => {
   const estadoLower = turno.estado?.toLowerCase() || '';
   const turnoEsDeHoy = esFechaDeHoy(turno.fecha);
   const esCancelado = estadoLower === 'cancelado';
+
   return (
     <div className="col-12 col-md-6">
       <div
@@ -70,6 +69,7 @@ export const TurnoCard: React.FC<TurnoCardProps> = ({
           <div>
             {estadoLower !== 'atendido' && turnoEsDeHoy && (
               <button
+                type="button"
                 className="btn btn-sm btn-outline-success d-flex align-items-center gap-1 px-2 py-1 fw-semibold"
                 style={{ borderRadius: '6px', fontSize: '0.8rem' }}
                 onClick={onMarkAttended}
@@ -82,6 +82,7 @@ export const TurnoCard: React.FC<TurnoCardProps> = ({
 
             {onCancel && !esCancelado && estadoLower !== 'atendido' && (
               <button
+                type="button"
                 className="btn btn-sm btn-outline-warning d-flex align-items-center gap-1 px-2 py-1 fw-semibold text-dark"
                 style={{ borderRadius: '6px', fontSize: '0.8rem' }}
                 onClick={onCancel}
@@ -93,7 +94,6 @@ export const TurnoCard: React.FC<TurnoCardProps> = ({
             )}
           </div>
           <ActionButtons onView={onView} onEdit={onEdit} onDelete={onDelete} />
-  
         </div>
       </div>
     </div>

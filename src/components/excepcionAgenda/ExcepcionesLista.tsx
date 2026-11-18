@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { BsPlusCircle, BsSearch, BsCalendarX, BsCalendarEvent, BsClock, BsExclamationTriangle } from 'react-icons/bs';
 import clientesAxios from '../../config/axios';
@@ -7,7 +7,7 @@ import { ConfirmDeleteModal } from '../../constants/ConfirmDeleteModal';
 import { toast } from 'sonner';
 import type { ExcepcionItem, MedicoPopulate } from './excepcion.schema';
 
-export const ExcepcionesLista: React.FC = () => {
+export const ExcepcionesLista = () => {
   const navigate = useNavigate();
   const [excepciones, setExcepciones] = useState<ExcepcionItem[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
@@ -92,7 +92,7 @@ export const ExcepcionesLista: React.FC = () => {
           <button 
             className="btn text-white fw-semibold d-flex align-items-center justify-content-center gap-2 shadow-sm"
             style={{ backgroundColor: '#00ACB2', borderRadius: '10px', padding: '8px 16px' }}
-            onClick={() => navigate('/excepciones/nuevo')} 
+            onClick={() => navigate('/excepcion-crear')} 
           >
             <BsPlusCircle size={18} />
             Registrar Excepción

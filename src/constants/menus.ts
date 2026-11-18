@@ -38,8 +38,12 @@ export const roleMenus: Record<UserRole, MenuItem[]> = {
       label: 'Turnos', 
       icon: BsCalendarCheck, 
       children: [
-        { id: 'turnos-lista', label: 'Ver Listado', path: '/turnos' },
-        { id: 'turnos-nuevo', label: 'Asignar Nuevo', path: '/turnos/asignar' },
+        { id: 'turnos', label: 'Turnos', path: '/turnos' },
+        { id: 'turnos-lista', label: 'Lista de Turnos', path: '/turnos/lista' },
+        { id: 'turnos-fecha', label: 'Turnos por fecha', path: '/turnos/por-fecha' },
+        { id: 'turnos-nuevo', label: 'Nuevo turno', path: '/turnos/asignar' },
+        { id: 'turnos-reprogrmar', label: 'Reprogramar turno', path: '/reprogramar-turno' },
+      
       ]
     },
     { 
@@ -49,7 +53,16 @@ export const roleMenus: Record<UserRole, MenuItem[]> = {
       children: [
         { id: 'horarios-lista', label: 'Ver Agendas', path: '/horarioAtencion' },
         { id: 'horarios-nuevo', label: 'Configurar Horario', path: '/horarioAtencion/nuevo' },
-        { id: 'excepciones-agenda', label: 'Excepciones de agenda', path: '/excepciones' },
+      ]
+    },
+     { 
+      id: 'excepcion-grupo', 
+      label: 'Excepcion Horario', 
+      icon: BsCheckCircle, 
+      children: [
+        { id: 'excepcion-lista', label: 'Ver Excepciones', path: '/excepcion-horario' },
+        { id: 'excepcion-nuevo', label: 'Configurar Excepciones', path: '/excepcion-crear' },
+        
       ]
     },
     { id: 'medicos', label: 'Médicos', icon: BsPeople, path: '/medicos' },
@@ -95,7 +108,28 @@ export const roleMenus: Record<UserRole, MenuItem[]> = {
         { id: 'pacientes-listado', label: 'Todos mis pacientes', path: '/pacientes' },
       ]
     },
-    { id: 'horarios-atencion', label: 'Horarios de Atención', icon: BsCheckCircle, path: '/horarioAtencion' },
+      { 
+      id: 'turnos-grupo', 
+      label: 'Turnos / Consultas', 
+      icon: BsCalendarCheck, 
+      children: [
+        { id: 'turnos-lista', label: 'Ver Listado', path: '/turnos' },
+      ]
+    },
+     { 
+     id: 'horarios-grupo', 
+      label: 'Horarios de Atención', 
+      icon: BsCheckCircle, 
+      children: [
+        { id: 'horarios-lista', label: 'Ver Agendas', path: '/horarioAtencion' },
+      ]
+    },
+    { 
+      id: 'historial-medico', 
+      label: 'Historial Médico', 
+      icon: BsHospital, // O BsFileMedical si lo importas de react-icons/bs
+      path: '/historial-medico' 
+    }
   ],
 
   PACIENTE: [

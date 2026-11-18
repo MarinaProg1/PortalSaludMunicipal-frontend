@@ -163,7 +163,7 @@ export const HorarioAtencionLista: React.FC = () => {
                <button 
                  className="btn text-white fw-semibold d-flex align-items-center justify-content-center gap-2 shadow-sm"
                  style={{ backgroundColor: '#00ACB2', borderRadius: '8px', padding: '4px 10px' }}
-                 onClick={() => navigate('/horarioAtencion/nuevo')} 
+                 onClick={() => navigate('/excepcion-crear')} 
                >
                  <BsPlusCircle size={18} />
                  Administar horarios
@@ -173,7 +173,7 @@ export const HorarioAtencionLista: React.FC = () => {
         <button 
           className="btn btn-outline-primary fw-semibold d-flex align-items-center justify-content-center gap-2 shadow-sm"
           style={{borderRadius: '6px', padding: '4px 16px', margin: '2px'}}
-          onClick={() => navigate('/excepciones/nuevo')}
+          onClick={() => navigate('/excepcion-crear')}
         >
           <BsPlusCircle size={18} />
           Registrar Excepción
