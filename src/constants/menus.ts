@@ -52,7 +52,7 @@ export const roleMenus: Record<UserRole, MenuItem[]> = {
       icon: BsCheckCircle, 
       children: [
         { id: 'horarios-lista', label: 'Ver Agendas', path: '/horarioAtencion' },
-        { id: 'horarios-nuevo', label: 'Configurar Horario', path: '/horarioAtencion/nuevo' },
+        { id: 'horarios-nuevo', label: 'Configurar Horarios', path: '/horarioAtencion/nuevo' },
       ]
     },
      { 
@@ -77,9 +77,12 @@ export const roleMenus: Record<UserRole, MenuItem[]> = {
       id: 'turnos-grupo', 
       label: 'Turnos', 
       icon: BsCalendarCheck, 
-      children: [
-        { id: 'turnos-lista', label: 'Ver Listado', path: '/turnos' },
-        { id: 'turnos-nuevo', label: 'Asignar Nuevo', path: '/turnos/nuevo' },
+     children: [
+        { id: 'turnos', label: 'Turnos', path: '/turnos' },
+        { id: 'turnos-lista', label: 'Lista de Turnos', path: '/turnos/lista' },
+        { id: 'turnos-fecha', label: 'Turnos por fecha', path: '/turnos/por-fecha' },
+        { id: 'turnos-nuevo', label: 'Nuevo turno', path: '/turnos/asignar' },
+        { id: 'turnos-reprogrmar', label: 'Reprogramar turno', path: '/reprogramar-turno' },
       ]
     },
     { 
