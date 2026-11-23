@@ -9,7 +9,7 @@ interface Especialidad {
   descripcion?: string;
 }
 
-export const EspecialidadesLista: React.FC = () => {
+export const EspecialidadLista: React.FC = () => {
   const navigate = useNavigate();
   const [especialidades, setEspecialidades] = useState<Especialidad[]>([]);
   const [loading, setLoading] = useState(true);
