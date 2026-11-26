@@ -8,28 +8,29 @@ import { PageHeader } from '../../constants/PageHeader';
 import { TurnoCard } from './TurnoCard';
 import { toast } from 'sonner';
 
+const obtenerHoyStr = () => {
+  const hoy = new Date();
+  const anio = hoy.getFullYear();
+  const mes = String(hoy.getMonth() + 1).padStart(2, '0');
+  const dia = String(hoy.getDate()).padStart(2, '0');
+  return `${anio}-${mes}-${dia}`;
+};
+
 export const TurnosDelDia = () => {
   const navigate = useNavigate();
   const [turnos, setTurnos] = useState<TurnoItem[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Obtener fecha de hoy en formato YYYY-MM-DD
-  const obtenerHoyStr = () => {
-    const hoy = new Date();
-    const anio = hoy.getFullYear();
-    const mes = String(hoy.getMonth() + 1).padStart(2, '0');
-    const dia = String(hoy.getDate()).padStart(2, '0');
-    return `${anio}-${mes}-${dia}`;
-  };
-
   useEffect(() => {
-    const fetchTurnosHoy = async () => {
+    let activo = true;
+
+    const cargarTurnosHoy = async () => {
       try {
         const hoy = obtenerHoyStr();
-        // Usamos tu endpoint general enviando el parámetro fecha
         const response = await clientesAxios.get(`/turnos?fecha=${hoy}`);
+        if (!activo) return;
+
         const dataApi = response.data;
-        
         let lista: TurnoItem[] = [];
         if (Array.isArray(dataApi)) lista = dataApi;
         else if (Array.isArray(dataApi.turnos)) lista = dataApi.turnos;
@@ -37,15 +38,36 @@ export const TurnosDelDia = () => {
 
         setTurnos(lista);
       } catch (err) {
+        if (!activo) return;
         console.error('Error al cargar turnos del día:', err);
         toast.error('No se pudieron cargar los turnos de hoy.');
       } finally {
-        setLoading(false);
+        if (activo) setLoading(false);
       }
     };
 
-    fetchTurnosHoy();
+    cargarTurnosHoy();
+
+    return () => {
+      activo = false;
+    };
   }, []);
+
+  const handleMarcarAtendido = async (turnoId: string) => {
+    try {
+      const response = await clientesAxios.patch(`/turnos/${turnoId}/atendido`);
+      const mensaje = response.data?.message || 'Turno marcado como atendido.';
+      toast.success(mensaje);
+
+      setTurnos((prev) =>
+        prev.map((t) => (t.id === turnoId ? { ...t, estado: 'ATENDIDO' } : t))
+      );
+    } catch (err: unknown) {
+      console.error('Error al marcar turno como atendido:', err);
+      const errorObj = err as { response?: { data?: { message?: string } } };
+      toast.error(errorObj.response?.data?.message || 'No se pudo marcar el turno como atendido.');
+    }
+  };
 
   return (
     <div className="container-fluid px-2 px-md-4 py-4" style={{ maxWidth: '1000px' }}>
@@ -68,7 +90,7 @@ export const TurnosDelDia = () => {
               onEdit={() => navigate(`/turnos/editar/${turno.id}`)}
               onCancel={() => {}}
               onDelete={() => {}}
-              onMarkAttended={() => {}}
+              onMarkAttended={() => handleMarcarAtendido(turno.id)}
             />
           ))}
         </div>
