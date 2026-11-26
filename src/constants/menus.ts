@@ -7,7 +7,8 @@ import {
   BsShieldLock, 
   BsHospital,
   BsCheckCircle,
-  BsPersonCircle
+  BsPersonCircle,
+  BsJournalMedical
 } from 'react-icons/bs';
 
 // Definimos los roles válidos en el sistema
@@ -113,24 +114,24 @@ export const roleMenus: Record<UserRole, MenuItem[]> = {
     },
       { 
       id: 'turnos-grupo', 
-      label: 'Turnos / Consultas', 
+      label: 'Consultas', 
       icon: BsCalendarCheck, 
       children: [
-        { id: 'turnos-lista', label: 'Ver Listado', path: '/turnos' },
+        { id: 'consultas-lista', label: 'Mis consultas', path: '/consultas-medicas' },
       ]
     },
      { 
      id: 'horarios-grupo', 
-      label: 'Horarios de Atención', 
+      label: 'Mi horario', 
       icon: BsCheckCircle, 
       children: [
-        { id: 'horarios-lista', label: 'Ver Agendas', path: '/horarioAtencion' },
+        { id: 'horarios-lista', label: 'Ver mi horario', path: '/horarioAtencion' },
       ]
     },
     { 
       id: 'historial-medico', 
-      label: 'Historial Médico', 
-      icon: BsHospital, // O BsFileMedical si lo importas de react-icons/bs
+      label: 'Historial de pacientes', 
+      icon: BsJournalMedical,
       path: '/historial-medico' 
     }
   ],

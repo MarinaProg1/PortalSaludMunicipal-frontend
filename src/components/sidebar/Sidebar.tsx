@@ -60,9 +60,17 @@ export function Sidebar({ userRole }: SidebarProps) {
 
 function SidebarContent({ userRole, isMobile = false }: SidebarContentProps) {
   const location = useLocation();
-  const { logout } = useAuth();
+  const { logout, user } = useAuth();
   const normalizedRole = (userRole || 'ADMIN').toUpperCase() as UserRole;
   const menuItems: MenuItem[] = roleMenus[normalizedRole] || roleMenus['ADMIN'] || [];
+
+  const nombreMostrar = [user?.nombre, user?.apellido].filter(Boolean).join(' ').trim() || normalizedRole;
+  const iniciales = (() => {
+    const n = (user?.nombre || '').trim();
+    const a = (user?.apellido || '').trim();
+    if (n || a) return `${n.charAt(0)}${a.charAt(0) || n.charAt(1) || ''}`.toUpperCase();
+    return normalizedRole.substring(0, 2).toUpperCase();
+  })();
 
   // Estado para controlar qué grupo desplegable está abierto
   const [menuAbierto, setMenuAbierto] = useState<string | null>(null);
@@ -181,10 +189,10 @@ function SidebarContent({ userRole, isMobile = false }: SidebarContentProps) {
           data-bs-toggle="dropdown"
           aria-expanded="false"
         >
-          <div className="rounded-circle bg-gradient-salud text-white fw-bold d-flex align-items-center justify-content-center me-2" style={{ width: '32px', height: '32px' }}>
-            {userRole.substring(0, 2).toUpperCase()}
+          <div className="rounded-circle bg-gradient-salud text-white fw-bold d-flex align-items-center justify-content-center me-2" style={{ width: '32px', height: '32px', fontSize: '0.8rem' }}>
+            {iniciales}
           </div>
-          <strong className="text-capitalize">{userRole}</strong>
+          <strong className="text-truncate" style={{ maxWidth: 150 }} title={nombreMostrar}>{nombreMostrar}</strong>
         </button>
 
         <ul className="dropdown-menu shadow w-100" aria-labelledby="dropdownUser1">

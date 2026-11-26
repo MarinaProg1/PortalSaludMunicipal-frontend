@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { BsPlusCircle, BsSearch, BsChevronDown, BsChevronUp, BsCalendarCheck, BsArrowLeft, BsCheckCircle } from 'react-icons/bs';
 import { useNavigate } from 'react-router-dom';
 import clientesAxios from '../../config/axios';
-//import { useAuth } from '../../context/AuthContext';
+import { useAuth } from '../../context/AuthContext';
 import { HorarioAtencionSkeleton } from './HorarioAtencionSkeleton';
 import type { HorarioItem, MedicoAgrupado, DiaDisponibilidad } from './horario.schema';
 import { MedicoAgendaDesplegable } from './MedicoAgendaDesplegable'; 
@@ -10,8 +10,9 @@ import { PageHeader } from '../../constants/PageHeader';
 
 export const HorarioAtencionLista: React.FC = () => {
   const navigate = useNavigate();
-  //const { rol } = useAuth();
-  //const puedeAdministrar = ['ADMIN', 'RECEPCIONISTA'].includes((rol || '').toUpperCase());
+  const { rol } = useAuth();
+  const esMedico = (rol || '').toUpperCase() === 'MEDICO';
+  const puedeAdministrar = ['ADMIN', 'RECEPCIONISTA'].includes((rol || '').toUpperCase());
   const [horarios, setHorarios] = useState<HorarioItem[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -54,6 +55,14 @@ export const HorarioAtencionLista: React.FC = () => {
     fetchHorarios();
     return () => { isMounted = false; };
   }, []);
+
+  useEffect(() => {
+    if (!esMedico || loading) return;
+    const ids = Array.from(new Set(horarios.map((h) => h.medico?._id).filter(Boolean)));
+    if (ids.length === 1) {
+      setMedicoDesplegado(ids[0] as string);
+    }
+  }, [esMedico, loading, horarios]);
 
   useEffect(() => {
     if (!medicoDesplegado) return;
@@ -111,6 +120,7 @@ export const HorarioAtencionLista: React.FC = () => {
   };
 
   const toggleDesplegar = (medicoId: string) => {
+    if (esMedico) return;
     if (medicoDesplegado === medicoId) {
       setMedicoDesplegado(null);
     } else {
@@ -155,32 +165,36 @@ export const HorarioAtencionLista: React.FC = () => {
       
       {/* Cabecera institucional */}
         <PageHeader 
-          titulo="Horarios y Agenda de Turnos por Médico"
-          subtitulo="Consulta la disponibilidad horaria y visualiza la agenda de turnos en tiempo real"
+          titulo={esMedico ? 'Mi horario de atención' : 'Horarios y Agenda de Turnos por Médico'}
+          subtitulo={esMedico ? 'Consultá tus días y franjas horarias de atención.' : 'Consulta la disponibilidad horaria y visualiza la agenda de turnos en tiempo real'}
           icon={<BsCheckCircle className="me-2" style={{ color: '#00ACB2' }} />}
           onBack={() => navigate(-1)}
           rightContent={
+            puedeAdministrar ? (
                <button 
                  className="btn text-white fw-semibold d-flex align-items-center justify-content-center gap-2 shadow-sm"
                  style={{ backgroundColor: '#00ACB2', borderRadius: '8px', padding: '4px 10px' }}
-                 onClick={() => navigate('/excepcion-crear')} 
+                 onClick={() => navigate('/horarioAtencion/nuevo')} 
                >
                  <BsPlusCircle size={18} />
-                 Administar horarios
+                 Configurar horarios
                </button>
-             }
+            ) : undefined
+          }
         />
-        <button 
-          className="btn btn-outline-primary fw-semibold d-flex align-items-center justify-content-center gap-2 shadow-sm"
-          style={{borderRadius: '6px', padding: '4px 16px', margin: '2px'}}
-          onClick={() => navigate('/excepcion-crear')}
-        >
-          <BsPlusCircle size={18} />
-          Registrar Excepción
-        </button>
+        {puedeAdministrar && (
+          <button 
+            className="btn btn-outline-primary fw-semibold d-flex align-items-center justify-content-center gap-2 shadow-sm mb-3"
+            style={{borderRadius: '6px', padding: '4px 16px', margin: '2px'}}
+            onClick={() => navigate('/excepcion-crear')}
+          >
+            <BsPlusCircle size={18} />
+            Registrar Excepción
+          </button>
+        )}
         
       {/* Buscador */}
-      {!medicoDesplegado && (
+      {!medicoDesplegado && !esMedico && (
         <div className="card border-0 shadow-sm mb-4 bg-white" style={{ borderRadius: '12px' }}>
           <div className="card-body p-3">
             <div className="input-group">
@@ -199,7 +213,7 @@ export const HorarioAtencionLista: React.FC = () => {
       )}
 
       {/* Botón de Regresar */}
-      {medicoDesplegado && (
+      {medicoDesplegado && !esMedico && (
         <div className="mb-3">
           <button 
             className="btn btn-outline-secondary btn-sm d-flex align-items-center gap-1 shadow-none"
@@ -243,17 +257,19 @@ export const HorarioAtencionLista: React.FC = () => {
                     </div>
                   </div>
 
-                  <button 
-                    type="button" 
-                    className="btn btn-sm btn-outline-secondary d-flex align-items-center gap-2 rounded-pill px-3 ms-auto ms-sm-0"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      toggleDesplegar(grupo.medicoId);
-                    }}
-                  >
-                    <span>{estaAbierto ? 'Ocultar Agenda' : 'Ver Agenda de Turnos'}</span>
-                    {estaAbierto ? <BsChevronUp /> : <BsChevronDown />}
-                  </button>
+                  {!esMedico && (
+                    <button 
+                      type="button" 
+                      className="btn btn-sm btn-outline-secondary d-flex align-items-center gap-2 rounded-pill px-3 ms-auto ms-sm-0"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toggleDesplegar(grupo.medicoId);
+                      }}
+                    >
+                      <span>{estaAbierto ? 'Ocultar Agenda' : 'Ver Agenda de Turnos'}</span>
+                      {estaAbierto ? <BsChevronUp /> : <BsChevronDown />}
+                    </button>
+                  )}
                 </div>
 
                 {/*Agenda integrada limpiamente mediante el subcomponente */}

@@ -1,11 +1,15 @@
 ﻿import { createContext, useContext, useState, useEffect, type ReactNode } from "react";
 import { decodeJwt } from "../utils/jwt";
+import clientesAxios from "../config/axios";
 
 export interface AuthUser {
   id?: string;
   email?: string;
   user?: string;
   rol?: string;
+  nombre?: string;
+  apellido?: string;
+  especialidades?: string[];
 }
 
 interface AuthContextType {
@@ -52,6 +56,33 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setToken(storedToken);
     setUser(userFromToken(storedToken));
   }, []);
+
+  useEffect(() => {
+    let mounted = true;
+    const cargarPerfil = async () => {
+      if (!token) return;
+      try {
+        const res = await clientesAxios.get('/auth/me');
+        const data = res.data?.data ?? res.data;
+        if (mounted && data) {
+          setUser((prev) => ({
+            ...(prev || {}),
+            id: data.id || prev?.id,
+            email: data.email || prev?.email,
+            user: data.user || prev?.user,
+            rol: data.rol || prev?.rol,
+            nombre: data.nombre || prev?.nombre || prev?.user,
+            apellido: data.apellido ?? prev?.apellido ?? '',
+            especialidades: Array.isArray(data.especialidades) ? data.especialidades : prev?.especialidades,
+          }));
+        }
+      } catch {
+        // fallback: mantener datos del token
+      }
+    };
+    cargarPerfil();
+    return () => { mounted = false; };
+  }, [token]);
 
   const login = (newToken: string, debeCambiarPassword: boolean) => {
     localStorage.setItem("token", newToken);

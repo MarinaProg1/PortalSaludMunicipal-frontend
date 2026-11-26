@@ -32,6 +32,7 @@ import { DetalleHistorialMedico } from "../components/historialMedico/DetalleHis
 import { PerfilView } from "../components/Perfil/PerfilView";
 import { MisPacientes } from "../components/medico/MisPacientes";
 import { AtencionPaciente } from "../components/medico/AtencionPaciente";
+import { ConsultaMedicaLista } from "../components/consultas/ConsultaMedicaLista";
 import { CrearExcepcionView } from "../components/excepcionAgenda/CrearExcepcionView";
 import { ExcepcionesLista } from "../components/excepcionAgenda/ExcepcionesLista";
 import { TurnosHome } from "../components/turnos/TurnosHome";
@@ -128,6 +129,7 @@ const AppRouter = () => {
           <Route path="mis-pacientes" element={<Navigate to="/mis-pacientes/por-atender" replace />} />
           <Route path="mis-pacientes/:bandeja" element={<RequireRole allowed={["MEDICO"]}><MisPacientes /></RequireRole>} />
           <Route path="atencion/:turnoId" element={<RequireRole allowed={["MEDICO"]}><AtencionPaciente /></RequireRole>} />
+          <Route path="consultas-medicas" element={<RequireRole allowed={["ADMIN", "RECEPCIONISTA", "MEDICO"]}><ConsultaMedicaLista /></RequireRole>} />
 
           <Route path="mis-turnos" element={<RequireRole allowed={["PACIENTE"]}><MisTurnos /></RequireRole>} />
           <Route path="mis-turnos/nuevo" element={<RequireRole allowed={["PACIENTE"]}><TurnoPacienteForm /></RequireRole>} />
@@ -157,10 +159,10 @@ const AppRouter = () => {
           <Route path="especialidades/editar/:id" element={<EspecialidadForm />} />
           <Route path="especialidades/:id" element={<DetalleEspecialidad />} />
 
-          <Route path="historial-medico" element={<HistorialMedicoLista />} />
-          <Route path="historial-medico/nuevo/:turnoId" element={<HistorialMedicoForm />} />
-          <Route path="historial-medico/editar/:id" element={<HistorialMedicoForm />} />
-          <Route path="historial-medico/:id" element={<DetalleHistorialMedico />} />
+          <Route path="historial-medico" element={<RequireRole allowed={["ADMIN", "RECEPCIONISTA", "MEDICO"]}><HistorialMedicoLista /></RequireRole>} />
+          <Route path="historial-medico/nuevo/:turnoId" element={<RequireRole allowed={["ADMIN", "RECEPCIONISTA", "MEDICO"]}><HistorialMedicoForm /></RequireRole>} />
+          <Route path="historial-medico/editar/:id" element={<RequireRole allowed={["ADMIN", "RECEPCIONISTA", "MEDICO"]}><HistorialMedicoForm /></RequireRole>} />
+          <Route path="historial-medico/:id" element={<RequireRole allowed={["ADMIN", "RECEPCIONISTA", "MEDICO"]}><DetalleHistorialMedico /></RequireRole>} />
 
           <Route path="excepcion-horario" element ={<ExcepcionesLista/>}/>
           <Route path="excepcion-crear" element ={<CrearExcepcionView/>}/>

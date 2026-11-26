@@ -1,255 +1,256 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { BsCalendarCheck, BsPlusCircle, BsEye, BsPencil, BsTrash, BsSearch } from 'react-icons/bs';
+import { BsJournalMedical, BsSearch, BsEye } from 'react-icons/bs';
+import { isAxiosError } from 'axios';
+import { toast } from 'sonner';
 import clientesAxios from '../../config/axios';
-import { HistorialMedicoSkeleton } from './HistorialMedicoSkeleton';
+import { PageHeader } from '../../constants/PageHeader';
+import { useAuth } from '../../context/AuthContext';
+
+interface ItemDescripcion {
+  descripcion?: string;
+}
+
+interface PacienteRef {
+  id?: string;
+  _id?: string;
+  nombre?: string;
+  apellido?: string;
+  dni?: string;
+}
 
 interface HistorialItem {
-  id: string;
-  paciente?: {
-    nombre?: string;
-    apellido?: string;
-  };
-  medico?: {
-    nombre?: string;
-    apellido?: string;
-  };
-  especialidad?: {
-    nombre?: string;
-  };
-  fecha: string;
-  diagnostico: string;
-  tratamiento: string;
-  observaciones?: string;
+  id?: string;
+  _id?: string;
+  paciente?: PacienteRef | string;
+  grupoSanguineo?: string;
+  alergias?: Array<ItemDescripcion | string>;
+  medicacionActual?: Array<ItemDescripcion | string>;
+  enfermedadesCronicas?: Array<ItemDescripcion | string>;
+  observacionesGenerales?: string;
+  updatedAt?: string;
+  createdAt?: string;
 }
+
+const getId = (h: HistorialItem): string => h.id || h._id || '';
+
+const nombrePaciente = (p: HistorialItem['paciente']): string => {
+  if (!p || typeof p !== 'object') return 'Paciente';
+  const nombre = `${p.apellido || ''} ${p.nombre || ''}`.trim();
+  return nombre || 'Paciente';
+};
+
+const dniPaciente = (p: HistorialItem['paciente']): string => {
+  if (!p || typeof p !== 'object') return '-';
+  return p.dni || '-';
+};
+
+const descripciones = (items?: Array<ItemDescripcion | string>): string[] => {
+  if (!Array.isArray(items)) return [];
+  return items
+    .map((item) => (typeof item === 'string' ? item : item?.descripcion || ''))
+    .map((s) => s.trim())
+    .filter(Boolean);
+};
+
+const resumen = (items?: Array<ItemDescripcion | string>): string => {
+  const vals = descripciones(items);
+  if (vals.length === 0) return 'Sin datos';
+  if (vals.length <= 2) return vals.join(', ');
+  return `${vals.slice(0, 2).join(', ')} +${vals.length - 2}`;
+};
+
+const formatFecha = (fecha?: string): string => {
+  if (!fecha) return '-';
+  const d = new Date(fecha);
+  if (Number.isNaN(d.getTime())) return '-';
+  return d.toLocaleDateString('es-AR');
+};
+
+const extractArray = (responseData: unknown): HistorialItem[] => {
+  if (Array.isArray(responseData)) return responseData as HistorialItem[];
+  if (responseData && typeof responseData === 'object') {
+    const obj = responseData as Record<string, unknown>;
+    if (Array.isArray(obj.data)) return obj.data as HistorialItem[];
+    if (Array.isArray(obj.historiales)) return obj.historiales as HistorialItem[];
+    if (Array.isArray(obj.historial)) return obj.historial as HistorialItem[];
+  }
+  return [];
+};
 
 export const HistorialMedicoLista: React.FC = () => {
   const navigate = useNavigate();
-  const [historial, setHistorial] = useState<HistorialItem[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
+  const { rol } = useAuth();
+  const esMedico = (rol || '').toUpperCase() === 'MEDICO';
+
+  const [historiales, setHistoriales] = useState<HistorialItem[]>([]);
+  const [loading, setLoading] = useState(true);
   const [busqueda, setBusqueda] = useState('');
 
   useEffect(() => {
-    let isMounted = true;
-
-    const fetchHistorial = async () => {
+    let mounted = true;
+    (async () => {
       try {
-        const response = await clientesAxios.get('/historial-medico');
-
-        if (isMounted) {
-          const dataApi = response.data;
-          let listaHistorial: HistorialItem[] = [];
-          if (Array.isArray(dataApi)) {
-            listaHistorial = dataApi;
-          } else if (dataApi && Array.isArray(dataApi.historial)) {
-            listaHistorial = dataApi.historial;
-          } else if (dataApi && Array.isArray(dataApi.data)) {
-            listaHistorial = dataApi.data;
-          }
-
-          setHistorial(listaHistorial);
-          setError(null);
-        }
-      } catch (err) {
-        console.error('Error al cargar el historial:', err);
-        if (isMounted) {
-          setError('No se pudo conectar con el servidor para cargar el historial.');
+        setLoading(true);
+        const res = await clientesAxios.get('/historiales');
+        if (!mounted) return;
+        setHistoriales(extractArray(res.data));
+      } catch (error) {
+        console.error(error);
+        if (mounted) {
+          const mensaje = isAxiosError<{ message?: string }>(error)
+            ? error.response?.data?.message || 'No se pudo cargar el historial médico.'
+            : 'No se pudo cargar el historial médico.';
+          toast.error(mensaje);
         }
       } finally {
-        if (isMounted) {
-          setLoading(false);
-        }
+        if (mounted) setLoading(false);
       }
-    };
-
-    fetchHistorial();
-
+    })();
     return () => {
-      isMounted = false;
+      mounted = false;
     };
   }, []);
 
-  const handleView = (id: string) => {
-    navigate(`/historial-medico-detalle/${id}`);
-  };
-
-  const handleEdit = (id: string) => {
-    navigate(`/historial-medico/editar/${id}`);
-  };
-
-  const handleDelete = async (id: string) => {
-    if (confirm('¿Estás seguro de eliminar este historial médico?')) {
-      try {
-        await clientesAxios.delete(`/historial-medico/${id}`);
-        setHistorial(historial.filter(h => h.id !== id));
-      } catch (err) {
-        console.error('Error al eliminar el historial:', err);
-        alert('Hubo un error al intentar eliminar el registro.');
-      }
-    }
-  };
-
-  const historialFiltrado = Array.isArray(historial) ? historial.filter(h => {
-    const nombrePaciente = `${h.paciente?.nombre || ''} ${h.paciente?.apellido || ''}`.toLowerCase();
-    const nombreMedico = `${h.medico?.nombre || ''} ${h.medico?.apellido || ''}`.toLowerCase();
-    const diagnostico = (h.diagnostico || '').toLowerCase();
-    const termino = busqueda.toLowerCase();
-
-    return nombrePaciente.includes(termino) || nombreMedico.includes(termino) || diagnostico.includes(termino);
-  }) : [];
-
-  if (loading) {
-    return (
-      <div className="container-fluid px-2 px-md-4 py-4">
-        <div className="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3 mb-4 pb-3 border-bottom border-secondary-subtle">
-          <div>
-            <h2 className="fw-bold text-dark mb-1 fs-4 fs-md-3">
-              <BsCalendarCheck className="me-2" style={{ color: '#00ACB2' }} />
-              Gestión de Historial Médico
-            </h2>
-            <p className="text-muted mb-0 small">Control y administración del historial médico en la salita.</p>
-          </div>
-        </div>
-        <HistorialMedicoSkeleton />
-      </div>
-    );
-  }
+  const filtrados = useMemo(() => {
+    const termino = busqueda.trim().toLowerCase();
+    if (!termino) return historiales;
+    return historiales.filter((h) => {
+      const paciente = nombrePaciente(h.paciente).toLowerCase();
+      const dni = dniPaciente(h.paciente).toLowerCase();
+      const grupo = (h.grupoSanguineo || '').toLowerCase();
+      const alergias = descripciones(h.alergias).join(' ').toLowerCase();
+      const cronicas = descripciones(h.enfermedadesCronicas).join(' ').toLowerCase();
+      const medicacion = descripciones(h.medicacionActual).join(' ').toLowerCase();
+      return [paciente, dni, grupo, alergias, cronicas, medicacion].some((v) => v.includes(termino));
+    });
+  }, [historiales, busqueda]);
 
   return (
     <div className="container-fluid px-2 px-md-4 py-4">
+      <PageHeader
+        titulo={esMedico ? 'Historial de mis pacientes' : 'Historial médico'}
+        subtitulo={
+          esMedico
+            ? 'Historiales clínicos de pacientes atendidos por el profesional.'
+            : 'Control y administración del historial clínico.'
+        }
+        icon={<BsJournalMedical className="me-2" style={{ color: '#00ACB2' }} />}
+        onBack={() => navigate(-1)}
+      />
 
-      {/* Cabecera institucional */}
-      <div className="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3 mb-4 pb-3 border-bottom border-secondary-subtle">
-        <div>
-          <h2 className="fw-bold text-dark mb-1 fs-4 fs-md-3">
-            <BsCalendarCheck className="me-2" style={{ color: '#00ACB2' }} />
-            Gestión de Historial Médico
-          </h2>
-          <p className="text-muted mb-0 small">Control y administración del historial médico en la salita.</p>
-        </div>
-
-        <button
-          className="btn text-white fw-semibold d-flex align-items-center justify-content-center gap-2 shadow-sm"
-          style={{ backgroundColor: '#00ACB2', borderRadius: '10px', padding: '10px 18px' }}
-          onClick={() => navigate('/historial-medico/nuevo')}
-        >
-          <BsPlusCircle size={18} />
-          Registrar Nuevo Historial
-        </button>
-      </div>
-
-      {/* Buscador */}
-      <div className="card border-0 shadow-sm bg-white p-3 mb-4" style={{ borderRadius: '12px' }}>
-        <div className="input-group">
-          <span className="input-group-text bg-white border-end-0"><BsSearch className="text-muted" /></span>
-          <input
-            type="text"
-            className="form-control border-start-0 shadow-none"
-            placeholder="Buscar por paciente, médico o diagnóstico..."
-            value={busqueda}
-            onChange={(e) => setBusqueda(e.target.value)}
-          />
-        </div>
-      </div>
-
-      {error && <div className="alert alert-danger">{error}</div>}
-
-      {/* Si no hay historial */}
-      {historialFiltrado.length === 0 && !error && (
-        <div className="card border-0 shadow-sm bg-white p-5 text-center" style={{ borderRadius: '12px' }}>
-          <BsCalendarCheck size={40} className="text-muted mb-3" style={{ color: '#00ACB2' }} />
-          <h5 className="fw-bold">No se encontraron historiales médicos</h5>
-          <p className="text-muted small mb-0">
-            {busqueda ? 'Probá con otro nombre o diagnóstico.' : 'Todavía no hay historiales registrados. Registrá el primero.'}
-          </p>
-        </div>
-      )}
-
-      {/* TABLA PARA ESCRITORIO */}
-      {historialFiltrado.length > 0 && (
-        <div className="d-none d-lg-block card border-0 shadow-sm bg-white overflow-hidden" style={{ borderRadius: '12px' }}>
-          <table className="table table-hover align-middle mb-0">
-            <thead className="table-light text-uppercase fs-7 text-secondary border-bottom">
-              <tr>
-                <th className="py-3 px-4">Paciente</th>
-                <th className="py-3">Médico</th>
-                <th className="py-3">Especialidad</th>
-                <th className="py-3">Fecha</th>
-                <th className="py-3">Diagnóstico</th>
-                <th className="py-3 text-end px-4">Acciones</th>
-              </tr>
-            </thead>
-            <tbody>
-              {historialFiltrado.map((h) => (
-                <tr key={h.id}>
-                  <td className="px-4 fw-semibold">{h.paciente?.nombre} {h.paciente?.apellido}</td>
-                  <td>Dr./Dra. {h.medico?.nombre} {h.medico?.apellido}</td>
-                  <td>{h.especialidad?.nombre}</td>
-                  <td>{new Date(h.fecha).toLocaleDateString('es-ES', { timeZone: 'UTC' })}</td>
-                  <td>
-                    <span className="badge px-3 py-2" style={{ backgroundColor: '#00ACB2', color: 'white', borderRadius: '6px' }}>
-                      {h.diagnostico}
-                    </span>
-                  </td>
-                  <td className="text-end px-4">
-                    <div className="d-flex justify-content-end gap-1">
-                      <button className="btn btn-sm btn-outline-secondary" title="Ver detalle" onClick={() => handleView(h.id)}><BsEye /></button>
-                      <button className="btn btn-sm btn-outline-primary" title="Editar" onClick={() => handleEdit(h.id)}><BsPencil /></button>
-                      <button className="btn btn-sm btn-outline-danger" title="Eliminar" onClick={() => handleDelete(h.id)}><BsTrash /></button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-
-      {/* TARJETAS PARA MÓVIL */}
-      {historialFiltrado.length > 0 && (
-        <div className="d-block d-lg-none">
-          <div className="row g-3">
-            {historialFiltrado.map((h) => (
-              <div className="col-12" key={h.id}>
-                <div className="card border-0 shadow-sm p-3 bg-white" style={{ borderRadius: '12px' }}>
-                  <div className="d-flex justify-content-between align-items-start mb-2">
-                    <div>
-                      <small className="text-muted">Paciente</small>
-                      <h6 className="fw-bold mb-0">{h.paciente?.nombre} {h.paciente?.apellido}</h6>
-                    </div>
-                    <span className="badge rounded-pill px-3 py-2" style={{ backgroundColor: '#00ACB2', color: 'white' }}>
-                      {h.diagnostico}
-                    </span>
-                  </div>
-                  <hr className="my-2 border-secondary-subtle" />
-                  <div className="row g-2 small mb-3">
-                    <div className="col-6">
-                      <small className="text-muted d-block">Médico</small>
-                      <span>Dr./Dra. {h.medico?.nombre} {h.medico?.apellido}</span>
-                    </div>
-                    <div className="col-6">
-                      <small className="text-muted d-block">Fecha</small>
-                      <span>{new Date(h.fecha).toLocaleDateString('es-ES', { timeZone: 'UTC' })}</span>
-                    </div>
-                    <div className="col-12">
-                      <small className="text-muted d-block">Especialidad</small>
-                      <span>{h.especialidad?.nombre}</span>
-                    </div>
-                  </div>
-                  <div className="d-flex justify-content-end gap-1 pt-2 border-top border-secondary-subtle">
-                    <button className="btn btn-sm btn-outline-secondary" onClick={() => handleView(h.id)}><BsEye /> Ver</button>
-                    <button className="btn btn-sm btn-outline-primary" onClick={() => handleEdit(h.id)}><BsPencil /> Editar</button>
-                    <button className="btn btn-sm btn-outline-danger" onClick={() => handleDelete(h.id)}><BsTrash /></button>
-                  </div>
-                </div>
-              </div>
-            ))}
+      <div className="card border-0 shadow-sm mb-4 bg-white" style={{ borderRadius: '12px' }}>
+        <div className="card-body p-3">
+          <div className="input-group">
+            <span className="input-group-text bg-transparent border-end-0 text-muted">
+              <BsSearch />
+            </span>
+            <input
+              type="text"
+              className="form-control border-start-0 shadow-none ps-0"
+              placeholder="Buscar por paciente, DNI, grupo sanguíneo, alergia o medicación..."
+              value={busqueda}
+              onChange={(e) => setBusqueda(e.target.value)}
+              disabled={loading}
+            />
           </div>
         </div>
-      )}
+      </div>
 
+      {loading ? (
+        <div className="text-center py-5 text-muted">Cargando historiales...</div>
+      ) : filtrados.length === 0 ? (
+        <div className="card border-0 shadow-sm bg-white p-5 text-center" style={{ borderRadius: '12px' }}>
+          <p className="text-muted mb-0">
+            {busqueda.trim() ? 'No se encontraron historiales para esa búsqueda.' : 'No hay historiales clínicos registrados.'}
+          </p>
+        </div>
+      ) : (
+        <>
+          <div className="d-none d-lg-block card border-0 shadow-sm bg-white overflow-hidden" style={{ borderRadius: '12px' }}>
+            <table className="table table-hover align-middle mb-0">
+              <thead className="table-light text-uppercase small text-secondary border-bottom">
+                <tr>
+                  <th className="py-3 px-4">Paciente</th>
+                  <th className="py-3">DNI</th>
+                  <th className="py-3">Grupo</th>
+                  <th className="py-3">Alergias</th>
+                  <th className="py-3">Enf. crónicas</th>
+                  <th className="py-3">Medicación</th>
+                  <th className="py-3">Actualizado</th>
+                  <th className="py-3 text-end px-4">Acción</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filtrados.map((h, index) => {
+                  const id = getId(h);
+                  return (
+                    <tr key={id || `hist-${index}`}>
+                      <td className="px-4 fw-semibold">{nombrePaciente(h.paciente)}</td>
+                      <td>{dniPaciente(h.paciente)}</td>
+                      <td>{h.grupoSanguineo || '-'}</td>
+                      <td className="text-truncate" style={{ maxWidth: 180 }}>{resumen(h.alergias)}</td>
+                      <td className="text-truncate" style={{ maxWidth: 180 }}>{resumen(h.enfermedadesCronicas)}</td>
+                      <td className="text-truncate" style={{ maxWidth: 180 }}>{resumen(h.medicacionActual)}</td>
+                      <td>{formatFecha(h.updatedAt || h.createdAt)}</td>
+                      <td className="text-end px-4">
+                        <button
+                          type="button"
+                          className="btn btn-sm text-white fw-semibold d-inline-flex align-items-center gap-1"
+                          style={{ backgroundColor: '#00ACB2', borderRadius: '8px' }}
+                          onClick={() => id && navigate(`/historial-medico/${id}`)}
+                          disabled={!id}
+                        >
+                          <BsEye /> Ver
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+
+          <div className="d-block d-lg-none">
+            <div className="row g-3">
+              {filtrados.map((h, index) => {
+                const id = getId(h);
+                return (
+                  <div className="col-12" key={id || `hist-m-${index}`}>
+                    <div className="card border-0 shadow-sm p-3 bg-white" style={{ borderRadius: '12px' }}>
+                      <div className="d-flex justify-content-between align-items-start mb-2 gap-2">
+                        <div>
+                          <small className="text-muted d-block">Paciente</small>
+                          <h6 className="fw-bold mb-0">{nombrePaciente(h.paciente)}</h6>
+                          <small className="text-muted">DNI {dniPaciente(h.paciente)}</small>
+                        </div>
+                        <span className="badge bg-light text-dark border">{h.grupoSanguineo || '-'}</span>
+                      </div>
+                      <div className="small mb-2">
+                        <div><span className="text-muted">Alergias:</span> {resumen(h.alergias)}</div>
+                        <div><span className="text-muted">Enf. crónicas:</span> {resumen(h.enfermedadesCronicas)}</div>
+                        <div><span className="text-muted">Medicación:</span> {resumen(h.medicacionActual)}</div>
+                        <div><span className="text-muted">Actualizado:</span> {formatFecha(h.updatedAt || h.createdAt)}</div>
+                      </div>
+                      <button
+                        type="button"
+                        className="btn btn-sm text-white fw-semibold"
+                        style={{ backgroundColor: '#00ACB2', borderRadius: '8px' }}
+                        onClick={() => id && navigate(`/historial-medico/${id}`)}
+                        disabled={!id}
+                      >
+                        Ver detalle
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 };
+
 export default HistorialMedicoLista;

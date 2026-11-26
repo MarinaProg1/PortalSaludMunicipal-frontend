@@ -11,6 +11,7 @@ import {
 import { isAxiosError } from 'axios';
 import { toast } from 'sonner';
 import { PageHeader } from '../../constants/PageHeader';
+import { useAuth } from '../../context/AuthContext';
 import { atencionService } from '../../services/atencion.service';
 import { estadoTurnoClase, formatearFecha } from '../pacientePortal/pacientePortal.schema';
 import {
@@ -31,7 +32,11 @@ const normalizarBandeja = (valor?: string): Bandeja =>
 export const MisPacientes: React.FC = () => {
   const navigate = useNavigate();
   const { bandeja } = useParams<{ bandeja: string }>();
+  const { user } = useAuth();
   const bandejaActual = normalizarBandeja(bandeja);
+
+  const nombreMedico = [user?.apellido, user?.nombre].filter(Boolean).join(', ').trim();
+  const especialidadesMedico = Array.isArray(user?.especialidades) ? user.especialidades.filter(Boolean).join(', ') : '';
 
   const [turnos, setTurnos] = useState<TurnoAtencion[]>([]);
   const [loading, setLoading] = useState(true);
@@ -86,6 +91,20 @@ export const MisPacientes: React.FC = () => {
 
   return (
     <div className="container-fluid px-2 px-md-4 py-4">
+      <div className="card border-0 shadow-sm bg-white mb-4" style={{ borderRadius: '12px' }}>
+        <div className="card-body py-3 px-4">
+          <p className="text-muted small mb-1">Bienvenido</p>
+          <h5 className="fw-bold mb-0" style={{ color: '#1f2937' }}>
+            Dr. {nombreMedico || 'Profesional'}
+          </h5>
+          {especialidadesMedico && (
+            <p className="mb-0 mt-1 small" style={{ color: '#00ACB2', fontWeight: 600 }}>
+              {especialidadesMedico}
+            </p>
+          )}
+        </div>
+      </div>
+
       <PageHeader
         titulo={titulo}
         subtitulo={infoBandeja.descripcion}
