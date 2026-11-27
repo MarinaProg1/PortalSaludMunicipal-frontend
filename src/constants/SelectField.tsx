@@ -96,7 +96,7 @@ export const SelectField: FC<TurnoSelectFieldProps> = ({
       {/* Menú desplegable con las opciones filtradas */}
       {isOpen && !disabled && (
         <ul
-          className="list-group position-absolute w-100 shadow mt-1"
+          className="list-group select-field-dropdown position-absolute w-100 shadow mt-1"
           style={{ zIndex: 1050, maxHeight: '200px', overflowY: 'auto' }}
         >
           {filteredOptions.length > 0 ? (

@@ -805,6 +805,32 @@
   color: #102a3c;
 }
 
+.select-field-dropdown {
+  background-color: #ffffff;
+}
+
+.select-field-dropdown .list-group-item {
+  background-color: #ffffff;
+  border-color: #d8d0c1;
+  color: #1c2f3d;
+}
+
+.select-field-dropdown .list-group-item-action:hover,
+.select-field-dropdown .list-group-item-action:focus {
+  background-color: #e8f7f7;
+  color: #102a3c;
+}
+
+.select-field-dropdown .list-group-item.active {
+  background-color: #00acb2;
+  border-color: #00acb2;
+  color: #ffffff;
+}
+
+.select-field-dropdown .list-group-item.text-muted {
+  color: #687785 !important;
+}
+
 .app-main .nav-tabs {
   border-color: var(--ps-line);
 }
