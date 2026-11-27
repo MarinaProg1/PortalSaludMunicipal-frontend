@@ -1,0 +1,239 @@
+﻿import { BrowserRouter, Routes, Route, Navigate, useParams, useNavigate } from "react-router-dom";
+import { goBackSafe } from "../components/utils/navigation";
+import Login from "../pages/auth/Login";
+import CambiarPassword from "../pages/auth/CambiarPassword";
+import { useAuth } from "../context/AuthContext";
+import LayoutPrincipal from "../components/layout/LayoutPrincipal";
+import { TurnosLista } from "../components/turnos/TurnosLista";
+import { DetalleTurno } from "../components/turnos/DetalleTurno";
+import { HorarioAtencionLista } from "../components/horarios/HorarioAtencionLista";
+import { HorarioAtencionForm } from "../components/horarios/HorarioAtencionForm";
+import { ObraSocialLista } from "../components/obrasSociales/ObraSocialLista";
+import { ObraSocialForm } from "../components/obrasSociales/ObraSocialForm";
+import { PacienteLista } from "../components/pacientes/PacienteLista";
+import { PacienteForm } from "../components/pacientes/PacienteForm";
+import { PacienteDetalle } from "../components/pacientes/PacienteDetalle";
+import { MedicoLista } from "../components/medicos/MedicoLista";
+import { MedicoForm } from "../components/medicos/MedicoForm";
+import { DetalleMedico } from "../components/medicos/DetalleMedico";
+import { MisTurnos } from "../components/pacientePortal/MisTurnos";
+import { MiPerfil } from "../components/pacientePortal/MiPerfil";
+import { TurnoPacienteForm } from "../components/pacientePortal/TurnoPacienteForm";
+import { AsignarTurnoView } from "../components/turnos/AsignarTurnoView";
+import { TurnoForm } from "../components/turnos/TurnoForm";
+import { DetalleTurnoPaciente } from "../components/pacientePortal/DetalleTurnoPaciente";
+import { RequireRole } from "./RequireRole";
+import NotFound from "../components/utils/NotFound";
+import { EspecialidadLista } from "../components/especialidades/EspecialidadLista";
+import { EspecialidadForm } from "../components/especialidades/EspecialidadForm";
+import { DetalleEspecialidad } from "../components/especialidades/DetalleEspecialidad";
+import { HistorialMedicoLista } from "../components/historialMedico/HistorialMedicoLista";
+import { HistorialMedicoForm } from "../components/historialMedico/HistorialMedicoForm";
+import { DetalleHistorialMedico } from "../components/historialMedico/DetalleHistorialMedico";
+import { PerfilView } from "../components/Perfil/PerfilView";
+import { MisPacientes } from "../components/medico/MisPacientes";
+import { AtencionPaciente } from "../components/medico/AtencionPaciente";
+import { ConsultaMedicaLista } from "../components/consultas/ConsultaMedicaLista";
+import { CrearExcepcionView } from "../components/excepcionAgenda/CrearExcepcionView";
+import { ExcepcionesLista } from "../components/excepcionAgenda/ExcepcionesLista";
+import { TurnosHome } from "../components/turnos/TurnosHome";
+import { TurnosPorFecha } from "../components/turnos/TurnosPorFecha";
+import { TurnosHistoricos } from "../components/turnos/TurnosHistoricos";
+import { TurnosDelDia } from "../components/turnos/TurnosDelDia";
+import { TurnosAReprogramar } from "../components/turnos/TurnosAReprogramar";
+import { EditarTurnoView } from "../components/turnos/EditarTurnoView";
+import { ConsultasMedicasLista } from '../components/consulta/ConsultasMedicasLista';
+import { ConsultaMedicaDetalle } from '../components/consulta/ConsultaMedicaDetalle';
+import { ConsultaMedicaForm } from '../components/consulta/ConsultaMedicaForm';
+import { ConsultaMedicaEditar } from '../components/consulta/ConsultaMedicaEditar';
+import {MedicoHome} from '../components/medicos/MedicoHome';
+
+const EdicionObraSocialWrapper = () => {
+  const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+
+  return (
+    <ObraSocialForm
+      obraSocialId={id}
+      onSuccess={() => navigate("/obras-sociales")}
+      onCancel={() => goBackSafe(navigate, '/obras-sociales')}
+    />
+  );
+};
+
+const EdicionPacienteWrapper = () => {
+  const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+
+  return (
+    <PacienteForm
+      pacienteId={id}
+      onSuccess={() => navigate("/pacientes")}
+      onCancel={() => goBackSafe(navigate, '/pacientes')}
+    />
+  );
+};
+
+const NuevoMedicoWrapper = () => {
+  const navigate = useNavigate();
+
+  return <MedicoForm onSuccess={() => navigate("/medicos")} onCancel={() => goBackSafe(navigate, '/medicos')} />;
+};
+
+const EdicionMedicoWrapper = () => {
+  const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+
+  return (
+    <MedicoForm
+      medicoId={id}
+      onSuccess={() => navigate("/medicos")}
+      onCancel={() => goBackSafe(navigate, '/medicos')}
+    />
+  );
+};
+
+const HistorialMedicoFormWrapper = () => {
+  const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+
+  return (
+    <HistorialMedicoForm
+      historialId={id}
+      onSuccess={() => navigate('/historial-medico')}
+      onCancel={() => goBackSafe(navigate, '/historial-medico')}
+    />
+  );
+};
+
+const HomeRedirect = () => {
+  const { rol } = useAuth();
+  const rolActual = (rol || '').toUpperCase();
+  const destino =
+    rolActual === 'PACIENTE'
+      ? '/mis-turnos'
+      : rolActual === 'MEDICO'
+        ? '/medicos/home'
+        : '/turnos';
+  return <Navigate to={destino} replace />;
+};
+
+
+const AppRouter = () => {
+  const { isAuthenticated } = useAuth();
+
+  return (
+    <BrowserRouter>
+      <Routes>
+        <Route path="/login" element={!isAuthenticated ? <Login /> : <HomeRedirect />} />
+        <Route path="/cambiar-password" element={isAuthenticated ? <CambiarPassword /> : <Navigate to="/login" replace />} />
+
+        <Route
+          path="/"
+          element={isAuthenticated ? <LayoutPrincipal /> : <Navigate to="/login" replace />}
+        >
+          <Route index element={<HomeRedirect />} />
+
+          <Route path="turnos" element={<TurnosHome />} />
+          <Route path="turnos/lista" element={<TurnosLista />} />
+          <Route path="/turnos/del-dia" element={<TurnosDelDia />} />
+          <Route path="turnos/por-fecha" element={<TurnosPorFecha />} />
+          <Route path="turnos/historicos" element={<TurnosHistoricos />} />
+          <Route path="turnos/asignar" element={<RequireRole allowed={["ADMIN", "RECEPCIONISTA", "MEDICO","PACIENTE"]}><AsignarTurnoView/></RequireRole>}/>
+          <Route path="turnos/nuevo" element={<RequireRole allowed={["ADMIN", "RECEPCIONISTA","MEDICO","PACIENTE"]}><TurnoForm /></RequireRole>} />
+          <Route path="turno-detalle/:id" element={<RequireRole allowed={["ADMIN", "RECEPCIONISTA", "MEDICO"]}><DetalleTurno /></RequireRole>} />
+          <Route path="turnos/editar/:id" element={<RequireRole allowed={["ADMIN", "RECEPCIONISTA"]}><EditarTurnoView/></RequireRole>} />
+
+          <Route path="mis-pacientes" element={<Navigate to="/mis-pacientes/por-atender" replace />} />
+          <Route path="mis-pacientes/:bandeja" element={<RequireRole allowed={["MEDICO"]}><MisPacientes /></RequireRole>} />
+          <Route path="atencion/:turnoId" element={<RequireRole allowed={["MEDICO"]}><AtencionPaciente /></RequireRole>} />
+          <Route path="consultas-medicas" element={<RequireRole allowed={["ADMIN", "RECEPCIONISTA", "MEDICO"]}><ConsultaMedicaLista /></RequireRole>} />
+
+          <Route path="mis-turnos" element={<RequireRole allowed={["PACIENTE"]}><MisTurnos /></RequireRole>} />
+          <Route path="mis-turnos/nuevo" element={<RequireRole allowed={["PACIENTE"]}><TurnoPacienteForm /></RequireRole>} />
+          <Route path="mis-turnos/:id" element={<RequireRole allowed={["PACIENTE"]}><DetalleTurnoPaciente /></RequireRole>} />
+          <Route path="mi-perfil" element={<RequireRole allowed={["PACIENTE"]}><MiPerfil /></RequireRole>} />
+
+          <Route path="horarioAtencion" element={<HorarioAtencionLista />} />
+          <Route path="horarioAtencion/nuevo" element={<RequireRole allowed={["ADMIN", "RECEPCIONISTA"]}><HorarioAtencionForm /></RequireRole>} />
+          <Route path="perfil" element={<PerfilView />} />
+
+          <Route path="obras-sociales" element={<RequireRole allowed={["ADMIN", "RECEPCIONISTA","PACIENTE"]}><ObraSocialLista /></RequireRole>} />
+          <Route path="obras-sociales/nuevo" element={<RequireRole allowed={["ADMIN", "RECEPCIONISTA"]}><ObraSocialForm /></RequireRole>} />
+          <Route path="obras-sociales/editar/:id" element={<RequireRole allowed={["ADMIN", "RECEPCIONISTA"]}><EdicionObraSocialWrapper /></RequireRole>} />
+
+          <Route path="pacientes" element={<RequireRole allowed={["ADMIN", "RECEPCIONISTA", "MEDICO"]}><PacienteLista /></RequireRole>} />
+          <Route path="pacientes/nuevo" element={<RequireRole allowed={["ADMIN", "RECEPCIONISTA"]}><PacienteForm /></RequireRole>} />
+          <Route path="pacientes/editar/:id" element={<RequireRole allowed={["ADMIN", "RECEPCIONISTA"]}><EdicionPacienteWrapper /></RequireRole>} />
+          <Route path="pacientes/:id" element={<RequireRole allowed={["ADMIN", "RECEPCIONISTA", "MEDICO"]}><PacienteDetalle /></RequireRole>} />
+
+          <Route path="medicos" element={<RequireRole allowed={["ADMIN", "RECEPCIONISTA","PACIENTE"]}><MedicoLista /></RequireRole>} />
+          <Route path="medicos/nuevo" element={<RequireRole allowed={["ADMIN", "RECEPCIONISTA"]}><NuevoMedicoWrapper /></RequireRole>} />
+          <Route path="medicos/editar/:id" element={<RequireRole allowed={["ADMIN", "RECEPCIONISTA"]}><EdicionMedicoWrapper /></RequireRole>} />
+          <Route path="medicos/:id" element={<RequireRole allowed={["ADMIN", "RECEPCIONISTA"]}><DetalleMedico /></RequireRole>} />
+          <Route path="medicos/home" element={<RequireRole allowed={["MEDICO"]}><MedicoHome /></RequireRole>} />
+
+          <Route path="especialidades" element={<EspecialidadLista />} />
+          <Route path="especialidades/nuevo" element={<EspecialidadForm />} />
+          <Route path="especialidades/editar/:id" element={<EspecialidadForm />} />
+          <Route path="especialidades/:id" element={<DetalleEspecialidad />} />
+
+          <Route path="historial-medico" element={<RequireRole allowed={["ADMIN", "RECEPCIONISTA", "MEDICO"]}><HistorialMedicoLista /></RequireRole>} />
+          <Route path="historial-medico/nuevo" element={<RequireRole allowed={["ADMIN", "RECEPCIONISTA", "MEDICO"]}><HistorialMedicoFormWrapper /></RequireRole>} />
+          <Route path="historial-medico/editar/:id" element={<RequireRole allowed={["ADMIN", "RECEPCIONISTA", "MEDICO"]}><HistorialMedicoFormWrapper /></RequireRole>} />
+          <Route path="historial-medico/:id" element={<RequireRole allowed={["ADMIN", "RECEPCIONISTA", "MEDICO"]}><DetalleHistorialMedico /></RequireRole>} />
+
+          <Route path="excepcion-horario" element ={<ExcepcionesLista/>}/>
+          <Route path="excepcion-crear" element ={<CrearExcepcionView/>}/>
+          <Route path="reprogramar-turno" element={<TurnosAReprogramar/>}/>
+
+          <Route
+  path="consultas-medicas-dos"
+  element={
+    <RequireRole allowed={["ADMIN", "RECEPCIONISTA", "MEDICO"]}>
+      <ConsultasMedicasLista />
+    </RequireRole>
+  }
+/>
+<Route
+  path="consultas-medicas/nuevo"
+  element={
+    <RequireRole allowed={["ADMIN", "MEDICO"]}>
+      <ConsultaMedicaForm />
+    </RequireRole>
+  }
+/>
+<Route
+  path="consultas-medicas/nuevo/:turnoId"
+  element={
+    <RequireRole allowed={["ADMIN", "MEDICO"]}>
+      <ConsultaMedicaForm />
+    </RequireRole>
+  }
+/>
+<Route
+  path="consultas-medicas/editar/:id"
+  element={
+    <RequireRole allowed={["ADMIN", "MEDICO"]}>
+      <ConsultaMedicaEditar />
+    </RequireRole>
+  }
+/>
+<Route
+  path="consultas-medicas/:id"
+  element={
+    <RequireRole allowed={["ADMIN", "RECEPCIONISTA", "MEDICO"]}>
+      <ConsultaMedicaDetalle />
+    </RequireRole>
+  }
+/>
+          
+        </Route>
+
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+    </BrowserRouter>
+  );
+};
+
+export default AppRouter;

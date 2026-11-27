@@ -1,0 +1,301 @@
+import React, { useState, useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { goBackSafe } from '../utils/navigation';
+import clientesAxios from '../../config/axios';
+import { toast } from 'sonner';
+import { BsCalendarCheck, BsChatText, BsTag } from 'react-icons/bs';
+import type { PacienteItem, MedicoItem, EspecialidadItem } from './turno.schema';
+import { TurnoFormSkeleton } from './TurnoFormSkeleton';
+import { TurnoSelectField } from './TurnoSelectField';
+import { PageHeader } from '../../constants/PageHeader';
+
+const EstadoTurno = {
+  PENDIENTE: 'PENDIENTE',
+  CONFIRMADO: 'CONFIRMADO',
+  ATENDIDO: 'ATENDIDO',
+  CANCELADO: 'CANCELADO',
+} as const;
+
+type EstadoTurnoType = typeof EstadoTurno[keyof typeof EstadoTurno];
+
+export const EditarTurnoView = () => {
+  const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+
+  const [loading, setLoading] = useState<boolean>(true);
+  const [guardando, setGuardando] = useState<boolean>(false);
+
+  // Listas para los selects
+  const [pacientes, setPacientes] = useState<PacienteItem[]>([]);
+  const [medicos, setMedicos] = useState<MedicoItem[]>([]);
+  const [especialidades, setEspecialidades] = useState<EspecialidadItem[]>([]);
+
+  // Estados del formulario
+  const [pacienteId, setPacienteId] = useState<string>('');
+  const [medicoId, setMedicoId] = useState<string>('');
+  const [especialidadId, setEspecialidadId] = useState<string>('');
+  const [fecha, setFecha] = useState<string>('');
+  const [hora, setHora] = useState<string>('');
+  const [estado, setEstado] = useState<EstadoTurnoType>(EstadoTurno.PENDIENTE);
+  const [observaciones, setObservaciones] = useState<string>('');
+
+  // 1. Cargar datos iniciales (Listas de selectores + Datos del Turno actual)
+  useEffect(() => {
+    let isMounted = true;
+
+    const cargarDatos = async () => {
+      try {
+        setLoading(true);
+
+        const [resTurno, resPacientes, resMedicos, resEspecialidades] = await Promise.all([
+          clientesAxios.get(`/turnos/${id}`),
+          clientesAxios.get('/pacientes').catch(() => ({ data: [] })),
+          clientesAxios.get('/medicos').catch(() => ({ data: [] })),
+          clientesAxios.get('/especialidades').catch(() => ({ data: [] }))
+        ]);
+
+        if (!isMounted) return;
+
+        const dataPacientes = resPacientes.data?.data || resPacientes.data || [];
+        const dataMedicos = resMedicos.data?.data || resMedicos.data || [];
+        const dataEspecialidades = resEspecialidades.data?.data || resEspecialidades.data || [];
+
+        const listaPacientes: PacienteItem[] = Array.isArray(dataPacientes) ? dataPacientes : [];
+        setMedicos(Array.isArray(dataMedicos) ? dataMedicos : []);
+        setEspecialidades(Array.isArray(dataEspecialidades) ? dataEspecialidades : []);
+
+        if (resTurno.data && resTurno.data.ok) {
+          const turno = resTurno.data.data;
+
+          const idPac =
+            typeof turno.paciente === 'string'
+              ? turno.paciente
+              : turno.paciente?._id || turno.paciente?.id || '';
+          const idMed =
+            typeof turno.medico === 'string'
+              ? turno.medico
+              : turno.medico?._id || turno.medico?.id || '';
+          const idEsp =
+            typeof turno.especialidad === 'string'
+              ? turno.especialidad
+              : turno.especialidad?._id || turno.especialidad?.id || '';
+
+          if (turno.paciente && typeof turno.paciente === 'object' && idPac) {
+            const yaEsta = listaPacientes.some((p) => (p._id || p.id) === idPac);
+            if (!yaEsta) {
+              listaPacientes.unshift(turno.paciente as PacienteItem);
+            }
+          }
+
+          setPacientes(listaPacientes);
+          setPacienteId(idPac);
+          setMedicoId(idMed);
+          setEspecialidadId(idEsp);
+
+          if (turno.fecha) {
+            const fechaIso = new Date(turno.fecha).toISOString().split('T')[0];
+            setFecha(fechaIso);
+          }
+
+          setHora(turno.hora || '');
+          setEstado(turno.estado || EstadoTurno.PENDIENTE);
+          setObservaciones(turno.observaciones || '');
+        } else {
+          setPacientes(listaPacientes);
+          toast.error('No se pudo cargar la información del turno.');
+        }
+      } catch (err) {
+        console.error('Error al cargar datos de edición:', err);
+        if (isMounted) {
+          toast.error('Error al conectar con el servidor.', {
+            description: 'Asegúrate de que la API esté respondiendo correctamente.'
+          });
+        }
+      } finally {
+        if (isMounted) setLoading(false);
+      }
+    };
+
+    if (id) {
+      void cargarDatos();
+    }
+
+    return () => {
+      isMounted = false;
+    };
+  }, [id]);
+
+  // 2. Manejar la actualización
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setGuardando(true);
+
+    try {
+      const datosActualizados = {
+        paciente: pacienteId,
+        medico: medicoId,
+        especialidad: especialidadId,
+        fecha,
+        hora,
+        estado,
+        observaciones,
+      };
+
+      const response = await clientesAxios.put(`/turnos/${id}`, datosActualizados);
+
+      if (response.data && response.data.ok) {
+        toast.success('¡Turno actualizado exitosamente!');
+        navigate('/turnos');
+      } else {
+        toast.error(response.data.message || 'No se pudo actualizar el turno.');
+      }
+    } catch (err: unknown) {
+      console.error('Error al actualizar el turno:', err);
+      const mensajeError = (err as { response?: { data?: { message?: string } } })?.response?.data?.message
+        || 'Ocurrió un error al guardar los cambios.';
+
+      toast.error(mensajeError);
+    } finally {
+      setGuardando(false);
+    }
+  };
+
+  if (loading) {
+    return <TurnoFormSkeleton />;
+  }
+
+  return (
+    <div className="container py-4" style={{ maxWidth: '750px' }}>
+      <div className="card border-0 shadow-sm p-4 bg-white" style={{ borderRadius: '12px' }}>
+
+        <PageHeader
+          titulo="Editar Turno Médico"
+          subtitulo="Modifica los datos del paciente, fecha, estado u observaciones de la cita."
+          icon={<BsCalendarCheck className="me-2" style={{ color: '#00ACB2' }} />}
+          onBack={() => goBackSafe(navigate, '/turnos')}
+        />
+
+        <form onSubmit={handleSubmit}>
+
+          <TurnoSelectField
+            label="Seleccionar Paciente"
+            value={pacienteId}
+            onChange={setPacienteId}
+            placeholder="Seleccione un paciente..."
+            required
+            options={pacientes.map((p: PacienteItem) => {
+              const pId = p._id || p.id || '';
+              return {
+                value: pId,
+                label: `${(p.apellido || '').toUpperCase()}, ${p.nombre || ''} - DNI: ${p.dni || ''}`,
+              };
+            })}
+          />
+
+          <TurnoSelectField
+            label="Especialidad del Turno"
+            value={especialidadId}
+            onChange={setEspecialidadId}
+            placeholder="Seleccione una especialidad..."
+            required
+            options={especialidades.map((esp: EspecialidadItem) => ({
+              value: esp._id || '',
+              label: esp.nombre.toUpperCase(),
+            }))}
+          />
+
+          <TurnoSelectField
+            label="Médico Asignado"
+            value={medicoId}
+            onChange={setMedicoId}
+            placeholder="Seleccione un médico..."
+            required
+            options={medicos.map((med: MedicoItem) => ({
+              value: med.id || med._id || '',
+              label: `Dr./Dra. ${med.nombre} ${med.apellido}`,
+            }))}
+          />
+
+          {/* Fila para Fecha y Hora */}
+          <div className="row">
+            <div className="col-md-6 mb-3">
+              <label className="form-label fw-semibold text-secondary small">Fecha del Turno</label>
+              <input
+                type="date"
+                className="form-control shadow-none"
+                value={fecha}
+                onChange={(e) => setFecha(e.target.value)}
+                required
+              />
+            </div>
+
+            <div className="col-md-6 mb-3">
+              <label className="form-label fw-semibold text-secondary small">Hora (Ej: 08:30)</label>
+              <input
+                type="text"
+                className="form-control shadow-none"
+                value={hora}
+                onChange={(e) => setHora(e.target.value)}
+                placeholder="08:30"
+                required
+              />
+            </div>
+          </div>
+
+          {/* Estado del Turno */}
+          <div className="mb-3">
+            <label className="form-label fw-semibold text-secondary small">
+              <BsTag className="me-1" /> Estado del Turno
+            </label>
+            <select
+              className="form-select shadow-none"
+              value={estado}
+              onChange={(e) => setEstado(e.target.value as EstadoTurnoType)}
+              required
+            >
+              <option value={EstadoTurno.PENDIENTE}>Pendiente</option>
+              <option value={EstadoTurno.CONFIRMADO}>Confirmado</option>
+              <option value={EstadoTurno.ATENDIDO}>Atendido</option>
+              <option value={EstadoTurno.CANCELADO}>Cancelado</option>
+            </select>
+          </div>
+
+          {/* Observaciones */}
+          <div className="mb-4">
+            <label className="form-label fw-semibold text-secondary small">
+              <BsChatText className="me-1" /> Observaciones / Motivo
+            </label>
+            <textarea
+              className="form-control shadow-none"
+              rows={3}
+              value={observaciones}
+              onChange={(e) => setObservaciones(e.target.value)}
+              placeholder="Ingrese notas adicionales u observaciones..."
+            ></textarea>
+          </div>
+
+          {/* Botones de Acción */}
+          <div className="d-flex justify-content-end gap-2 pt-3 border-top">
+            <button
+              type="button"
+              className="btn btn-light px-4"
+              onClick={() => navigate('/turnos')}
+              disabled={guardando}
+            >
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              className="btn text-white fw-semibold px-4 shadow-sm"
+              style={{ backgroundColor: '#00ACB2' }}
+              disabled={guardando}
+            >
+              {guardando ? 'Actualizando...' : 'Actualizar Turno'}
+            </button>
+          </div>
+
+        </form>
+      </div>
+    </div>
+  );
+};

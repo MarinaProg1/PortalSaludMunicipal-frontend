@@ -1,58 +1,69 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ActionButtons } from '../../constants/ActionButtons';
+import { goBackSafe } from '../utils/navigation';
 import { BsPlusCircle, BsSearch, BsCalendarCheck } from 'react-icons/bs';
 import clientesAxios from '../../config/axios';
-import { TurnosSkeleton } from './TurnosSkeleton'; // <-- Importas tu componente
+import { TurnosSkeleton } from './TurnosSkeleton';
+import type { TurnoItem } from './turno.schema';
+import { PageHeader } from '../../constants/PageHeader';
+import { toast } from 'sonner';
+import { isAxiosError } from 'axios';
+import { TurnoCard } from './TurnoCard';
+import {
+  esFechaDeHoy,
+  normalizarEstadoTurno,
+  normalizarTurnoParaCard,
+  obtenerIdTurno,
+  obtenerNombrePacienteTurno,
+  type TurnoConUrgencia,
+} from './turno.utils';
+import { ConfirmDeleteModal } from '../../constants/ConfirmDeleteModal';
+import { useAuth } from '../../context/AuthContext';
+import { DEFAULT_PAGE_SIZE, parsePaginatedResponse } from '../../utils/pagination';
+import { PaginationControls } from '../common/PaginationControls';
 
-interface TurnoItem {
-  id: string;
-  medico?: {
-    id: string; 
-    nombre: string;
-    apellido: string;
-  };
-  paciente?: {
-    id: string;
-    nombre: string;
-    apellido: string;
-  };
-  especialidad?: {
-    id: string;
-    nombre: string;
-  };
-  fecha: string;
-  hora: string;
-  estado: 'PENDIENTE' | 'CONFIRMADO' | 'CANCELADO' | 'ATENDIDO';
-  activo: boolean;
-}
+export type TurnoListaItem = TurnoConUrgencia;
 
-export const TurnosLista: React.FC = () => {
- const navigate = useNavigate();
-  const [turnos, setTurnos] = useState<TurnoItem[]>([]);
+export const TurnosLista = () => {
+  const navigate = useNavigate();
+  const { rol } = useAuth();
+  const rolActual = (rol || '').toUpperCase();
+  const esMedico = rolActual === 'MEDICO';
+  const fallbackVolver =
+    rolActual === 'PACIENTE' ? '/mis-turnos' : esMedico ? '/medicos/home' : '/turnos';
+
+  const [turnos, setTurnos] = useState<TurnoListaItem[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [busqueda, setBusqueda] = useState('');
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(DEFAULT_PAGE_SIZE);
+  const [total, setTotal] = useState(0);
+
+  const [idTurnoACancelar, setIdTurnoACancelar] = useState<string | null>(null);
+  const [cancelando, setCancelando] = useState<boolean>(false);
 
   useEffect(() => {
     let isMounted = true;
 
     const fetchTurnos = async () => {
       try {
-        const response = await clientesAxios.get('/turnos');
-        
-        if (isMounted) {
-          const dataApi = response.data;
-          let listaTurnos: TurnoItem[] = [];
-          if (Array.isArray(dataApi)) {
-            listaTurnos = dataApi;
-          } else if (dataApi && Array.isArray(dataApi.turnos)) {
-            listaTurnos = dataApi.turnos;
-          } else if (dataApi && Array.isArray(dataApi.data)) {
-            listaTurnos = dataApi.data;
-          }
+        setLoading(true);
+        const response = await clientesAxios.get('/turnos', { params: { page, limit } });
 
-          setTurnos(listaTurnos);
+        if (isMounted) {
+          const resultado = parsePaginatedResponse<TurnoListaItem>(
+            response.data,
+            page,
+            limit,
+            ['turnos']
+          );
+          const normalizados = resultado.items.map((item, idx) => ({
+            ...item,
+            id: obtenerIdTurno(item, `turno-${idx}`),
+          }));
+          setTurnos(normalizados);
+          setTotal(resultado.total);
           setError(null);
         }
       } catch (err) {
@@ -67,202 +78,217 @@ export const TurnosLista: React.FC = () => {
       }
     };
 
-    fetchTurnos();
+    void fetchTurnos();
 
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [page, limit]);
 
   const handleView = (id: string) => {
-    navigate(`/turno-detalle/${id}`);
+    navigate(esMedico ? `/atencion/${id}` : `/turno-detalle/${id}`);
   };
 
   const handleEdit = (id: string) => {
     navigate(`/turnos/editar/${id}`);
   };
 
-  const handleDelete = async (id: string) => {
-    if (confirm('¿Estás seguro de cancelar/eliminar este turno?')) {
-      try {
-        await clientesAxios.delete(`/turnos/${id}`);
-        setTurnos(turnos.filter(t => t.id !== id));
-      } catch (err) {
-        console.error('Error al eliminar el turno:', err);
-        alert('Hubo un error al intentar eliminar el registro.');
-      }
+  const handleAtenderTurno = (id: string) => {
+    navigate(`/consultas-medicas/nuevo/${id}`);
+  };
+
+  const handleOpenCancelModal = (id: string) => {
+    setIdTurnoACancelar(id);
+  };
+
+  const handleConfirmCancel = async () => {
+    if (!idTurnoACancelar) return;
+
+    setCancelando(true);
+    try {
+      const response = await clientesAxios.patch(`/turnos/${idTurnoACancelar}/cancelar`);
+
+      setTurnos((prevTurnos) =>
+        prevTurnos.map((t, idx) =>
+          obtenerIdTurno(t, `turno-${idx}`) === idTurnoACancelar
+            ? {
+                ...t,
+                estado: normalizarEstadoTurno(response.data?.data?.estado || 'cancelado'),
+              }
+            : t
+        )
+      );
+
+      toast.success(response.data?.message || 'Turno cancelado correctamente.');
+      setIdTurnoACancelar(null);
+    } catch (err: unknown) {
+      console.error('Error al cancelar el turno:', err);
+      const mensaje = isAxiosError<{ message?: string }>(err)
+        ? err.response?.data?.message || 'Hubo un error al intentar cancelar el turno.'
+        : 'Hubo un error al intentar cancelar el turno.';
+      toast.error(mensaje);
+    } finally {
+      setCancelando(false);
     }
   };
 
-  const turnosFiltrados = Array.isArray(turnos) ? turnos.filter(t => {
-    const nombrePaciente = `${t.paciente?.nombre || ''} ${t.paciente?.apellido || ''}`.toLowerCase();
-    const nombreMedico = `${t.medico?.nombre || ''} ${t.medico?.apellido || ''}`.toLowerCase();
-    const termino = busqueda.toLowerCase();
+  const handleDelete = async (id: string) => {
+    if (!window.confirm('¿Eliminar este turno definitivamente? Esta acción no se puede deshacer.')) {
+      return;
+    }
 
-    return nombrePaciente.includes(termino) || nombreMedico.includes(termino);
-  }) : [];
+    try {
+      await clientesAxios.delete(`/turnos/${id}`);
+      setTurnos((prevTurnos) =>
+        prevTurnos.filter((t, idx) => obtenerIdTurno(t, `turno-${idx}`) !== id)
+      );
+      setTotal((prevTotal) => Math.max(0, prevTotal - 1));
+      toast.success('Turno eliminado definitivamente de la base de datos.');
+    } catch (err) {
+      console.error('Error al eliminar el turno:', err);
+      toast.error('Hubo un error al intentar eliminar el registro.');
+    }
+  };
+
+  const turnosFiltrados = Array.isArray(turnos)
+    ? turnos
+        .filter((t) => {
+          const nombrePaciente = obtenerNombrePacienteTurno(t).toLowerCase();
+          const nombreMedico = `${t.medico?.nombre || ''} ${t.medico?.apellido || ''}`.toLowerCase();
+          const termino = busqueda.toLowerCase();
+
+          return nombrePaciente.includes(termino) || nombreMedico.includes(termino);
+        })
+        .sort((a, b) => {
+          const esHoyA = esFechaDeHoy(a.fecha);
+          const esHoyB = esFechaDeHoy(b.fecha);
+
+          if (esHoyA && !esHoyB) return -1;
+          if (!esHoyA && esHoyB) return 1;
+
+          const fechaA = new Date(a.fecha).getTime();
+          const fechaB = new Date(b.fecha).getTime();
+
+          if (fechaA !== fechaB) {
+            return fechaA - fechaB;
+          }
+
+          return (a.hora || '').localeCompare(b.hora || '');
+        })
+    : [];
 
   return (
-    <div className="container-fluid px-2 px-md-4 py-4">
-      
-      {/* Cabecera institucional */}
-      <div className="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3 mb-4 pb-3 border-bottom border-secondary-subtle">
-        <div>
-          <h2 className="fw-bold text-dark mb-1 fs-4 fs-md-3">
-            <BsCalendarCheck className="me-2" style={{ color: '#00ACB2' }} />
-            Gestión de Turnos Médicos
-          </h2>
-          <p className="text-muted mb-0 small">Control y administración de turnos asignados en la salita.</p>
-        </div>
-        
-        <button 
-          className="btn text-white fw-semibold d-flex align-items-center justify-content-center gap-2 shadow-sm"
-          style={{ backgroundColor: '#00ACB2', borderRadius: '10px', padding: '10px 18px' }}
-          onClick={() => navigate('/turnos/nuevo')} 
-        >
-          <BsPlusCircle size={18} />
-          Asignar Nuevo Turno
-        </button>
-      </div>
+    <div className="container-fluid px-2 px-md-4 py-4" style={{ maxWidth: '1000px' }}>
+      <PageHeader
+        titulo="Gestión de Turnos Médicos"
+        subtitulo="Control y administración de turnos asignados en la salita."
+        icon={<BsCalendarCheck className="me-2" style={{ color: '#00ACB2' }} />}
+        onBack={() => goBackSafe(navigate, fallbackVolver)}
+        rightContent={
+          !esMedico ? (
+            <button
+              type="button"
+              className="btn text-white fw-semibold d-flex align-items-center justify-content-center gap-2 shadow-sm"
+              style={{ backgroundColor: '#00ACB2', borderRadius: '6px', padding: '4px 8px' }}
+              onClick={() => navigate('/turnos/asignar')}
+            >
+              <BsPlusCircle size={18} />
+              Asignar Nuevo Turno
+            </button>
+          ) : undefined
+        }
+      />
 
-      {/* Buscador */}
       <div className="card border-0 shadow-sm mb-4 bg-white" style={{ borderRadius: '12px' }}>
         <div className="card-body p-3">
           <div className="input-group">
             <span className="input-group-text bg-transparent border-end-0 text-muted">
               <BsSearch size={18} />
             </span>
-            <input 
-              type="text" 
-              className="form-control border-start-0 shadow-none ps-0" 
+            <input
+              type="text"
+              className="form-control border-start-0 shadow-none ps-0"
               placeholder="Buscar por paciente o médico..."
               value={busqueda}
-              onChange={(e) => setBusqueda(e.target.value)}
+              onChange={(e) => {
+                setBusqueda(e.target.value);
+                setPage(1);
+              }}
               disabled={loading}
             />
           </div>
         </div>
       </div>
 
-      {/* Renderizado condicional limpio usando el Skeleton */}
       {loading ? (
         <TurnosSkeleton />
       ) : error ? (
-        <div className="card border-0 shadow-sm bg-danger-subtle text-danger p-4 text-center" style={{ borderRadius: '12px' }}>
+        <div
+          className="card border-0 shadow-sm bg-danger-subtle text-danger p-4 text-center"
+          style={{ borderRadius: '12px' }}
+        >
           <p className="mb-0 fw-semibold">{error}</p>
         </div>
       ) : turnosFiltrados.length > 0 ? (
-        <>
-          {/* VISTA 1: TARJETAS (Móvil) */}
-          <div className="d-block d-lg-none">
-            <div className="row g-3">
-              {turnosFiltrados.map((turno) => (
-                <div className="col-12" key={turno.id}>
-                  <div className="card border-0 shadow-sm p-3 bg-white" style={{ borderRadius: '12px' }}>
-                    <div className="d-flex justify-content-between align-items-start mb-2">
-                      <div>
-                        <span className="text-muted small d-block">Paciente</span>
-                        <h6 className="fw-bold text-dark mb-0">
-                          {turno.paciente?.nombre} {turno.paciente?.apellido}
-                        </h6>
-                      </div>
-                      <span className={`badge px-2 py-1 text-uppercase ${
-                        turno.estado === 'CONFIRMADO' ? 'bg-success-subtle text-success' :
-                        turno.estado === 'PENDIENTE' ? 'bg-warning-subtle text-warning text-dark' :
-                        'bg-danger-subtle text-danger'
-                      }`}>
-                        {turno.estado}
-                      </span>
-                    </div>
+        <div className="row g-3">
+          {turnosFiltrados.map((turno, index) => {
+            const turnoId = obtenerIdTurno(turno, `turno-${index}`);
+            const esTurnoDeHoy = esFechaDeHoy(turno.fecha);
+            const estadoNormalizado = normalizarEstadoTurno(turno.estado);
+            const yaCerrado =
+              Boolean(turno.tieneConsulta) ||
+              ['atendido', 'finalizado', 'cancelado'].includes(estadoNormalizado);
+            const puedeAtender = esMedico && esTurnoDeHoy && !yaCerrado;
 
-                    <hr className="my-2 border-secondary-subtle" />
+            return (
+              <TurnoCard
+                key={turnoId}
+                turno={normalizarTurnoParaCard({ ...turno, id: turnoId }) as TurnoItem}
+                puedeAtender={puedeAtender}
+                onView={() => handleView(turnoId)}
+                onEdit={() => handleEdit(turnoId)}
+                onCancel={() => handleOpenCancelModal(turnoId)}
+                onDelete={() => handleDelete(turnoId)}
+                onMarkAttended={() => {
+                  if (puedeAtender) {
+                    handleAtenderTurno(turnoId);
+                  }
+                }}
+              />
+            );
+          })}
 
-                    <div className="row g-2 small mb-3">
-                      <div className="col-6">
-                        <span className="text-muted d-block">Médico</span>
-                        <span className="fw-medium text-dark">
-                          {turno.medico?.nombre} {turno.medico?.apellido}
-                        </span>
-                      </div>
-                      <div className="col-6">
-                        <span className="text-muted d-block">Especialidad</span>
-                        <span className="fw-medium text-dark">{turno.especialidad?.nombre}</span>
-                      </div>
-                      <div className="col-12 mt-2">
-                        <span className="text-muted d-block">Fecha y Hora</span>
-                        <span className="fw-semibold text-dark">{turno.fecha} - {turno.hora} hs</span>
-                      </div>
-                    </div>
-
-                    <div className="d-flex justify-content-end pt-2 border-top border-secondary-subtle">
-                      <ActionButtons 
-                        onView={() => handleView(turno.id)}
-                        onEdit={() => handleEdit(turno.id)}
-                        onDelete={() => handleDelete(turno.id)}
-                      />
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* VISTA 2: TABLA (Escritorio) */}
-          <div className="d-none d-lg-block card border-0 shadow-sm bg-white overflow-hidden" style={{ borderRadius: '12px' }}>
-            <div className="table-responsive">
-              <table className="table table-hover align-middle mb-0">
-                <thead className="table-light text-uppercase fs-7 text-secondary border-bottom">
-                  <tr>
-                    <th className="py-3 px-4">Paciente</th>
-                    <th className="py-3">Médico</th>
-                    <th className="py-3">Especialidad</th>
-                    <th className="py-3">Fecha y Hora</th>
-                    <th className="py-3">Estado</th>
-                    <th className="py-3 text-end px-4">Acciones</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {turnosFiltrados.map((turno) => (
-                    <tr key={turno.id}>
-                      <td className="px-4 fw-semibold text-dark">
-                        {turno.paciente?.nombre} {turno.paciente?.apellido}
-                      </td>
-                      <td className="text-muted">
-                        {turno.medico?.nombre} {turno.medico?.apellido}
-                      </td>
-                      <td className="text-muted">{turno.especialidad?.nombre}</td>
-                      <td className="text-dark fw-medium">
-                        {turno.fecha} - <span className="text-muted">{turno.hora} hs</span>
-                      </td>
-                      <td>
-                        <span className={`badge px-2 py-1 text-uppercase ${
-                          turno.estado === 'CONFIRMADO' ? 'bg-success-subtle text-success' :
-                          turno.estado === 'PENDIENTE' ? 'bg-warning-subtle text-warning text-dark' :
-                          'bg-danger-subtle text-danger'
-                        }`}>
-                          {turno.estado}
-                        </span>
-                      </td>
-                      <td className="text-end px-4">
-                        <ActionButtons 
-                          onView={() => handleView(turno.id)}
-                          onEdit={() => handleEdit(turno.id)}
-                          onDelete={() => handleDelete(turno.id)}
-                        />
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </>
+          <ConfirmDeleteModal
+            isOpen={idTurnoACancelar !== null}
+            titulo="Confirmar Cancelación de Turno"
+            mensaje="¿Estás seguro de que deseas cancelar este turno? Su estado cambiará a cancelado."
+            cargando={cancelando}
+            onClose={() => setIdTurnoACancelar(null)}
+            onConfirm={handleConfirmCancel}
+          />
+        </div>
       ) : (
-        <div className="card border-0 shadow-sm bg-white p-5 text-center" style={{ borderRadius: '12px' }}>
-          <p className="text-muted mb-0">No se encontraron turnos registrados en la base de datos.</p>
+        <div
+          className="card border-0 shadow-sm bg-white p-5 text-center"
+          style={{ borderRadius: '12px' }}
+        >
+          <p className="text-muted mb-0">
+            No se encontraron turnos registrados en la base de datos.
+          </p>
         </div>
       )}
-
+      {!loading && !error && (
+        <PaginationControls
+          page={page}
+          limit={limit}
+          total={total}
+          onPageChange={setPage}
+          onLimitChange={(newLimit) => {
+            setLimit(newLimit);
+            setPage(1);
+          }}
+        />
+      )}
     </div>
   );
 };

@@ -1,75 +1,126 @@
-# React + TypeScript + Vite
+# Portal de Salud Municipal - Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Aplicación web para administrar turnos y agendas de un centro de salud municipal. Reúne en una sola interfaz las tareas de administración, recepción, atención médica y autogestión de pacientes.
 
-Currently, two official plugins are available:
+## Objetivo del sistema
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+El portal organiza el recorrido de atención: el personal configura profesionales y horarios, asigna turnos, y los médicos pueden revisar sus pacientes, registrar atenciones y consultar información clínica. Cada paciente también cuenta con un espacio propio para gestionar sus turnos y datos personales.
 
-## React Compiler
+## Módulos funcionales
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+### 1. Acceso y permisos
 
-## Expanding the ESLint configuration
+- Inicio de sesión y cierre de sesión.
+- La sesión se mantiene mediante un token de autenticación.
+- El menú y las rutas disponibles dependen del rol: **ADMIN**, **RECEPCIONISTA**, **MEDICO** o **PACIENTE**.
+- Algunas rutas requieren autenticación y otras verifican que el usuario tenga un rol autorizado.
+- Si la cuenta debe actualizar su contraseña, el sistema dirige al usuario al cambio de contraseña.
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+### 2. Gestión de turnos
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+Es el módulo central para organizar la atención médica. Incluye:
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+- **Todos los turnos:** consulta y administración de turnos activos, con búsqueda y acciones disponibles según el rol.
+- **Turnos del día:** vista de la agenda correspondiente a la fecha actual.
+- **Búsqueda por fecha:** consulta de los turnos de un día elegido.
+- **Turnos históricos pendientes:** revisión de turnos anteriores que todavía figuran pendientes de atención o cancelación.
+- **Asignación de turnos:** selección de especialidad, profesional, fecha y horario disponible; luego se completa el registro del turno.
+- **Detalle y edición:** consulta de la información del turno y actualización de sus datos.
+- **Reprogramación:** bandeja de turnos afectados por modificaciones o excepciones en la agenda.
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+Los listados usan paginación del servidor. Por defecto muestran 10 resultados por página y permiten elegir 10, 20 o 50.
 
-```
+### 3. Agendas y disponibilidad
 
-You can also install [eslint-plugin-react-x](https://npmx.dev/package/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://npmx.dev/package/eslint-plugin-react-dom) for React-specific lint rules:
+Permite consultar los horarios de atención agrupados por profesional. Desde la agenda se puede explorar la disponibilidad mensual y los horarios libres para una fecha. El personal autorizado puede configurar los bloques de atención de cada médico.
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+### 4. Excepciones de agenda
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+Registra situaciones que modifican la disponibilidad habitual de un profesional, como días no laborables, licencias o cambios de horario. Los turnos afectados pueden consultarse en la bandeja de reprogramación.
 
+### 5. Pacientes
+
+El personal administrativo puede registrar y actualizar pacientes; los usuarios autorizados pueden consultar su ficha. El listado permite buscar pacientes y consultar datos de contacto y obra social. La ficha reúne información relacionada con la atención del paciente.
+
+### 6. Médicos
+
+Incluye el listado de profesionales, sus datos de contacto y matrícula, especialidades y estado. El personal autorizado puede registrar, editar, consultar o desactivar profesionales.
+
+### 7. Especialidades
+
+Administra el catálogo de especialidades disponibles en el centro de salud. Las especialidades se utilizan, entre otras cosas, para filtrar profesionales al asignar un turno.
+
+### 8. Obras sociales
+
+Mantiene el catálogo de obras sociales y sus datos de contacto. Esta información puede asociarse a la ficha del paciente y consultarse durante la gestión administrativa.
+
+### 9. Atención médica y consultas
+
+El médico puede abrir la atención asociada a un turno, revisar los datos del paciente y registrar la consulta. También existe un listado de consultas médicas para revisar las atenciones registradas.
+
+### 10. Historial médico
+
+Permite consultar y mantener la información clínica del paciente, como grupo sanguíneo, alergias, medicación actual, enfermedades crónicas y observaciones. El historial complementa los datos de las consultas y la ficha del paciente.
+
+### 11. Portal del paciente
+
+El paciente dispone de un espacio privado para:
+
+- Consultar sus próximos turnos y su historial.
+- Ver el detalle de un turno.
+- Iniciar la solicitud de un nuevo turno a partir de la disponibilidad publicada.
+- Consultar y actualizar los datos de su perfil.
+
+## Recorrido general para una presentación
+
+1. Iniciar sesión y mostrar cómo el rol define la pantalla inicial y las opciones disponibles.
+2. Desde el módulo de turnos, revisar la agenda del día o buscar turnos por fecha.
+3. Mostrar cómo se seleccionan especialidad, médico y horario para asignar un turno.
+4. Desde el rol médico, abrir la bandeja de pacientes y acceder a una atención o al historial clínico.
+5. Desde el portal del paciente, consultar turnos y revisar los datos del perfil.
+6. Mostrar cómo una excepción de agenda puede generar turnos que requieren reprogramación.
+
+## Organización del frontend
+
+- `src/routes`: rutas de la aplicación y restricciones de acceso.
+- `src/context`: estado compartido de autenticación y usuario.
+- `src/components`: pantallas y componentes, organizados por módulo funcional.
+- `src/services`: comunicación con los servicios de la API.
+- `src/config/axios.ts`: configuración del cliente HTTP y envío del token.
+- `src/constants`: menús por rol y componentes reutilizables de interfaz.
+- `src/utils`: funciones auxiliares compartidas.
+
+## Tecnologías
+
+- React y TypeScript.
+- Vite para desarrollo y compilación.
+- React Router para navegación.
+- Axios para comunicación con la API.
+- Bootstrap y React Icons para la interfaz.
+
+## Ejecución local
+
+1. Instalar dependencias:
+
+   ```bash
+   npm install
+   ```
+
+2. Crear un archivo `.env` basado en `.env.example` y configurar la URL del backend:
+
+   ```env
+   VITE_API_URL=http://localhost:3000
+   ```
+
+3. Iniciar el servidor de desarrollo:
+
+   ```bash
+   npm run dev
+   ```
+
+Comandos adicionales:
+
+```bash
+npm run build
+npm run lint
 ```

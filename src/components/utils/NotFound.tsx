@@ -30,7 +30,7 @@ const NotFound = () => {
 
                             {/* Botón con el color institucional y border-radius armónico */}
                             <Link 
-                                to="/recepcion" 
+                                to="/turnos" 
                                 className="btn text-white fw-semibold d-inline-flex align-items-center gap-2 shadow-sm px-4 py-2"
                                 style={{ backgroundColor: '#00ACB2', borderRadius: '10px' }}
                             >

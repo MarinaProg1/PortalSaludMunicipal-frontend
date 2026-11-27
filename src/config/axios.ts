@@ -1,9 +1,9 @@
 import axios from 'axios';
 
+const apiUrl = (import.meta as ImportMeta & { env?: { VITE_API_URL?: string } }).env?.VITE_API_URL ?? 'http://localhost:3000';
+
 const clientesAxios = axios.create({
-
-    baseURL: (import.meta as ImportMeta & { env: { VITE_API_URL: string } }).env.VITE_API_URL,
-
+    baseURL: apiUrl,
     headers: {
         'Content-Type': 'application/json'
     }
@@ -29,12 +29,28 @@ clientesAxios.interceptors.response.use(
         return response;
     },
     (error) => {
-        if (error.response && error.response.status === 401) {
+        const esIntentoDeLogin =
+            typeof error.config?.url === 'string' && error.config.url.includes('/auth/login');
+
+        // 403 con codigo: el backend exige cambiar la contrasena antes de seguir.
+        const codigo = error.response?.data?.data?.code;
+        if (error.response?.status === 403 && codigo === 'DEBE_CAMBIAR_PASSWORD') {
+            if (window.location.pathname !== '/cambiar-password') {
+                window.location.href = '/cambiar-password';
+            }
+            return Promise.reject(error);
+        }
+
+        // En el login, un 401 significa credenciales incorrectas: dejamos que la
+        // pantalla muestre el toast y NO recargamos (eso borraria el mensaje).
+        if (error.response && error.response.status === 401 && !esIntentoDeLogin) {
             console.warn("Token invalido o expirado. Cerrando sesion...");
 
             localStorage.removeItem('token');
 
-            window.location.href = '/login';
+            if (window.location.pathname !== '/login') {
+                window.location.href = '/login';
+            }
         }
 
         return Promise.reject(error);
