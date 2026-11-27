@@ -124,3 +124,25 @@ Comandos adicionales:
 npm run build
 npm run lint
 ```
+
+## Despliegue en Render
+
+El frontend se publica como un **Static Site**. El archivo `render.yaml` ya configura
+la compilación, la carpeta `dist`, la variable de entorno de la API y la regla de
+rewrite necesaria para que React Router funcione al abrir o recargar rutas internas.
+
+1. Subir estos cambios a la rama que se vaya a desplegar en GitHub.
+2. En Render, elegir **New +** → **Blueprint** y conectar el repositorio.
+3. Seleccionar la rama y confirmar la creación del servicio definido en `render.yaml`.
+   Si Render pide `VITE_API_URL`, ingresar la URL pública base del backend (por
+   ejemplo, `https://mi-api.onrender.com`; agregar el prefijo `/api` solo si el
+   backend lo requiere).
+4. Esperar a que termine el primer deploy y abrir la URL `onrender.com` que muestra
+   el servicio.
+
+`VITE_API_URL` se incorpora durante la compilación: si cambia, actualizarla en
+**Environment** y volver a desplegar. No poner secretos en variables `VITE_*`, ya
+que quedan visibles para quienes cargan la aplicación. El backend debe estar
+desplegado por separado, aceptar solicitudes desde el dominio del frontend mediante
+CORS y usar HTTPS. Si el `package.json` está en una subcarpeta del repositorio
+conectado, configurar esa carpeta como **Root Directory** del servicio en Render.

@@ -6,7 +6,8 @@ import { BsCalendarPlus, BsCheckCircle } from 'react-icons/bs';
 import clientesAxios from '../../config/axios';
 import { PageHeader } from '../../constants/PageHeader';
 import { pacientePortalService } from '../../services/pacientePortal.service';
-import type { HorarioAtencionItem, MedicoItem, OptionItem } from '../turnos/turno.schema';
+import type { HorarioItem } from '../horarios/horario.schema';
+import type { MedicoItem, OptionItem } from '../turnos/turno.schema';
 
 const DIAS_SEMANA = ['DOMINGO', 'LUNES', 'MARTES', 'MIERCOLES', 'JUEVES', 'VIERNES', 'SABADO'];
 
@@ -50,7 +51,7 @@ export const TurnoPacienteForm: React.FC = () => {
 
   const [medicos, setMedicos] = useState<MedicoItem[]>([]);
   const [especialidadesDisponibles, setEspecialidadesDisponibles] = useState<OptionItem[]>([]);
-  const [horariosMedico, setHorariosMedico] = useState<HorarioAtencionItem[]>([]);
+  const [horariosMedico, setHorariosMedico] = useState<HorarioItem[]>([]);
 
   const [formData, setFormData] = useState({
     medico: '',
@@ -91,7 +92,7 @@ export const TurnoPacienteForm: React.FC = () => {
     try {
       setLoadingHorarios(true);
       const res = await clientesAxios.get(`/horarioAtencion?medico=${medicoId}`);
-      setHorariosMedico(extraerArray(res.data) as HorarioAtencionItem[]);
+      setHorariosMedico(extraerArray(res.data) as HorarioItem[]);
     } catch (e) {
       console.error(e);
       setHorariosMedico([]);
