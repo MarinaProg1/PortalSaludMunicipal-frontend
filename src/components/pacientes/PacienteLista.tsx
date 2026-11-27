@@ -1,5 +1,6 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { goBackSafe } from '../utils/navigation';
 import { BsHeartPulse, BsPlusCircle, BsSearch } from 'react-icons/bs';
 import { ActionButtons } from '../../constants/ActionButtons';
 import { PageHeader } from '../../constants/PageHeader';
@@ -9,6 +10,8 @@ import { getPacienteId, type PacienteItem } from './paciente.schema';
 import type { ObraSocialItem } from '../obrasSociales/obraSocial.schema';
 import { useAuth } from '../../context/AuthContext';
 import toast from 'react-hot-toast';
+import { DEFAULT_PAGE_SIZE } from '../../utils/pagination';
+import { PaginationControls } from '../common/PaginationControls';
 
 export const PacienteLista: React.FC = () => {
   const navigate = useNavigate();
@@ -18,15 +21,18 @@ export const PacienteLista: React.FC = () => {
   const [obras, setObras] = useState<ObraSocialItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [busqueda, setBusqueda] = useState('');
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(DEFAULT_PAGE_SIZE);
+  const [total, setTotal] = useState(0);
 
-  const cargar = async () => {
+  const cargar = useCallback(async () => {
     try {
-      setLoading(true);
-      const [pacientes, obrasSociales] = await Promise.all([
-        pacienteService.listar(),
+      const [resultadoPacientes, obrasSociales] = await Promise.all([
+        pacienteService.listarPaginado(page, limit),
         obraSocialService.listar(true).catch(() => []),
       ]);
-      setItems(Array.isArray(pacientes) ? pacientes : []);
+      setItems(resultadoPacientes.items);
+      setTotal(resultadoPacientes.total);
       setObras(Array.isArray(obrasSociales) ? obrasSociales : []);
     } catch (e) {
       console.error(e);
@@ -34,11 +40,33 @@ export const PacienteLista: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [page, limit]);
 
   useEffect(() => {
-    cargar();
-  }, []);
+    let activo = true;
+    Promise.all([
+      pacienteService.listarPaginado(page, limit),
+      obraSocialService.listar(true).catch(() => []),
+    ])
+      .then(([resultadoPacientes, obrasSociales]) => {
+        if (!activo) return;
+        setItems(resultadoPacientes.items);
+        setTotal(resultadoPacientes.total);
+        setObras(Array.isArray(obrasSociales) ? obrasSociales : []);
+      })
+      .catch((e) => {
+        if (!activo) return;
+        console.error(e);
+        toast.error('No se pudieron cargar los pacientes');
+      })
+      .finally(() => {
+        if (activo) setLoading(false);
+      });
+
+    return () => {
+      activo = false;
+    };
+  }, [page, limit]);
 
   const obrasMap = useMemo(() => {
     const map: Record<string, string> = {};
@@ -60,7 +88,8 @@ export const PacienteLista: React.FC = () => {
     try {
       await pacienteService.eliminar(id);
       toast.success('Paciente eliminado');
-      cargar();
+      setLoading(true);
+      await cargar();
     } catch (e) {
       console.error(e);
       toast.error('Error al eliminar el paciente');
@@ -84,7 +113,7 @@ export const PacienteLista: React.FC = () => {
         titulo="Pacientes"
         subtitulo="Administracion de pacientes del sistema."
         icon={<BsHeartPulse className="me-2" style={{ color: '#00ACB2' }} />}
-        onBack={() => navigate(-1)}
+        onBack={() => goBackSafe(navigate)}
         rightContent={
           puedeAdministrar ? (
             <button
@@ -109,7 +138,11 @@ export const PacienteLista: React.FC = () => {
               className="form-control border-start-0 shadow-none ps-0"
               placeholder="Buscar por nombre, apellido, DNI o email..."
               value={busqueda}
-              onChange={(e) => setBusqueda(e.target.value)}
+              onChange={(e) => {
+                setBusqueda(e.target.value);
+                if (page !== 1) setLoading(true);
+                setPage(1);
+              }}
               disabled={loading}
             />
           </div>
@@ -167,6 +200,22 @@ export const PacienteLista: React.FC = () => {
         <div className="card border-0 shadow-sm bg-white p-5 text-center" style={{ borderRadius: '12px' }}>
           <p className="text-muted mb-0">No se encontraron pacientes.</p>
         </div>
+      )}
+      {!loading && (
+        <PaginationControls
+          page={page}
+          limit={limit}
+          total={total}
+          onPageChange={(newPage) => {
+            setLoading(true);
+            setPage(newPage);
+          }}
+          onLimitChange={(newLimit) => {
+            setLoading(true);
+            setLimit(newLimit);
+            setPage(1);
+          }}
+        />
       )}
     </div>
   );

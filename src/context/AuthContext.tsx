@@ -52,17 +52,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<AuthUser | null>(() => userFromToken(getStoredToken()));
 
   useEffect(() => {
-    const storedToken = getStoredToken();
-    setToken(storedToken);
-    setUser(userFromToken(storedToken));
-  }, []);
-
-  useEffect(() => {
     let mounted = true;
     const cargarPerfil = async () => {
       if (!token) return;
       try {
-        const res = await clientesAxios.get('/auth/me');
+        const res = await clientesAxios.get("/auth/me");
         const data = res.data?.data ?? res.data;
         if (mounted && data) {
           setUser((prev) => ({
@@ -72,16 +66,20 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             user: data.user || prev?.user,
             rol: data.rol || prev?.rol,
             nombre: data.nombre || prev?.nombre || prev?.user,
-            apellido: data.apellido ?? prev?.apellido ?? '',
-            especialidades: Array.isArray(data.especialidades) ? data.especialidades : prev?.especialidades,
+            apellido: data.apellido ?? prev?.apellido ?? "",
+            especialidades: Array.isArray(data.especialidades)
+              ? data.especialidades
+              : prev?.especialidades,
           }));
         }
       } catch {
         // fallback: mantener datos del token
       }
     };
-    cargarPerfil();
-    return () => { mounted = false; };
+    void cargarPerfil();
+    return () => {
+      mounted = false;
+    };
   }, [token]);
 
   const login = (newToken: string, debeCambiarPassword: boolean) => {
@@ -98,7 +96,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         rolActual === "PACIENTE"
           ? "/mis-turnos"
           : rolActual === "MEDICO"
-            ? "/mis-pacientes/por-atender"
+            ? "/medicos/home"
             : "/turnos";
       window.location.href = destino;
     }
@@ -128,6 +126,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   );
 };
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (context === undefined) {

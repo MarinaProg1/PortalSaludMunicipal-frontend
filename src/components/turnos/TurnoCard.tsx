@@ -1,7 +1,17 @@
 import { ActionButtons } from '../../constants/ActionButtons';
 import { BsCalendarEvent, BsCheckCircle, BsClock, BsXCircle } from 'react-icons/bs';
 import type { TurnoCardProps } from './turno.schema';
-import { esFechaDeHoy, formatearFechaTurno } from './turno.utils';
+import {
+  esFechaDeHoy,
+  formatearFechaTurno,
+  normalizarEstadoTurno,
+  obtenerNombrePacienteTurno,
+  type TurnoConUrgencia,
+} from './turno.utils';
+
+interface TurnoCardExtendidoProps extends TurnoCardProps {
+  puedeAtender?: boolean;
+}
 
 export const TurnoCard = ({
   turno,
@@ -10,10 +20,18 @@ export const TurnoCard = ({
   onDelete,
   onCancel,
   onMarkAttended,
-}: TurnoCardProps) => {
-  const estadoLower = turno.estado?.toLowerCase() || '';
+  puedeAtender,
+}: TurnoCardExtendidoProps) => {
+  const estadoNormalizado = normalizarEstadoTurno(turno.estado);
   const turnoEsDeHoy = esFechaDeHoy(turno.fecha);
-  const esCancelado = estadoLower === 'cancelado';
+  const esAtendido = estadoNormalizado === 'atendido' || estadoNormalizado === 'finalizado';
+  const esCancelado = estadoNormalizado === 'cancelado';
+  const mostrarAtender =
+    typeof puedeAtender === 'boolean'
+      ? puedeAtender && !esAtendido && !esCancelado
+      : !esAtendido && !esCancelado && turnoEsDeHoy;
+
+  const nombrePaciente = obtenerNombrePacienteTurno(turno as unknown as TurnoConUrgencia);
 
   return (
     <div className="col-12 col-md-6">
@@ -25,17 +43,20 @@ export const TurnoCard = ({
           <div className="d-flex justify-content-between align-items-start mb-2">
             <div>
               <span className="text-muted small d-block">Paciente</span>
-              <h6 className="fw-bold text-dark mb-0 fs-5">
-                {turno.paciente?.nombre} {turno.paciente?.apellido}
-              </h6>
+              <h6 className="fw-bold text-dark mb-0 fs-5">{nombrePaciente}</h6>
             </div>
-            <span className={`badge px-2 py-1 text-uppercase ${
-              estadoLower === 'confirmado' ? 'bg-success-subtle text-success' :
-              estadoLower === 'pendiente' ? 'bg-warning-subtle text-warning text-dark' :
-              estadoLower === 'atendido' ? 'bg-info-subtle text-info fw-bold' :
-              'bg-danger-subtle text-danger'
-            }`}>
-              {turno.estado}
+            <span
+              className={`badge px-2 py-1 text-uppercase ${
+                estadoNormalizado === 'confirmado'
+                  ? 'bg-success-subtle text-success'
+                  : estadoNormalizado === 'pendiente'
+                    ? 'bg-warning-subtle text-dark'
+                    : esAtendido
+                      ? 'bg-info-subtle text-info fw-bold'
+                      : 'bg-danger-subtle text-danger'
+              }`}
+            >
+              {estadoNormalizado}
             </span>
           </div>
 
@@ -45,12 +66,12 @@ export const TurnoCard = ({
             <div className="col-6">
               <span className="text-muted d-block">Médico</span>
               <span className="fw-medium text-dark">
-                Dr./Dra. {turno.medico?.nombre} {turno.medico?.apellido}
+                Dr./Dra. {turno.medico?.nombre || ''} {turno.medico?.apellido || ''}
               </span>
             </div>
             <div className="col-6">
               <span className="text-muted d-block">Especialidad</span>
-              <span className="fw-medium text-dark">{turno.especialidad?.nombre}</span>
+              <span className="fw-medium text-dark">{turno.especialidad?.nombre || '-'}</span>
             </div>
             <div className="col-12 mt-2 d-flex align-items-center gap-3">
               <div className="d-flex align-items-center gap-1 text-secondary">
@@ -66,8 +87,8 @@ export const TurnoCard = ({
         </div>
 
         <div className="d-flex align-items-center justify-content-between pt-2 border-top border-secondary-subtle">
-          <div>
-            {estadoLower !== 'atendido' && turnoEsDeHoy && (
+          <div className="d-flex align-items-center gap-2">
+            {mostrarAtender && onMarkAttended && (
               <button
                 type="button"
                 className="btn btn-sm btn-outline-success d-flex align-items-center gap-1 px-2 py-1 fw-semibold"
@@ -80,7 +101,7 @@ export const TurnoCard = ({
               </button>
             )}
 
-            {onCancel && !esCancelado && estadoLower !== 'atendido' && (
+            {onCancel && !esCancelado && !esAtendido && (
               <button
                 type="button"
                 className="btn btn-sm btn-outline-warning d-flex align-items-center gap-1 px-2 py-1 fw-semibold text-dark"

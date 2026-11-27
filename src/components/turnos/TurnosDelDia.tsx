@@ -1,5 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { goBackSafe } from '../utils/navigation';
 import { BsCalendarDay } from 'react-icons/bs';
 import clientesAxios from '../../config/axios';
 import { TurnosSkeleton } from './TurnosSkeleton';
@@ -7,6 +8,17 @@ import type { TurnoItem } from './turno.schema';
 import { PageHeader } from '../../constants/PageHeader';
 import { TurnoCard } from './TurnoCard';
 import { toast } from 'sonner';
+import { DEFAULT_PAGE_SIZE, parsePaginatedResponse } from '../../utils/pagination';
+import { PaginationControls } from '../common/PaginationControls';
+import {
+  normalizarEstadoTurno,
+  normalizarTurnoParaCard,
+  obtenerIdTurno,
+  type TurnoConUrgencia,
+} from './turno.utils';
+import { useAuth } from '../../context/AuthContext';
+
+type TurnoDiaItem = TurnoConUrgencia;
 
 const obtenerHoyStr = () => {
   const hoy = new Date();
@@ -16,27 +28,47 @@ const obtenerHoyStr = () => {
   return `${anio}-${mes}-${dia}`;
 };
 
+const esTurnoAtendido = (turno: TurnoDiaItem): boolean => {
+  const estado = normalizarEstadoTurno(turno.estado);
+  return estado === 'atendido' || estado === 'finalizado' || Boolean(turno.tieneConsulta);
+};
+
 export const TurnosDelDia = () => {
   const navigate = useNavigate();
-  const [turnos, setTurnos] = useState<TurnoItem[]>([]);
+  const auth = useAuth() as {
+    rol?: string;
+  };
+
+  const rolActual = (auth.rol || '').toUpperCase();
+  const esMedico = rolActual === 'MEDICO';
+
+  const [turnos, setTurnos] = useState<TurnoDiaItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(DEFAULT_PAGE_SIZE);
+  const [total, setTotal] = useState(0);
 
   useEffect(() => {
     let activo = true;
 
     const cargarTurnosHoy = async () => {
       try {
+        setLoading(true);
         const hoy = obtenerHoyStr();
-        const response = await clientesAxios.get(`/turnos?fecha=${hoy}`);
+        const response = await clientesAxios.get('/turnos', {
+          params: { fecha: hoy, page, limit },
+        });
         if (!activo) return;
 
-        const dataApi = response.data;
-        let lista: TurnoItem[] = [];
-        if (Array.isArray(dataApi)) lista = dataApi;
-        else if (Array.isArray(dataApi.turnos)) lista = dataApi.turnos;
-        else if (Array.isArray(dataApi.data)) lista = dataApi.data;
+        const resultado = parsePaginatedResponse<TurnoDiaItem>(
+          response.data,
+          page,
+          limit,
+          ['turnos']
+        );
 
-        setTurnos(lista);
+        setTurnos(resultado.items);
+        setTotal(resultado.total);
       } catch (err) {
         if (!activo) return;
         console.error('Error al cargar turnos del día:', err);
@@ -46,58 +78,117 @@ export const TurnosDelDia = () => {
       }
     };
 
-    cargarTurnosHoy();
+    void cargarTurnosHoy();
 
     return () => {
       activo = false;
     };
-  }, []);
+  }, [page, limit]);
+
+  const turnosOrdenados = useMemo(() => {
+    return [...turnos].sort((a, b) => {
+      const atendidoA = esTurnoAtendido(a);
+      const atendidoB = esTurnoAtendido(b);
+
+      if (atendidoA !== atendidoB) {
+        return atendidoA ? 1 : -1;
+      }
+
+      return String(a.hora || '').localeCompare(String(b.hora || ''));
+    });
+  }, [turnos]);
 
   const handleMarcarAtendido = async (turnoId: string) => {
+    if (esMedico) {
+      navigate(`/consultas-medicas/nuevo/${turnoId}`);
+      return;
+    }
+
     try {
       const response = await clientesAxios.patch(`/turnos/${turnoId}/atendido`);
       const mensaje = response.data?.message || 'Turno marcado como atendido.';
       toast.success(mensaje);
 
+      const estadoActualizado = normalizarEstadoTurno(
+        response.data?.data?.estado || 'atendido'
+      ).toUpperCase() as TurnoItem['estado'];
+
       setTurnos((prev) =>
-        prev.map((t) => (t.id === turnoId ? { ...t, estado: 'ATENDIDO' } : t))
+        prev.map((t, idx) =>
+          obtenerIdTurno(t, `turno-${idx}`) === turnoId
+            ? { ...t, estado: estadoActualizado, tieneConsulta: true }
+            : t
+        )
       );
     } catch (err: unknown) {
       console.error('Error al marcar turno como atendido:', err);
       const errorObj = err as { response?: { data?: { message?: string } } };
-      toast.error(errorObj.response?.data?.message || 'No se pudo marcar el turno como atendido.');
+      toast.error(
+        errorObj.response?.data?.message || 'No se pudo marcar el turno como atendido.'
+      );
     }
   };
 
   return (
     <div className="container-fluid px-2 px-md-4 py-4" style={{ maxWidth: '1000px' }}>
-      <PageHeader 
+      <PageHeader
         titulo="Turnos del Día"
         subtitulo={`Programación para hoy (${new Date().toLocaleDateString()})`}
         icon={<BsCalendarDay className="me-2" style={{ color: '#00ACB2' }} />}
-        onBack={() => navigate('/turnos')}
+        onBack={() => goBackSafe(navigate, '/turnos')}
       />
 
       {loading ? (
         <TurnosSkeleton />
-      ) : turnos.length > 0 ? (
+      ) : turnosOrdenados.length > 0 ? (
         <div className="row g-3">
-          {turnos.map((turno) => (
-            <TurnoCard 
-              key={turno.id}
-              turno={turno}
-              onView={() => navigate(`/turno-detalle/${turno.id}`)}
-              onEdit={() => navigate(`/turnos/editar/${turno.id}`)}
-              onCancel={() => {}}
-              onDelete={() => {}}
-              onMarkAttended={() => handleMarcarAtendido(turno.id)}
-            />
-          ))}
+          {turnosOrdenados.map((turno, index) => {
+            const turnoId = obtenerIdTurno(turno, `turno-${index}`);
+            const estadoNormalizado = normalizarEstadoTurno(turno.estado);
+            const yaCerrado =
+              Boolean(turno.tieneConsulta) ||
+              ['atendido', 'finalizado', 'cancelado'].includes(estadoNormalizado);
+            const puedeAtender = !yaCerrado;
+
+            return (
+              <TurnoCard
+                key={turnoId}
+                turno={normalizarTurnoParaCard({ ...turno, id: turnoId })}
+                puedeAtender={puedeAtender}
+                onView={() =>
+                  navigate(esMedico ? `/atencion/${turnoId}` : `/turno-detalle/${turnoId}`)
+                }
+                onEdit={() => navigate(`/turnos/editar/${turnoId}`)}
+                onCancel={() => {}}
+                onDelete={() => {}}
+                onMarkAttended={() => {
+                  if (puedeAtender) {
+                    void handleMarcarAtendido(turnoId);
+                  }
+                }}
+              />
+            );
+          })}
         </div>
       ) : (
-        <div className="card border-0 shadow-sm bg-white p-5 text-center" style={{ borderRadius: '12px' }}>
+        <div
+          className="card border-0 shadow-sm bg-white p-5 text-center"
+          style={{ borderRadius: '12px' }}
+        >
           <p className="text-muted mb-0">No hay turnos programados para el día de hoy.</p>
         </div>
+      )}
+      {!loading && (
+        <PaginationControls
+          page={page}
+          limit={limit}
+          total={total}
+          onPageChange={setPage}
+          onLimitChange={(newLimit) => {
+            setLimit(newLimit);
+            setPage(1);
+          }}
+        />
       )}
     </div>
   );

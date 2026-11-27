@@ -1,5 +1,6 @@
 import clientesAxios from '../config/axios';
 import type { ObraSocialFormValues, ObraSocialItem } from '../components/obrasSociales/obraSocial.schema';
+import { parsePaginatedResponse, type PaginatedResult } from '../utils/pagination';
 
 const BASE = '/obrasociales';
 
@@ -16,6 +17,17 @@ export const obraSocialService = {
   async listar(todas = false): Promise<ObraSocialItem[]> {
     const res = await clientesAxios.get(BASE, { params: todas ? { todas: 'true' } : {} });
     return extractData<ObraSocialItem[]>(res) || [];
+  },
+
+  async listarPaginado(
+    todas: boolean,
+    page: number,
+    limit: number
+  ): Promise<PaginatedResult<ObraSocialItem>> {
+    const res = await clientesAxios.get(BASE, {
+      params: { ...(todas ? { todas: 'true' } : {}), page, limit },
+    });
+    return parsePaginatedResponse<ObraSocialItem>(res.data, page, limit, ['obras', 'obrasSociales']);
   },
 
   async obtener(id: string): Promise<ObraSocialItem> {

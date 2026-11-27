@@ -4,6 +4,7 @@ import type {
   PacienteHistorial,
   PacienteItem,
 } from '../components/pacientes/paciente.schema';
+import { parsePaginatedResponse, type PaginatedResult } from '../utils/pagination';
 
 const BASE = '/pacientes';
 
@@ -19,6 +20,11 @@ export const pacienteService = {
   async listar(params?: { dni?: string; obraSocial?: string }): Promise<PacienteItem[]> {
     const res = await clientesAxios.get(BASE, { params });
     return extractData<PacienteItem[]>(res) || [];
+  },
+
+  async listarPaginado(page: number, limit: number): Promise<PaginatedResult<PacienteItem>> {
+    const res = await clientesAxios.get(BASE, { params: { page, limit } });
+    return parsePaginatedResponse<PacienteItem>(res.data, page, limit, ['pacientes']);
   },
 
   async obtener(id: string): Promise<PacienteItem> {

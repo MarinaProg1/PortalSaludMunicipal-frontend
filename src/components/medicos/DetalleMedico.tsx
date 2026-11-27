@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { goBackSafe } from '../utils/navigation';
 import { BsEnvelope, BsGeoAlt, BsPencil, BsPersonBadge, BsTelephone } from 'react-icons/bs';
 import { PageHeader } from '../../constants/PageHeader';
 import { medicoService } from '../../services/medico.service';
@@ -62,7 +63,7 @@ export const DetalleMedico: React.FC = () => {
           <div className="alert alert-danger mb-3" role="alert">
             {error || 'No se encontró el médico solicitado.'}
           </div>
-          <button className="btn btn-outline-secondary btn-sm" onClick={() => navigate('/medicos')}>
+          <button className="btn btn-outline-secondary btn-sm" onClick={() => goBackSafe(navigate, '/medicos')}>
             Volver al listado
           </button>
         </div>
@@ -92,7 +93,7 @@ export const DetalleMedico: React.FC = () => {
         titulo="Detalle del Médico"
         subtitulo="Información completa del profesional registrado."
         icon={<BsPersonBadge className="me-2" style={{ color: '#00ACB2' }} />}
-        onBack={() => navigate('/medicos')}
+        onBack={() => goBackSafe(navigate, '/medicos')}
         rightContent={
           <button
             className="btn btn-sm text-white fw-semibold d-flex align-items-center gap-1"

@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { goBackSafe } from '../utils/navigation';
 import { BsHeartPulse, BsSave } from 'react-icons/bs';
 import { PageHeader } from '../../constants/PageHeader';
 import { ObraSocialSelect } from '../obrasSociales/ObraSocialSelect';
@@ -15,6 +16,9 @@ import {
 } from './paciente.schema';
 import toast from 'react-hot-toast';
 
+type SexoPaciente = 'M' | 'F';
+type TipoTelefonoValor = 'celular' | 'fijo' | 'trabajo';
+
 interface Props {
   pacienteId?: string;
   onSuccess?: () => void;
@@ -25,7 +29,7 @@ interface FormState {
   nombre: string;
   apellido: string;
   dni: string;
-  sexo: string;
+  sexo: SexoPaciente;
   email: string;
   direccion: {
     calle: string;
@@ -35,7 +39,7 @@ interface FormState {
     barrio: string;
   };
   telefono: {
-    tipo: string;
+    tipo: TipoTelefonoValor;
     codigoArea: string;
     numero: string;
   };
@@ -44,11 +48,45 @@ interface FormState {
   activo: boolean;
 }
 
+interface ApiErrorShape {
+  response?: {
+    data?: {
+      message?: string;
+      error?: string;
+      errors?: Array<{ message?: string } | string>;
+    };
+  };
+}
+
+function normalizarSexo(valor?: string): SexoPaciente {
+  const upper = (valor || '').toUpperCase();
+  if (upper === 'F' || upper === 'FEMENINO') return 'F';
+  return 'M';
+}
+
+function normalizarTipoTelefono(valor?: string): TipoTelefonoValor {
+  const lower = (valor || '').toLowerCase();
+  if (lower === 'fijo' || lower === 'trabajo') return lower;
+  return 'celular';
+}
+
+function extraerMensajeApi(err: unknown, fallback: string): string {
+  const apiErr = err as ApiErrorShape;
+  const dataError = apiErr?.response?.data;
+  if (Array.isArray(dataError?.errors) && dataError.errors.length > 0) {
+    return dataError.errors
+      .map((item) => (typeof item === 'string' ? item : item.message || ''))
+      .filter(Boolean)
+      .join(', ');
+  }
+  return dataError?.message || dataError?.error || fallback;
+}
+
 const EMPTY: FormState = {
   nombre: '',
   apellido: '',
   dni: '',
-  sexo: 'MASCULINO',
+  sexo: 'M',
   email: '',
   direccion: { calle: '', numero: '', piso: '', departamento: '', barrio: '' },
   telefono: { tipo: 'celular', codigoArea: '', numero: '' },
@@ -62,7 +100,7 @@ function pacienteToForm(p: PacienteItem): FormState {
     nombre: p.nombre || '',
     apellido: p.apellido || '',
     dni: p.dni || '',
-    sexo: (p.sexo || 'MASCULINO').toUpperCase(),
+    sexo: normalizarSexo(p.sexo),
     email: p.email || '',
     direccion: {
       calle: p.direccion?.calle || '',
@@ -72,7 +110,7 @@ function pacienteToForm(p: PacienteItem): FormState {
       barrio: p.direccion?.barrio || '',
     },
     telefono: {
-      tipo: p.telefono?.tipo || 'celular',
+      tipo: normalizarTipoTelefono(p.telefono?.tipo),
       codigoArea: p.telefono?.codigoArea || '',
       numero: p.telefono?.numero || '',
     },
@@ -88,7 +126,7 @@ export const PacienteForm: React.FC<Props> = ({ pacienteId, onSuccess, onCancel 
   const [values, setValues] = useState<FormState>(EMPTY);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(!!pacienteId);
 
   // Creación rápida de obra social desde el alta/edición del paciente
   const [refreshObras, setRefreshObras] = useState(0);
@@ -98,26 +136,34 @@ export const PacienteForm: React.FC<Props> = ({ pacienteId, onSuccess, onCancel 
   const [creandoObra, setCreandoObra] = useState(false);
 
   useEffect(() => {
-    if (!pacienteId) {
-      setValues(EMPTY);
-      return;
-    }
+    if (!pacienteId) return;
 
-    setLoading(true);
+    let activo = true;
+
     (async () => {
       try {
         const data = await pacienteService.obtener(pacienteId);
-        setValues(pacienteToForm(data));
+        if (activo) {
+          setValues(pacienteToForm(data));
+        }
       } catch (e) {
         console.error(e);
-        toast.error('No se pudo cargar el paciente');
+        if (activo) {
+          toast.error('No se pudo cargar el paciente');
+        }
       } finally {
-        setLoading(false);
+        if (activo) {
+          setLoading(false);
+        }
       }
     })();
+
+    return () => {
+      activo = false;
+    };
   }, [pacienteId]);
 
-  const setField = (field: keyof FormState, value: string | boolean) => {
+  const setField = <K extends keyof FormState>(field: K, value: FormState[K]) => {
     setValues((prev) => ({ ...prev, [field]: value }));
   };
 
@@ -125,7 +171,10 @@ export const PacienteForm: React.FC<Props> = ({ pacienteId, onSuccess, onCancel 
     setValues((prev) => ({ ...prev, direccion: { ...prev.direccion, [field]: value } }));
   };
 
-  const setTelefono = (field: keyof FormState['telefono'], value: string) => {
+  const setTelefono = <K extends keyof FormState['telefono']>(
+    field: K,
+    value: FormState['telefono'][K]
+  ) => {
     setValues((prev) => ({ ...prev, telefono: { ...prev.telefono, [field]: value } }));
   };
 
@@ -168,9 +217,9 @@ export const PacienteForm: React.FC<Props> = ({ pacienteId, onSuccess, onCancel 
       }
 
       cancelarNuevaObra();
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error(err);
-      toast.error(err?.response?.data?.message || 'Error al crear la obra social');
+      toast.error(extraerMensajeApi(err, 'Error al crear la obra social'));
     } finally {
       setCreandoObra(false);
     }
@@ -192,11 +241,40 @@ export const PacienteForm: React.FC<Props> = ({ pacienteId, onSuccess, onCancel 
       return;
     }
 
+    const numeroCalle = Number(values.direccion.numero.trim());
+    if (!values.direccion.numero.trim() || !Number.isInteger(numeroCalle) || numeroCalle <= 0) {
+      setErrors({ 'direccion.numero': 'El número debe ser un entero positivo' });
+      toast.error('Revisa los campos marcados');
+      return;
+    }
+
     const data = parsed.data;
+    const obraSocialLimpia = values.obraSocial.trim();
+    const tieneObraSocial = obraSocialLimpia.length === 24;
+
     const payload = {
-      ...data,
-      obraSocial: data.obraSocial || null,
-      numeroAfiliado: data.obraSocial ? data.numeroAfiliado || null : null,
+      nombre: data.nombre.trim().toUpperCase(),
+      apellido: data.apellido.trim().toUpperCase(),
+      dni: data.dni.trim(),
+      sexo: normalizarSexo(data.sexo),
+      email: data.email.trim().toLowerCase(),
+      direccion: {
+        calle: values.direccion.calle.trim(),
+        numero: numeroCalle,
+        piso: values.direccion.piso.trim(),
+        departamento: values.direccion.departamento.trim(),
+        barrio: values.direccion.barrio.trim(),
+      },
+      telefono: {
+        tipo: normalizarTipoTelefono(values.telefono.tipo),
+        codigoArea: values.telefono.codigoArea.trim(),
+        numero: values.telefono.numero.trim(),
+      },
+      obraSocial: tieneObraSocial ? obraSocialLimpia : null,
+      numeroAfiliado:
+        tieneObraSocial && values.numeroAfiliado.trim()
+          ? values.numeroAfiliado.trim()
+          : null,
       activo: isEdit ? values.activo : true,
     };
 
@@ -211,9 +289,9 @@ export const PacienteForm: React.FC<Props> = ({ pacienteId, onSuccess, onCancel 
       }
       if (onSuccess) onSuccess();
       else navigate('/pacientes');
-    } catch (err: any) {
-      console.error(err);
-      toast.error(err?.response?.data?.message || 'Error al guardar el paciente');
+    } catch (err: unknown) {
+      console.error('Error al guardar paciente:', (err as ApiErrorShape)?.response?.data || err);
+      toast.error(extraerMensajeApi(err, 'Error al guardar el paciente'));
     } finally {
       setSaving(false);
     }
@@ -227,7 +305,7 @@ export const PacienteForm: React.FC<Props> = ({ pacienteId, onSuccess, onCancel 
         titulo={isEdit ? 'Editar Paciente' : 'Nuevo Paciente'}
         subtitulo={isEdit ? 'Modificar datos del paciente.' : 'Registrar un nuevo paciente en el sistema.'}
         icon={<BsHeartPulse className="me-2" style={{ color: '#00ACB2' }} />}
-        onBack={onCancel || (() => navigate(-1))}
+        onBack={onCancel || (() => goBackSafe(navigate, '/pacientes'))}
       />
 
       <form onSubmit={onSubmit}>
@@ -264,7 +342,7 @@ export const PacienteForm: React.FC<Props> = ({ pacienteId, onSuccess, onCancel 
                   value={values.dni}
                   onChange={(e) => setField('dni', e.target.value)}
                   className={`form-control ${errors.dni ? 'is-invalid' : ''}`}
-                  placeholder="7 u 8 digitos"
+                  placeholder="7 u 8 dígitos"
                 />
                 {errors.dni && <div className="invalid-feedback">{errors.dni}</div>}
               </div>
@@ -274,14 +352,17 @@ export const PacienteForm: React.FC<Props> = ({ pacienteId, onSuccess, onCancel 
                 <select
                   name="sexo"
                   value={values.sexo}
-                  onChange={(e) => setField('sexo', e.target.value)}
+                  onChange={(e) => setField('sexo', normalizarSexo(e.target.value))}
                   className={`form-select ${errors.sexo ? 'is-invalid' : ''}`}
                 >
-                  {SEXOS.map((s) => (
-                    <option key={s} value={s}>
-                      {s}
-                    </option>
-                  ))}
+                  {SEXOS.map((s) => {
+                    const valor = normalizarSexo(s);
+                    return (
+                      <option key={valor} value={valor}>
+                        {valor === 'F' ? 'Femenino' : 'Masculino'}
+                      </option>
+                    );
+                  })}
                 </select>
                 {errors.sexo && <div className="invalid-feedback">{errors.sexo}</div>}
               </div>
@@ -303,7 +384,7 @@ export const PacienteForm: React.FC<Props> = ({ pacienteId, onSuccess, onCancel 
 
         <div className="card border-0 shadow-sm bg-white mb-3" style={{ borderRadius: '12px' }}>
           <div className="card-body p-4">
-            <h6 className="fw-bold text-dark mb-3">Direccion</h6>
+            <h6 className="fw-bold text-dark mb-3">Dirección</h6>
             <div className="row g-3">
               <div className="col-12 col-md-6">
                 <label className="form-label fw-semibold">Calle *</label>
@@ -318,8 +399,11 @@ export const PacienteForm: React.FC<Props> = ({ pacienteId, onSuccess, onCancel 
               </div>
 
               <div className="col-6 col-md-2">
-                <label className="form-label fw-semibold">Numero *</label>
+                <label className="form-label fw-semibold">Número *</label>
                 <input
+                  type="number"
+                  min={1}
+                  step={1}
                   value={values.direccion.numero}
                   onChange={(e) => setDireccion('numero', e.target.value)}
                   className={`form-control ${errors['direccion.numero'] ? 'is-invalid' : ''}`}
@@ -361,13 +445,13 @@ export const PacienteForm: React.FC<Props> = ({ pacienteId, onSuccess, onCancel 
 
         <div className="card border-0 shadow-sm bg-white mb-3" style={{ borderRadius: '12px' }}>
           <div className="card-body p-4">
-            <h6 className="fw-bold text-dark mb-3">Telefono</h6>
+            <h6 className="fw-bold text-dark mb-3">Teléfono</h6>
             <div className="row g-3">
               <div className="col-12 col-md-4">
                 <label className="form-label fw-semibold">Tipo *</label>
                 <select
                   value={values.telefono.tipo}
-                  onChange={(e) => setTelefono('tipo', e.target.value)}
+                  onChange={(e) => setTelefono('tipo', normalizarTipoTelefono(e.target.value))}
                   className={`form-select ${errors['telefono.tipo'] ? 'is-invalid' : ''}`}
                 >
                   {TIPOS_TELEFONO.map((t) => (
@@ -382,12 +466,12 @@ export const PacienteForm: React.FC<Props> = ({ pacienteId, onSuccess, onCancel 
               </div>
 
               <div className="col-6 col-md-3">
-                <label className="form-label fw-semibold">Codigo de area *</label>
+                <label className="form-label fw-semibold">Código de área *</label>
                 <input
                   value={values.telefono.codigoArea}
                   onChange={(e) => setTelefono('codigoArea', e.target.value)}
                   className={`form-control ${errors['telefono.codigoArea'] ? 'is-invalid' : ''}`}
-                  placeholder="Ej: 348"
+                  placeholder="Ej: 3777"
                 />
                 {errors['telefono.codigoArea'] && (
                   <div className="invalid-feedback">{errors['telefono.codigoArea']}</div>
@@ -395,7 +479,7 @@ export const PacienteForm: React.FC<Props> = ({ pacienteId, onSuccess, onCancel 
               </div>
 
               <div className="col-6 col-md-5">
-                <label className="form-label fw-semibold">Numero *</label>
+                <label className="form-label fw-semibold">Número *</label>
                 <input
                   value={values.telefono.numero}
                   onChange={(e) => setTelefono('numero', e.target.value)}
@@ -514,7 +598,7 @@ export const PacienteForm: React.FC<Props> = ({ pacienteId, onSuccess, onCancel 
               </div>
 
               <div className="col-12 col-md-6">
-                <label className="form-label fw-semibold">Numero de afiliado</label>
+                <label className="form-label fw-semibold">Número de afiliado</label>
                 <input
                   value={values.numeroAfiliado}
                   onChange={(e) => setField('numeroAfiliado', e.target.value)}
@@ -526,7 +610,7 @@ export const PacienteForm: React.FC<Props> = ({ pacienteId, onSuccess, onCancel 
 
             {!isEdit && (
               <div className="alert alert-info mt-3 mb-0 py-2 small">
-                Se creara un usuario para el paciente con su email. La contrasena inicial sera su DNI.
+                Se creará un usuario para el paciente con su email. La contraseña inicial será su DNI.
               </div>
             )}
           </div>

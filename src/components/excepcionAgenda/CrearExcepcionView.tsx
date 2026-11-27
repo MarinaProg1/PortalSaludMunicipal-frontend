@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { goBackSafe } from '../utils/navigation';
 import { BsCalendarX, BsChatText, BsPersonBadge, BsTag, BsExclamationTriangle, BsTelephone, BsEnvelope } from 'react-icons/bs';
 import clientesAxios from '../../config/axios';
 import { PageHeader } from '../../constants/PageHeader';
@@ -39,6 +40,7 @@ interface TurnoAfectado {
     email?: string;
   };
 }
+
 export const CrearExcepcionView = () => {
   const navigate = useNavigate();
   const [medicos, setMedicos] = useState<MedicoItem[]>([]);
@@ -88,12 +90,8 @@ export const CrearExcepcionView = () => {
       return;
     }
 
-    const motivoFinal = categoriaMotivo === CategoriaMotivo.OTRO 
-      ? motivoCustom 
-      : `${categoriaMotivo}${motivoCustom ? ` - ${motivoCustom}` : ''}`;
-
-    if (!motivoFinal || motivoFinal.trim().length < 3) {
-      toast.error('El motivo debe tener al menos 3 caracteres.');
+    if (categoriaMotivo === CategoriaMotivo.OTRO && motivoCustom.trim().length < 3) {
+      toast.error('Por favor, ingrese un detalle de al menos 3 caracteres para "Otro".');
       return;
     }
 
@@ -106,7 +104,7 @@ export const CrearExcepcionView = () => {
         tipo,
         horaInicio: tipo === TipoExcepcion.MODIFICACION_HORARIO ? horaInicio : undefined,
         horaFin: tipo === TipoExcepcion.MODIFICACION_HORARIO ? horaFin : undefined,
-        motivo: motivoFinal,
+        motivo: categoriaMotivo,
       };
 
       const response = await clientesAxios.post('/excepciones', payload);
@@ -115,7 +113,6 @@ export const CrearExcepcionView = () => {
         const turnosRepo = response.data.data?.turnosAReprogramar || [];
 
         if (turnosRepo.length > 0) {
-          // Si hay turnos afectados, los guardamos en el estado para mostrárselos al usuario
           setTurnosAfectados(turnosRepo);
           toast.warning(`Excepción registrada, pero hay ${turnosRepo.length} turnos que requieren reprogramación.`);
         } else {
@@ -145,7 +142,7 @@ export const CrearExcepcionView = () => {
           titulo="Registrar Excepción de Agenda"
           subtitulo="Bloquea un día completo o modifica temporalmente el horario de un profesional."
           icon={<BsCalendarX className="me-2" style={{ color: '#00ACB2' }} />}
-          onBack={() => navigate('/excepcion-horario')}
+          onBack={() => goBackSafe(navigate, '/excepcion-horario')}
         />
 
         {error && <div className="alert alert-danger">{error}</div>}

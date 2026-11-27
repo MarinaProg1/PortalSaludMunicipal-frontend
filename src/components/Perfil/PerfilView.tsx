@@ -5,23 +5,37 @@ import { toast } from 'sonner';
 import clientesAxios from '../../config/axios';
 import type { TokenPayload, PerfilState } from './Perfil.Schema';
 
-function formatearTelefono(tel: unknown): string {
-  if (!tel) return 'No especificado';
-  if (typeof tel === 'string') return tel;
+function normalizarTelefono(value: unknown): NonNullable<PerfilState['telefono']> {
+  const texto = (field: unknown): string =>
+    typeof field === 'string' || typeof field === 'number' ? String(field) : '';
 
-  if (typeof tel === 'object' && tel !== null) {
-    const t = tel as { tipo?: string; codigoArea?: string; numero?: string };
-    const partes = [];
-
-    if (t.tipo) partes.push(t.tipo);
-    if (t.codigoArea) partes.push(t.codigoArea);
-    if (t.numero) partes.push(t.numero);
-
-    return partes.length > 0 ? partes.join(' - ') : 'No especificado';
+  if (typeof value === 'object' && value !== null) {
+    const telefono = value as Record<string, unknown>;
+    return {
+      tipo: texto(telefono.tipo),
+      codigoArea: texto(telefono.codigoArea),
+      numero: texto(telefono.numero),
+    };
   }
 
-  return 'No especificado';
+  if (typeof value === 'string') {
+    const extraer = (campo: string): string =>
+      value.match(new RegExp(`["']?${campo}["']?\\s*:\\s*["']?([^,'"}]+)["']?`, 'i'))?.[1].trim() ||
+      '';
+    const telefono = {
+      tipo: extraer('tipo'),
+      codigoArea: extraer('codigoArea'),
+      numero: extraer('numero'),
+    };
+
+    return telefono.tipo || telefono.codigoArea || telefono.numero
+      ? telefono
+      : { numero: value.trim() };
+  }
+
+  return {};
 }
+
 function decodificarToken(token: string): TokenPayload | null {
   try {
     const base64Url = token.split('.')[1];
@@ -53,14 +67,11 @@ function obtenerPerfilInicial(): PerfilState {
     }
   }
 
-  // Tomamos el teléfono tal cual viene (como objeto o undefined)
-  const telRaw = (payload?.telefono || userParsed?.telefono) as PerfilState['telefono'];
-
   return {
     nombre: (payload?.nombre || userParsed?.nombre || 'No especificado') as string,
     apellido: (payload?.apellido || userParsed?.apellido || 'No especificado') as string,
     email: (payload?.email || userParsed?.email || 'No especificado') as string,
-    telefono: telRaw || { tipo: '', codigoArea: '', numero: '' }, 
+    telefono: normalizarTelefono(payload?.telefono || userParsed?.telefono),
     matricula: (payload?.matricula || userParsed?.matricula || '') as string,
     rol: (payload?.rol || userParsed?.rol || 'USER') as string,
   };
@@ -85,13 +96,12 @@ export function PerfilView() {
         const res = await clientesAxios.get('/usuarios/perfil');
         
         const data = (res.data?.data || res.data) as Record<string, unknown>;
-        console.log('Objeto teléfono recibido del backend:', data.telefono);
         if (activo && data) {
           setPerfil({
             nombre: (data.nombre as string) || 'No especificado',
             apellido: (data.apellido as string) || 'No especificado',
             email: (data.email as string) || 'No especificado',
-            telefono: (data.telefono as PerfilState['telefono']) || { tipo: '', codigoArea: '', numero: '' },
+            telefono: normalizarTelefono(data.telefono),
             matricula: (data.matricula as string) || '',
             rol: (data.rol as string) || 'USER',
           });
@@ -183,12 +193,29 @@ export function PerfilView() {
               </p>
             </div>
 
-  <div className="col-md-6">
-  <span className="d-block fw-semibold text-secondary small">Teléfono</span>
-  <p className="text-dark fs-6 mb-0 py-1 px-2 bg-light rounded border border-secondary-subtle">
-    {formatearTelefono(perfil.telefono)}
-  </p>
-</div>
+            <div className="col-md-6">
+              <span className="d-block fw-semibold text-secondary small mb-1">Teléfono</span>
+              <div className="row g-2">
+                <div className="col-12 col-sm-4">
+                  <span className="d-block text-muted small">Tipo</span>
+                  <p className="text-dark fs-6 mb-0 py-1 px-2 bg-light rounded border border-secondary-subtle">
+                    {perfil.telefono?.tipo || 'No especificado'}
+                  </p>
+                </div>
+                <div className="col-6 col-sm-4">
+                  <span className="d-block text-muted small">Código de área</span>
+                  <p className="text-dark fs-6 mb-0 py-1 px-2 bg-light rounded border border-secondary-subtle">
+                    {perfil.telefono?.codigoArea || 'No especificado'}
+                  </p>
+                </div>
+                <div className="col-6 col-sm-4">
+                  <span className="d-block text-muted small">Número</span>
+                  <p className="text-dark fs-6 mb-0 py-1 px-2 bg-light rounded border border-secondary-subtle">
+                    {perfil.telefono?.numero || 'No especificado'}
+                  </p>
+                </div>
+              </div>
+            </div>
             <div className="col-md-6">
               <span className="d-block fw-semibold text-secondary small">Rol en el Sistema</span>
               <p className="text-dark fs-6 mb-0 py-1 px-2 bg-light rounded border border-secondary-subtle text-uppercase">

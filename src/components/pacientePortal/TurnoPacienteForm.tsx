@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { goBackSafe } from '../utils/navigation';
 import { isAxiosError } from 'axios';
 import { BsCalendarPlus, BsCheckCircle } from 'react-icons/bs';
 import clientesAxios from '../../config/axios';
@@ -164,7 +165,7 @@ export const TurnoPacienteForm: React.FC = () => {
           titulo="Sacar un Turno"
           subtitulo="Elegí médico, especialidad, fecha y horario."
           icon={<BsCalendarPlus className="me-2" style={{ color: '#00ACB2' }} />}
-          onBack={() => navigate('/mis-turnos')}
+          onBack={() => goBackSafe(navigate, '/mis-turnos')}
         />
 
         {success && (

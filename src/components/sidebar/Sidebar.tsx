@@ -1,7 +1,8 @@
 import { useState } from 'react';
+import type React from 'react';
 import { roleMenus } from '../../constants/menus';
 import type { UserRole, MenuItem } from '../../constants/menus';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { BsList, BsChevronDown, BsChevronUp } from 'react-icons/bs';
 import { LogoPortalSalud } from '../brand/LogoPortalSalud';
 import { useAuth } from '../../context/AuthContext';
@@ -60,6 +61,7 @@ export function Sidebar({ userRole }: SidebarProps) {
 
 function SidebarContent({ userRole, isMobile = false }: SidebarContentProps) {
   const location = useLocation();
+  const navigate = useNavigate();
   const { logout, user } = useAuth();
   const normalizedRole = (userRole || 'ADMIN').toUpperCase() as UserRole;
   const menuItems: MenuItem[] = roleMenus[normalizedRole] || roleMenus['ADMIN'] || [];
@@ -72,10 +74,18 @@ function SidebarContent({ userRole, isMobile = false }: SidebarContentProps) {
     return normalizedRole.substring(0, 2).toUpperCase();
   })();
 
-  // Estado para controlar qué grupo desplegable está abierto
+  // Solo un grupo puede estar abierto a la vez
   const [menuAbierto, setMenuAbierto] = useState<string | null>(null);
 
-  const toggleSubmenu = (id: string) => {
+  const handleParentClick = (item: MenuItem) => {
+    setMenuAbierto(item.id);
+    if (item.path && item.path !== '#') {
+      navigate(item.path);
+    }
+  };
+
+  const handleChevronClick = (e: React.MouseEvent, id: string) => {
+    e.stopPropagation();
     setMenuAbierto((prev) => (prev === id ? null : id));
   };
 
@@ -100,13 +110,14 @@ function SidebarContent({ userRole, isMobile = false }: SidebarContentProps) {
           const tieneHijos = item.children && item.children.length > 0;
           const estaAbierto = menuAbierto === item.id;
 
-          // Si NO tiene sub-ítems, se renderiza como un enlace normal
+          // Si NO tiene sub-ítems, se renderiza como un enlace normal y cierra cualquier acordeón abierto
           if (!tieneHijos) {
             const isActive = location.pathname === item.path;
             return (
               <li key={item.id} className="nav-item">
                 <Link
                   to={item.path || '#'}
+                  onClick={() => setMenuAbierto(null)}
                   className={`nav-link d-flex align-items-center justify-content-between text-start w-100 ${
                     isActive ? 'active bg-gradient-salud text-white shadow-sm' : 'text-dark hover-bg-light'
                   }`}
@@ -126,31 +137,50 @@ function SidebarContent({ userRole, isMobile = false }: SidebarContentProps) {
             );
           }
 
-          // Si TIENE sub-ítems, se renderiza como un menú desplegable (acordeón)
+          // Si TIENE sub-ítems, navega a item.path (si existe) y abre este grupo cerrando el anterior
+          const rutaDirectaActiva = Boolean(item.path && location.pathname === item.path);
           const grupoActivo = Boolean(
-            item.children?.some(
-              (sub) =>
-                sub.path &&
-                sub.path !== '#' &&
-                (location.pathname === sub.path || location.pathname.startsWith(`${sub.path}/`)),
-            ),
+            rutaDirectaActiva ||
+              item.children?.some(
+                (sub) =>
+                  sub.path &&
+                  sub.path !== '#' &&
+                  (location.pathname === sub.path || location.pathname.startsWith(`${sub.path}/`)),
+              ),
           );
 
           return (
             <li key={item.id} className="nav-item">
-              <button
-                type="button"
-                className={`nav-link d-flex align-items-center justify-content-between w-100 border-0 py-2 ${
-                  grupoActivo ? 'nav-parent-active' : 'text-dark'
+              <div
+                className={`nav-link d-flex align-items-center justify-content-between w-100 py-2 ${
+                  rutaDirectaActiva
+                    ? 'active bg-gradient-salud text-white shadow-sm'
+                    : grupoActivo
+                      ? 'nav-parent-active'
+                      : 'text-dark'
                 }`}
-                onClick={() => toggleSubmenu(item.id)}
+                style={{ cursor: 'pointer' }}
+                onClick={() => handleParentClick(item)}
               >
                 <span className="d-flex align-items-center gap-2">
                   {Icon && <Icon size={20} />}
                   <span className="fw-semibold">{item.label}</span>
                 </span>
-                {estaAbierto ? <BsChevronUp size={14} /> : <BsChevronDown size={14} />}
-              </button>
+                <span
+                  role="button"
+                  tabIndex={0}
+                  className="p-1"
+                  onClick={(e) => handleChevronClick(e, item.id)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      handleChevronClick(e as unknown as React.MouseEvent, item.id);
+                    }
+                  }}
+                >
+                  {estaAbierto ? <BsChevronUp size={14} /> : <BsChevronDown size={14} />}
+                </span>
+              </div>
 
               {/* Sub-lista desplegable */}
               {estaAbierto && (
@@ -166,7 +196,7 @@ function SidebarContent({ userRole, isMobile = false }: SidebarContentProps) {
                           }`}
                           {...(isMobile ? { 'data-bs-dismiss': 'offcanvas' } : {})}
                         >
-                          • {subItem.label}
+                          - {subItem.label}
                         </Link>
                       </li>
                     );

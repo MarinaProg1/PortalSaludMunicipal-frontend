@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { goBackSafe } from '../utils/navigation';
 import { BsJournalMedical, BsSearch } from 'react-icons/bs';
 import { isAxiosError } from 'axios';
 import { toast } from 'sonner';
@@ -7,6 +8,8 @@ import { PageHeader } from '../../constants/PageHeader';
 import { useAuth } from '../../context/AuthContext';
 import { atencionService } from '../../services/atencion.service';
 import type { ConsultaMedica } from '../medico/atencion.schema';
+import { DEFAULT_PAGE_SIZE } from '../../utils/pagination';
+import { PaginationControls } from '../common/PaginationControls';
 
 const getId = (value: unknown): string => {
   if (!value) return '';
@@ -46,14 +49,20 @@ export const ConsultaMedicaLista: React.FC = () => {
   const [consultas, setConsultas] = useState<ConsultaMedica[]>([]);
   const [loading, setLoading] = useState(true);
   const [busqueda, setBusqueda] = useState('');
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(DEFAULT_PAGE_SIZE);
+  const [total, setTotal] = useState(0);
 
   useEffect(() => {
     let mounted = true;
     (async () => {
       try {
         setLoading(true);
-        const data = await atencionService.consultas({});
-        if (mounted) setConsultas(Array.isArray(data) ? data : []);
+        const resultado = await atencionService.consultasPaginadas({}, page, limit);
+        if (mounted) {
+          setConsultas(resultado.items);
+          setTotal(resultado.total);
+        }
       } catch (error) {
         console.error(error);
         if (mounted) {
@@ -69,7 +78,7 @@ export const ConsultaMedicaLista: React.FC = () => {
     return () => {
       mounted = false;
     };
-  }, []);
+  }, [page, limit]);
 
   const filtradas = useMemo(() => {
     const termino = busqueda.trim().toLowerCase();
@@ -94,7 +103,7 @@ export const ConsultaMedicaLista: React.FC = () => {
             : 'Listado de consultas médicas registradas.'
         }
         icon={<BsJournalMedical className="me-2" style={{ color: '#00ACB2' }} />}
-        onBack={() => navigate(-1)}
+        onBack={() => goBackSafe(navigate)}
       />
 
       <div className="card border-0 shadow-sm mb-4 bg-white" style={{ borderRadius: '12px' }}>
@@ -108,7 +117,10 @@ export const ConsultaMedicaLista: React.FC = () => {
               className="form-control border-start-0 shadow-none ps-0"
               placeholder="Buscar por paciente, DNI, motivo, diagnóstico o tratamiento..."
               value={busqueda}
-              onChange={(e) => setBusqueda(e.target.value)}
+              onChange={(e) => {
+                setBusqueda(e.target.value);
+                setPage(1);
+              }}
               disabled={loading}
             />
           </div>
@@ -214,6 +226,18 @@ export const ConsultaMedicaLista: React.FC = () => {
             </div>
           </div>
         </>
+      )}
+      {!loading && (
+        <PaginationControls
+          page={page}
+          limit={limit}
+          total={total}
+          onPageChange={setPage}
+          onLimitChange={(newLimit) => {
+            setLimit(newLimit);
+            setPage(1);
+          }}
+        />
       )}
     </div>
   );

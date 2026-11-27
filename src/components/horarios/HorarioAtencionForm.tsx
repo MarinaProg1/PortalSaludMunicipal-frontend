@@ -2,12 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { BsClock, BsPersonBadge } from 'react-icons/bs';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
+import { goBackSafe } from '../utils/navigation';
 import clientesAxios from '../../config/axios';
 import { isAxiosError } from 'axios';
 import type { MedicoItem, DiaConfig, HorarioApiResponse } from './horario.schema';
 import { PageHeader } from '../../constants/PageHeader';
 import { HorarioAtencionFormSkeleton } from './HorarioAtencionFromSkeleton';
-import { DiaAgendaItem } from './DiaAgendaItem'; 
+import { DiaAgendaItem } from './DiaAgendaItem';
 import { SelectField } from '../../constants/SelectField';
 
 const DIAS_SEMANA = [
@@ -36,7 +37,7 @@ export const HorarioAtencionForm: React.FC = () => {
   const [medicoSeleccionado, setMedicoSeleccionado] = useState('');
   const [duracionTurno, setDuracionTurno] = useState<number>(30);
   const [agendaDias, setAgendaDias] = useState<Record<string, DiaConfig>>(estructuraInicialDias());
-  
+
   // Estado para almacenar los horarios que YA están guardados en la BD para este médico
   const [horariosExistentesIds, setHorariosExistentesIds] = useState<HorarioApiResponse[]>([]);
 
@@ -48,7 +49,7 @@ export const HorarioAtencionForm: React.FC = () => {
   useEffect(() => {
     const fetchMedicos = async () => {
       try {
-        const response = await clientesAxios.get('/medicos');
+        const response = await clientesAxios.get('/medicos', { params: { page: 1, limit: 100 } });
         const data = response.data;
         let listaMedicos: MedicoItem[] = [];
 
@@ -84,7 +85,9 @@ export const HorarioAtencionForm: React.FC = () => {
 
     setLoadingHorariosMedico(true);
     try {
-      const response = await clientesAxios.get(`/horarioAtencion?medico=${idMedico}`);
+      const response = await clientesAxios.get('/horarioAtencion', {
+        params: { medico: idMedico, page: 1, limit: 100 },
+      });
       const dataApi = response.data;
       let horariosBD: HorarioApiResponse[] = [];
 
@@ -93,7 +96,7 @@ export const HorarioAtencionForm: React.FC = () => {
       } else if (dataApi && typeof dataApi === 'object') {
         const record = dataApi as Record<string, unknown>;
         if (Array.isArray(record.data)) horariosBD = record.data as HorarioApiResponse[];
-        else if (Array.isArray(record.horarios)) horariosBD = record.data as HorarioApiResponse[];
+        else if (Array.isArray(record.horarios)) horariosBD = record.horarios as HorarioApiResponse[];
       }
 
       setHorariosExistentesIds(horariosBD);
@@ -114,7 +117,7 @@ export const HorarioAtencionForm: React.FC = () => {
           if (nuevaAgenda[dia]) {
             nuevaAgenda[dia].seleccionado = true;
             const horaInicioNum = parseInt(horaInicioStr.split(':')[0], 10);
-            
+
             if (horaInicioNum < 13) {
               nuevaAgenda[dia].manana = {
                 activo: true,
@@ -142,22 +145,27 @@ export const HorarioAtencionForm: React.FC = () => {
   };
 
   const handleToggleDia = (diaKey: string) => {
-    setAgendaDias(prev => ({
+    setAgendaDias((prev) => ({
       ...prev,
-      [diaKey]: { ...prev[diaKey], seleccionado: !prev[diaKey].seleccionado }
+      [diaKey]: { ...prev[diaKey], seleccionado: !prev[diaKey].seleccionado },
     }));
   };
 
-  const handleTurnoChange = (diaKey: string, turno: 'manana' | 'tarde', field: 'activo' | 'horaInicio' | 'horaFin', value: unknown) => {
-    setAgendaDias(prev => ({
+  const handleTurnoChange = (
+    diaKey: string,
+    turno: 'manana' | 'tarde',
+    field: 'activo' | 'horaInicio' | 'horaFin',
+    value: unknown
+  ) => {
+    setAgendaDias((prev) => ({
       ...prev,
       [diaKey]: {
         ...prev[diaKey],
         [turno]: {
           ...prev[diaKey][turno],
-          [field]: value
-        }
-      }
+          [field]: value,
+        },
+      },
     }));
   };
 
@@ -166,10 +174,11 @@ export const HorarioAtencionForm: React.FC = () => {
     const configDia = agendaDias[diaKey];
     if (!configDia) return false;
 
-    const horaInicioConfig = tipoTurno === 'manana' ? configDia.manana.horaInicio : configDia.tarde.horaInicio;
+    const horaInicioConfig =
+      tipoTurno === 'manana' ? configDia.manana.horaInicio : configDia.tarde.horaInicio;
     const horaInicioNum = parseInt(horaInicioConfig.split(':')[0], 10);
 
-    return horariosExistentesIds.some(h => {
+    return horariosExistentesIds.some((h) => {
       if (h.diaSemana !== diaKey) return false;
       const hBDInicioNum = parseInt((h.horaInicio || '').split(':')[0], 10);
       return (horaInicioNum < 13 && hBDInicioNum < 13) || (horaInicioNum >= 13 && hBDInicioNum >= 13);
@@ -206,7 +215,7 @@ export const HorarioAtencionForm: React.FC = () => {
               horaInicio: config.manana.horaInicio,
               horaFin: config.manana.horaFin,
               duracionTurnoMinutos: duracionTurno,
-              activo: true
+              activo: true,
             })
           );
         }
@@ -219,7 +228,7 @@ export const HorarioAtencionForm: React.FC = () => {
               horaInicio: config.tarde.horaInicio,
               horaFin: config.tarde.horaFin,
               duracionTurnoMinutos: duracionTurno,
-              activo: true
+              activo: true,
             })
           );
         }
@@ -234,7 +243,7 @@ export const HorarioAtencionForm: React.FC = () => {
       await Promise.all(promesas);
 
       toast.success('¡Nuevos horarios de atención agregados exitosamente!');
-      
+
       setTimeout(() => {
         navigate('/horarioAtencion');
       }, 1500);
@@ -243,7 +252,7 @@ export const HorarioAtencionForm: React.FC = () => {
       const backendMessage = isAxiosError<{ message?: string }>(err)
         ? err.response?.data?.message || 'Error al registrar los horarios de atención en el servidor.'
         : 'Error al registrar los horarios de atención en el servidor.';
-      
+
       toast.error(backendMessage);
     } finally {
       setSubmitting(false);
@@ -257,32 +266,30 @@ export const HorarioAtencionForm: React.FC = () => {
   return (
     <div className="container-fluid px-2 px-md-4 py-4">
       <div className="card border-0 shadow-sm bg-white p-4 mx-auto" style={{ maxWidth: '850px', borderRadius: '12px' }}>
-    
-        <PageHeader 
+        <PageHeader
           titulo="Configurar Horarios de Atención"
           subtitulo="Seleccione el profesional para consultar o añadir nueva disponibilidad semanal."
           icon={<BsClock className="me-2" style={{ color: '#00ACB2' }} />}
-          onBack={() => navigate('/horarioAtencion')}
+          onBack={() => goBackSafe(navigate, '/horarioAtencion')}
         />
 
         <form onSubmit={handleSubmit}>
- 
           <div className="row g-3 mb-4 p-3 bg-light rounded-3">
             <div className="col-md-8">
-             <SelectField
+              <SelectField
                 label="Médico Profesional"
                 labelIcon={<BsPersonBadge className="me-1" />}
                 value={medicoSeleccionado}
                 onChange={(id) => handleCambioMedico(id)}
-                placeholder={loadingData ? "Cargando médicos..." : "Seleccione o busque un médico..."}
+                placeholder={loadingData ? 'Cargando médicos...' : 'Seleccione o busque un médico...'}
                 required
                 disabled={loadingData}
                 className="mb-0"
-                options={medicos.map(m => {
+                options={medicos.map((m) => {
                   const medicoId = m.id || '';
                   return {
                     value: medicoId,
-                    label: `Dr./Dra. ${m.nombre} ${m.apellido}`
+                    label: `Dr./Dra. ${m.nombre} ${m.apellido}`,
                   };
                 })}
               />
@@ -290,9 +297,9 @@ export const HorarioAtencionForm: React.FC = () => {
 
             <div className="col-md-4">
               <label className="form-label fw-semibold text-secondary small">Duración Turno (minutos)</label>
-              <input 
-                type="number" 
-                className="form-control shadow-none" 
+              <input
+                type="number"
+                className="form-control shadow-none"
                 value={duracionTurno}
                 onChange={(e) => setDuracionTurno(Number(e.target.value))}
                 min={5}
@@ -306,7 +313,7 @@ export const HorarioAtencionForm: React.FC = () => {
             <h5 className="fw-bold text-dark mb-0">Disponibilidad Semanal</h5>
             {loadingHorariosMedico && (
               <span className="text-muted small d-flex align-items-center gap-2">
-                <span className="spinner-border spinner-border-sm" role="status" style={{ color: '#00ACB2' }}></span>
+                <span className="spinner-border spinner-border-sm" role="status" style={{ color: '#00ACB2' }} />
                 Buscando agenda del médico...
               </span>
             )}
@@ -329,16 +336,16 @@ export const HorarioAtencionForm: React.FC = () => {
 
           {/* Botones de acción */}
           <div className="d-flex justify-content-end gap-2 mt-4 pt-3 border-top border-secondary-subtle">
-            <button 
-              type="button" 
-              className="btn btn-light px-4" 
-              onClick={() => navigate('/horarioAtencion')} 
+            <button
+              type="button"
+              className="btn btn-light px-4"
+              onClick={() => navigate('/horarioAtencion')}
               disabled={submitting}
             >
               Cancelar
             </button>
-            <button 
-              type="submit" 
+            <button
+              type="submit"
               className="btn text-white fw-semibold px-4 shadow-sm"
               style={{ backgroundColor: '#00ACB2', borderRadius: '8px' }}
               disabled={submitting}
@@ -346,9 +353,7 @@ export const HorarioAtencionForm: React.FC = () => {
               {submitting ? 'Guardando...' : 'Guardar Nuevos Horarios'}
             </button>
           </div>
-
         </form>
-
       </div>
     </div>
   );

@@ -1,5 +1,6 @@
 import clientesAxios from '../config/axios';
 import type { MedicoItem, MedicoPayload } from '../components/medicos/medico.schema';
+import { parsePaginatedResponse, type PaginatedResult } from '../utils/pagination';
 
 const BASE = '/medicos';
 
@@ -15,6 +16,11 @@ export const medicoService = {
   async listar(): Promise<MedicoItem[]> {
     const res = await clientesAxios.get(BASE, { params: { limit: 1000 } });
     return extractData<MedicoItem[]>(res) || [];
+  },
+
+  async listarPaginado(page: number, limit: number): Promise<PaginatedResult<MedicoItem>> {
+    const res = await clientesAxios.get(BASE, { params: { page, limit } });
+    return parsePaginatedResponse<MedicoItem>(res.data, page, limit, ['medicos']);
   },
 
   async obtener(id: string): Promise<MedicoItem | null> {

@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { goBackSafe } from '../utils/navigation';
 import {
   BsHeartPulse,
   BsJournalMedical,
@@ -88,7 +89,7 @@ export const PacienteDetalle: React.FC = () => {
           titulo="Paciente"
           subtitulo="No se encontro el paciente solicitado."
           icon={<BsHeartPulse className="me-2" style={{ color: '#00ACB2' }} />}
-          onBack={() => navigate(-1)}
+          onBack={() => goBackSafe(navigate)}
         />
       </div>
     );
@@ -116,7 +117,7 @@ export const PacienteDetalle: React.FC = () => {
         titulo={`${paciente.apellido}, ${paciente.nombre}`}
         subtitulo={`DNI ${paciente.dni}`}
         icon={<BsHeartPulse className="me-2" style={{ color: '#00ACB2' }} />}
-        onBack={() => navigate(-1)}
+        onBack={() => goBackSafe(navigate)}
         rightContent={
           <div className="d-flex gap-2">
             {puedeAdministrar && (

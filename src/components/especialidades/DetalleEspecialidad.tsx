@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { goBackSafe } from '../utils/navigation';
 import { isAxiosError } from 'axios';
 import { BsArrowLeft, BsJournalMedical } from 'react-icons/bs';
 import clientesAxios from '../../config/axios';
@@ -56,7 +57,7 @@ export const DetalleEspecialidad: React.FC = () => {
           <div className="alert alert-danger mb-3" role="alert">
             {error || 'No se encontró la especialidad solicitada.'}
           </div>
-          <button className="btn btn-outline-secondary btn-sm d-flex align-items-center gap-1" onClick={() => navigate(-1)}>
+          <button className="btn btn-outline-secondary btn-sm d-flex align-items-center gap-1" onClick={() => goBackSafe(navigate)}>
             <BsArrowLeft /> Volver
           </button>
         </div>
@@ -77,7 +78,7 @@ export const DetalleEspecialidad: React.FC = () => {
             </h3>
             <p className="text-muted mb-0 small">Información completa de la especialidad registrada.</p>
           </div>
-          <button className="btn btn-outline-secondary btn-sm d-flex align-items-center gap-1" onClick={() => navigate(-1)}>
+          <button className="btn btn-outline-secondary btn-sm d-flex align-items-center gap-1" onClick={() => goBackSafe(navigate)}>
             <BsArrowLeft /> Volver
           </button>
         </div>
@@ -100,7 +101,7 @@ export const DetalleEspecialidad: React.FC = () => {
 
         {/* Pie de tarjeta */}
         <div className="d-flex justify-content-end mt-4 pt-3 border-top border-secondary-subtle gap-2">
-          <button className="btn btn-outline-secondary btn-sm" onClick={() => navigate('/especialidades')}>
+          <button className="btn btn-outline-secondary btn-sm" onClick={() => goBackSafe(navigate, '/especialidades')}>
             Volver al listado
           </button>
           <button className="btn btn-sm text-white" style={{ backgroundColor: '#00ACB2' }} onClick={() => navigate(`/especialidades/editar/${especialidad.id}`)}>

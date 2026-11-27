@@ -7,6 +7,7 @@ import type {
   HistorialClinico,
   TurnoAtencion,
 } from '../components/medico/atencion.schema';
+import { parsePaginatedResponse, type PaginatedResult } from '../utils/pagination';
 
 function extractData<T>(response: any): T {
   const d = response?.data;
@@ -21,6 +22,15 @@ export const atencionService = {
     const res = await clientesAxios.get('/turnos', { params: { bandeja } });
     const data = extractData<TurnoAtencion[]>(res);
     return Array.isArray(data) ? data : [];
+  },
+
+  async bandejaPaginada(
+    bandeja: Bandeja,
+    page: number,
+    limit: number
+  ): Promise<PaginatedResult<TurnoAtencion>> {
+    const res = await clientesAxios.get('/turnos', { params: { bandeja, page, limit } });
+    return parsePaginatedResponse<TurnoAtencion>(res.data, page, limit, ['turnos']);
   },
 
   async turno(id: string): Promise<TurnoAtencion> {
@@ -43,6 +53,17 @@ export const atencionService = {
     const res = await clientesAxios.get('/consultasmedicas', { params: filtros });
     const data = extractData<ConsultaMedica[]>(res);
     return Array.isArray(data) ? data : [];
+  },
+
+  async consultasPaginadas(
+    filtros: { paciente?: string; turno?: string },
+    page: number,
+    limit: number
+  ): Promise<PaginatedResult<ConsultaMedica>> {
+    const res = await clientesAxios.get('/consultasmedicas', {
+      params: { ...filtros, page, limit },
+    });
+    return parsePaginatedResponse<ConsultaMedica>(res.data, page, limit, ['consultas']);
   },
 
   async crearConsulta(payload: ConsultaPayload): Promise<ConsultaMedica> {

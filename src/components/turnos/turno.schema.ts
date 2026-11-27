@@ -1,17 +1,30 @@
 import type { ReactNode } from 'react';
 import { z } from 'zod';
 
-
 export const turnoFormSchema = z.object({
   paciente: z.string().min(1, { message: 'Debe seleccionar un paciente.' }),
   medico: z.string().min(1, { message: 'Debe seleccionar un médico.' }),
   especialidad: z.string().min(1, { message: 'Debe seleccionar una especialidad.' }),
   fecha: z.string().min(1, { message: 'La fecha es obligatoria.' }),
   hora: z.string().min(1, { message: 'Debe seleccionar un horario disponible.' }),
-  estado: z.enum(['pendiente', 'confirmado', 'cancelado', 'finalizado', 'atendido']).default('pendiente'),
+  estado: z
+    .enum(['pendiente', 'confirmado', 'cancelado', 'finalizado', 'atendido'])
+    .default('pendiente'),
 });
 
 export type TurnoFormValues = z.infer<typeof turnoFormSchema>;
+
+export type EstadoTurnoSchema =
+  | 'pendiente'
+  | 'confirmado'
+  | 'cancelado'
+  | 'finalizado'
+  | 'atendido'
+  | 'PENDIENTE'
+  | 'CONFIRMADO'
+  | 'CANCELADO'
+  | 'FINALIZADO'
+  | 'ATENDIDO';
 
 export interface OptionItem {
   id?: string;
@@ -21,26 +34,45 @@ export interface OptionItem {
   razonSocial?: string;
 }
 
-export interface MedicoItem extends OptionItem {
+export interface MedicoItem {
+  id: string;
+  _id?: string;
+  nombre: string;
+  apellido?: string;
   especialidades?: OptionItem[];
 }
+
+export interface PacienteTurnoObjeto {
+  id?: string;
+  _id?: string;
+  nombre: string;
+  apellido: string;
+  dni?: string;
+}
+
+export type PacienteTurnoValor = string | PacienteTurnoObjeto;
+
 export interface TurnoDetalle {
   id: string;
-  paciente: {
-    nombre: string;
-    apellido: string;
-    dni?: string;
-  };
+  _id?: string;
+  paciente: PacienteTurnoValor;
+  pacienteTexto?: string | null;
+  pacienteNombre?: string;
+  esUrgencia?: boolean;
   medico: {
+    id?: string;
+    _id?: string;
     nombre: string;
     apellido: string;
   };
   especialidad: {
+    id?: string;
+    _id?: string;
     nombre: string;
   };
   fecha: string;
   hora: string;
-  estado: string;
+  estado: EstadoTurnoSchema | string;
   observaciones?: string;
 }
 
@@ -53,13 +85,10 @@ export interface TurnoItem {
     nombre: string;
     apellido: string;
   };
-  paciente?: {
-    id?: string;
-    _id?: string;
-    nombre: string;
-    apellido: string;
-    dni?: string;
-  };
+  paciente?: PacienteTurnoValor;
+  pacienteTexto?: string | null;
+  pacienteNombre?: string;
+  esUrgencia?: boolean;
   especialidad?: {
     id?: string;
     _id?: string;
@@ -67,36 +96,33 @@ export interface TurnoItem {
   };
   fecha: string;
   hora: string;
-  estado: 'PENDIENTE' | 'CONFIRMADO' | 'CANCELADO' | 'ATENDIDO' | 'FINALIZADO';
+  estado: EstadoTurnoSchema;
   observaciones?: string;
   // true cuando el turno sigue pendiente/confirmado pero su fecha ya pasó.
   vencido?: boolean;
   activo: boolean;
 }
+
 export interface PacienteItem {
-  id: string;
+  id?: string;
+  _id?: string;
   nombre: string;
   apellido: string;
   dni?: string;
-  telefono?: string | {
-    tipo?: string;
-    codigoArea?: string;
-    numero?: string;
-  };
+  telefono?:
+    | string
+    | {
+        tipo?: string;
+        codigoArea?: string;
+        numero?: string;
+      };
   email?: string;
 }
 
-
 export interface EspecialidadItem {
-
-  _id: string;
+  id?: string;
+  _id?: string;
   nombre: string;
-}
-
-export interface MedicoItem {
-  id: string;
-  nombre: string;
-  apellido: string;
 }
 
 export interface DiaMesDisponibilidad {
@@ -105,6 +131,7 @@ export interface DiaMesDisponibilidad {
   tieneDisponibilidad: boolean;
   totalLibres: number;
 }
+
 export interface CalendarioMensualProps {
   titulo?: string;
   anio?: number;
@@ -115,6 +142,7 @@ export interface CalendarioMensualProps {
   onCambiarMes?: (direccion: 'prev' | 'next') => void;
   onSeleccionarFecha?: (fecha: string) => void;
 }
+
 export interface HorariosDisponiblesProps {
   fecha: string;
   todosLosSlots: string[];
@@ -122,11 +150,13 @@ export interface HorariosDisponiblesProps {
   loading: boolean;
   onSeleccionar: (hora: string) => void;
 }
+
 export interface TurnoFormProps {
-  turnoId?: string; 
-  onSuccess?: () => void; 
-  onCancel?: () => void;  
+  turnoId?: string;
+  onSuccess?: () => void;
+  onCancel?: () => void;
 }
+
 export interface TurnoCardProps {
   turno: TurnoItem;
   onView: () => void;
@@ -135,6 +165,7 @@ export interface TurnoCardProps {
   onCancel?: () => void;
   onMarkAttended: () => void;
 }
+
 export interface TurnoSelectOption {
   value: string;
   label: string;

@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { goBackSafe } from '../utils/navigation';
 import {
   BsCalendarCheck,
   BsClock,
@@ -66,7 +67,7 @@ export const DetalleTurnoPaciente: React.FC = () => {
           titulo="Detalle del Turno"
           subtitulo="No se encontró el turno solicitado."
           icon={<BsCalendarCheck className="me-2" style={{ color: '#00ACB2' }} />}
-          onBack={() => navigate('/mis-turnos')}
+          onBack={() => goBackSafe(navigate, '/mis-turnos')}
         />
       </div>
     );
@@ -80,7 +81,7 @@ export const DetalleTurnoPaciente: React.FC = () => {
         titulo="Detalle del Turno"
         subtitulo="Consultá el motivo, el diagnóstico y las recomendaciones de tu médico."
         icon={<BsCalendarCheck className="me-2" style={{ color: '#00ACB2' }} />}
-        onBack={() => navigate('/mis-turnos')}
+        onBack={() => goBackSafe(navigate, '/mis-turnos')}
       />
 
       <div className="row g-3">

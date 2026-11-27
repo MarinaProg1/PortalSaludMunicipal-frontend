@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-export const SEXOS = ['MASCULINO', 'FEMENINO', 'OTRO'] as const;
+export const SEXOS = ['M', 'F'] as const;
 export const TIPOS_TELEFONO = ['celular', 'fijo', 'trabajo'] as const;
 
 export const pacienteSchema = z.object({

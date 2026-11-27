@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { goBackSafe } from '../utils/navigation';
 import {
   BsCalendarCheck,
   BsCheckCircle,
@@ -14,6 +15,8 @@ import { PageHeader } from '../../constants/PageHeader';
 import { useAuth } from '../../context/AuthContext';
 import { atencionService } from '../../services/atencion.service';
 import { estadoTurnoClase, formatearFecha } from '../pacientePortal/pacientePortal.schema';
+import { DEFAULT_PAGE_SIZE } from '../../utils/pagination';
+import { PaginationControls } from '../common/PaginationControls';
 import {
   BANDEJAS,
   esEstadoActivo,
@@ -41,6 +44,9 @@ export const MisPacientes: React.FC = () => {
   const [turnos, setTurnos] = useState<TurnoAtencion[]>([]);
   const [loading, setLoading] = useState(true);
   const [busqueda, setBusqueda] = useState('');
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(DEFAULT_PAGE_SIZE);
+  const [total, setTotal] = useState(0);
 
   useEffect(() => {
     let mounted = true;
@@ -48,8 +54,11 @@ export const MisPacientes: React.FC = () => {
     (async () => {
       try {
         setLoading(true);
-        const data = await atencionService.bandeja(bandejaActual);
-        if (mounted) setTurnos(data);
+        const resultado = await atencionService.bandejaPaginada(bandejaActual, page, limit);
+        if (mounted) {
+          setTurnos(resultado.items);
+          setTotal(resultado.total);
+        }
       } catch (error) {
         console.error(error);
         if (mounted) {
@@ -66,7 +75,7 @@ export const MisPacientes: React.FC = () => {
     return () => {
       mounted = false;
     };
-  }, [bandejaActual]);
+  }, [bandejaActual, page, limit]);
 
   const visibles = useMemo(() => {
     const termino = busqueda.trim().toLowerCase();
@@ -109,7 +118,7 @@ export const MisPacientes: React.FC = () => {
         titulo={titulo}
         subtitulo={infoBandeja.descripcion}
         icon={<BsCalendarCheck className="me-2" style={{ color: '#00ACB2' }} />}
-        onBack={() => navigate(-1)}
+        onBack={() => goBackSafe(navigate)}
       />
 
       <div className="d-flex flex-wrap gap-2 mb-3">
@@ -127,7 +136,11 @@ export const MisPacientes: React.FC = () => {
                   ? { backgroundColor: '#00ACB2', borderRadius: '10px' }
                   : { borderRadius: '10px' }
               }
-              onClick={() => navigate(`/mis-pacientes/${item.id}`)}
+              onClick={() => {
+                setLoading(true);
+                setPage(1);
+                navigate(`/mis-pacientes/${item.id}`);
+              }}
             >
               {item.label}
             </button>
@@ -146,7 +159,11 @@ export const MisPacientes: React.FC = () => {
               className="form-control border-start-0 shadow-none ps-0"
               placeholder="Buscar por paciente o DNI..."
               value={busqueda}
-              onChange={(e) => setBusqueda(e.target.value)}
+              onChange={(e) => {
+                setBusqueda(e.target.value);
+                if (page !== 1) setLoading(true);
+                setPage(1);
+              }}
               disabled={loading}
             />
           </div>
@@ -232,6 +249,22 @@ export const MisPacientes: React.FC = () => {
                       <div className="p-2 rounded-3 bg-light small text-muted mt-3">
                         {turno.observaciones}
                       </div>
+                    )}
+                    {!loading && (
+                      <PaginationControls
+                        page={page}
+                        limit={limit}
+                        total={total}
+                        onPageChange={(newPage) => {
+                          setLoading(true);
+                          setPage(newPage);
+                        }}
+                        onLimitChange={(newLimit) => {
+                          setLoading(true);
+                          setLimit(newLimit);
+                          setPage(1);
+                        }}
+                      />
                     )}
                   </div>
 

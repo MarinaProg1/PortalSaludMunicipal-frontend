@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { goBackSafe } from '../utils/navigation';
 import { BsPlusCircle, BsSearch, BsCalendarCheck } from 'react-icons/bs';
 import clientesAxios from '../../config/axios';
 import { TurnosSkeleton } from './TurnosSkeleton';
@@ -8,46 +9,61 @@ import { PageHeader } from '../../constants/PageHeader';
 import { toast } from 'sonner';
 import { isAxiosError } from 'axios';
 import { TurnoCard } from './TurnoCard';
-import { esFechaDeHoy } from './turno.utils';
+import {
+  esFechaDeHoy,
+  normalizarEstadoTurno,
+  normalizarTurnoParaCard,
+  obtenerIdTurno,
+  obtenerNombrePacienteTurno,
+  type TurnoConUrgencia,
+} from './turno.utils';
 import { ConfirmDeleteModal } from '../../constants/ConfirmDeleteModal';
 import { useAuth } from '../../context/AuthContext';
+import { DEFAULT_PAGE_SIZE, parsePaginatedResponse } from '../../utils/pagination';
+import { PaginationControls } from '../common/PaginationControls';
 
-export const TurnosLista: React.FC = () => {
+export type TurnoListaItem = TurnoConUrgencia;
+
+export const TurnosLista = () => {
   const navigate = useNavigate();
   const { rol } = useAuth();
   const rolActual = (rol || '').toUpperCase();
   const esMedico = rolActual === 'MEDICO';
-  //const puedeAdministrar = ['ADMIN', 'RECEPCIONISTA'].includes(rolActual);
-  const [turnos, setTurnos] = useState<TurnoItem[]>([]);
+  const fallbackVolver =
+    rolActual === 'PACIENTE' ? '/mis-turnos' : esMedico ? '/medicos/home' : '/turnos';
+
+  const [turnos, setTurnos] = useState<TurnoListaItem[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [busqueda, setBusqueda] = useState('');
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(DEFAULT_PAGE_SIZE);
+  const [total, setTotal] = useState(0);
 
   const [idTurnoACancelar, setIdTurnoACancelar] = useState<string | null>(null);
   const [cancelando, setCancelando] = useState<boolean>(false);
-
-  const [idTurnoAEliminar, setIdTurnoAEliminar] = useState<string | null>(null);
-  const [eliminando, setEliminando] = useState<boolean>(false);
 
   useEffect(() => {
     let isMounted = true;
 
     const fetchTurnos = async () => {
       try {
-        const response = await clientesAxios.get('/turnos');
-        
-        if (isMounted) {
-          const dataApi = response.data;
-          let listaTurnos: TurnoItem[] = [];
-          if (Array.isArray(dataApi)) {
-            listaTurnos = dataApi;
-          } else if (dataApi && Array.isArray(dataApi.turnos)) {
-            listaTurnos = dataApi.turnos;
-          } else if (dataApi && Array.isArray(dataApi.data)) {
-            listaTurnos = dataApi.data;
-          }
+        setLoading(true);
+        const response = await clientesAxios.get('/turnos', { params: { page, limit } });
 
-          setTurnos(listaTurnos);
+        if (isMounted) {
+          const resultado = parsePaginatedResponse<TurnoListaItem>(
+            response.data,
+            page,
+            limit,
+            ['turnos']
+          );
+          const normalizados = resultado.items.map((item, idx) => ({
+            ...item,
+            id: obtenerIdTurno(item, `turno-${idx}`),
+          }));
+          setTurnos(normalizados);
+          setTotal(resultado.total);
           setError(null);
         }
       } catch (err) {
@@ -62,15 +78,14 @@ export const TurnosLista: React.FC = () => {
       }
     };
 
-    fetchTurnos();
+    void fetchTurnos();
 
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [page, limit]);
 
   const handleView = (id: string) => {
-    // El medico abre la pantalla de atencion en lugar del detalle administrativo.
     navigate(esMedico ? `/atencion/${id}` : `/turno-detalle/${id}`);
   };
 
@@ -78,7 +93,10 @@ export const TurnosLista: React.FC = () => {
     navigate(`/turnos/editar/${id}`);
   };
 
-  //MANEJO DE CANCELACIÓN 
+  const handleAtenderTurno = (id: string) => {
+    navigate(`/consultas-medicas/nuevo/${id}`);
+  };
+
   const handleOpenCancelModal = (id: string) => {
     setIdTurnoACancelar(id);
   };
@@ -89,10 +107,16 @@ export const TurnosLista: React.FC = () => {
     setCancelando(true);
     try {
       const response = await clientesAxios.patch(`/turnos/${idTurnoACancelar}/cancelar`);
-      
-      // Actualizamos el estado del turno a CANCELADO localmente
-      setTurnos(prevTurnos => 
-        prevTurnos.map(t => t.id === idTurnoACancelar ? { ...t, estado: response.data?.data?.estado || 'CANCELADO' } : t)
+
+      setTurnos((prevTurnos) =>
+        prevTurnos.map((t, idx) =>
+          obtenerIdTurno(t, `turno-${idx}`) === idTurnoACancelar
+            ? {
+                ...t,
+                estado: normalizarEstadoTurno(response.data?.data?.estado || 'cancelado'),
+              }
+            : t
+        )
       );
 
       toast.success(response.data?.message || 'Turno cancelado correctamente.');
@@ -108,58 +132,28 @@ export const TurnosLista: React.FC = () => {
     }
   };
 
-  //MANEJO DE ELIMINACIÓN DEFINITIVA 
-  const handleOpenDeleteModal = (id: string) => {
-    setIdTurnoAEliminar(id);
-  };
-
-  const handleConfirmDelete = async () => {
-    if (!idTurnoAEliminar) return;
-
-    setEliminando(true);
-    try {
-      await clientesAxios.delete(`/turnos/${idTurnoAEliminar}`);
-      // Removemos el turno definitivamente de la lista
-      setTurnos(prevTurnos => prevTurnos.filter(t => t.id !== idTurnoAEliminar));
-      toast.success('Turno eliminado definitivamente de la base de datos.');
-      setIdTurnoAEliminar(null);
-    } catch (err) {
-      console.error('Error al eliminar el turno:', err);
-      toast.error('Hubo un error al intentar eliminar el registro.');
-    } finally {
-      setEliminando(false);
-    }
-  };
-
-  // Función para marcar turno como atendido
-  const handleMarcarAtendido = async (id: string) => {
-    // El medico atiende desde la pantalla clinica (carga consulta + cierra turno).
-    if (esMedico) {
-      navigate(`/atencion/${id}`);
+  const handleDelete = async (id: string) => {
+    if (!window.confirm('¿Eliminar este turno definitivamente? Esta acción no se puede deshacer.')) {
       return;
     }
 
     try {
-      const response = await clientesAxios.patch(`/turnos/${id}/atendido`);
-      
-      setTurnos(prevTurnos => 
-        prevTurnos.map(t => t.id === id ? { ...t, estado: response.data?.data?.estado || 'ATENDIDO' } : t)
+      await clientesAxios.delete(`/turnos/${id}`);
+      setTurnos((prevTurnos) =>
+        prevTurnos.filter((t, idx) => obtenerIdTurno(t, `turno-${idx}`) !== id)
       );
-
-      toast.success(response.data?.message || '¡Turno marcado como atendido con éxito!');
-    } catch (err: unknown) {
-      console.error('Error al marcar como atendido:', err);
-      const mensaje = isAxiosError<{ message?: string }>(err)
-        ? err.response?.data?.message || 'No se pudo marcar el turno como atendido.'
-        : 'No se pudo marcar el turno como atendido.';
-      toast.error(mensaje);
+      setTotal((prevTotal) => Math.max(0, prevTotal - 1));
+      toast.success('Turno eliminado definitivamente de la base de datos.');
+    } catch (err) {
+      console.error('Error al eliminar el turno:', err);
+      toast.error('Hubo un error al intentar eliminar el registro.');
     }
   };
 
-  const turnosFiltrados = Array.isArray(turnos) 
+  const turnosFiltrados = Array.isArray(turnos)
     ? turnos
-        .filter(t => {
-          const nombrePaciente = `${t.paciente?.nombre || ''} ${t.paciente?.apellido || ''}`.toLowerCase();
+        .filter((t) => {
+          const nombrePaciente = obtenerNombrePacienteTurno(t).toLowerCase();
           const nombreMedico = `${t.medico?.nombre || ''} ${t.medico?.apellido || ''}`.toLowerCase();
           const termino = busqueda.toLowerCase();
 
@@ -185,66 +179,86 @@ export const TurnosLista: React.FC = () => {
 
   return (
     <div className="container-fluid px-2 px-md-4 py-4" style={{ maxWidth: '1000px' }}>
-    
-      <PageHeader 
+      <PageHeader
         titulo="Gestión de Turnos Médicos"
         subtitulo="Control y administración de turnos asignados en la salita."
         icon={<BsCalendarCheck className="me-2" style={{ color: '#00ACB2' }} />}
-        onBack={() => navigate(-1)}
+        onBack={() => goBackSafe(navigate, fallbackVolver)}
         rightContent={
-          <button 
-            className="btn text-white fw-semibold d-flex align-items-center justify-content-center gap-2 shadow-sm"
-            style={{ backgroundColor: '#00ACB2', borderRadius: '6px', padding: '4px 8px' }}
-            onClick={() => navigate('/turnos/asignar')} 
-          >
-            <BsPlusCircle size={18} />
-            Asignar Nuevo Turno
-          </button>
+          !esMedico ? (
+            <button
+              type="button"
+              className="btn text-white fw-semibold d-flex align-items-center justify-content-center gap-2 shadow-sm"
+              style={{ backgroundColor: '#00ACB2', borderRadius: '6px', padding: '4px 8px' }}
+              onClick={() => navigate('/turnos/asignar')}
+            >
+              <BsPlusCircle size={18} />
+              Asignar Nuevo Turno
+            </button>
+          ) : undefined
         }
       />
 
-      {/* Buscador */}
       <div className="card border-0 shadow-sm mb-4 bg-white" style={{ borderRadius: '12px' }}>
         <div className="card-body p-3">
           <div className="input-group">
             <span className="input-group-text bg-transparent border-end-0 text-muted">
               <BsSearch size={18} />
             </span>
-            <input 
-              type="text" 
-              className="form-control border-start-0 shadow-none ps-0" 
+            <input
+              type="text"
+              className="form-control border-start-0 shadow-none ps-0"
               placeholder="Buscar por paciente o médico..."
               value={busqueda}
-              onChange={(e) => setBusqueda(e.target.value)}
+              onChange={(e) => {
+                setBusqueda(e.target.value);
+                setPage(1);
+              }}
               disabled={loading}
             />
           </div>
         </div>
       </div>
 
-      {/* Renderizado condicional */}
       {loading ? (
         <TurnosSkeleton />
       ) : error ? (
-        <div className="card border-0 shadow-sm bg-danger-subtle text-danger p-4 text-center" style={{ borderRadius: '12px' }}>
+        <div
+          className="card border-0 shadow-sm bg-danger-subtle text-danger p-4 text-center"
+          style={{ borderRadius: '12px' }}
+        >
           <p className="mb-0 fw-semibold">{error}</p>
         </div>
       ) : turnosFiltrados.length > 0 ? (
-        
         <div className="row g-3">
-          {turnosFiltrados.map((turno) => (
-            <TurnoCard
-              key={turno.id}
-              turno={turno}
-              onView={() => handleView(turno.id)}
-              onEdit={() => handleEdit(turno.id)}
-              onCancel={() => handleOpenCancelModal(turno.id)}    
-              onDelete={() => handleOpenDeleteModal(turno.id)}     
-              onMarkAttended={() => handleMarcarAtendido(turno.id)}
-            />
-          ))}
+          {turnosFiltrados.map((turno, index) => {
+            const turnoId = obtenerIdTurno(turno, `turno-${index}`);
+            const esTurnoDeHoy = esFechaDeHoy(turno.fecha);
+            const estadoNormalizado = normalizarEstadoTurno(turno.estado);
+            const yaCerrado =
+              Boolean(turno.tieneConsulta) ||
+              ['atendido', 'finalizado', 'cancelado'].includes(estadoNormalizado);
+            const puedeAtender = esMedico && esTurnoDeHoy && !yaCerrado;
 
-          <ConfirmDeleteModal 
+            return (
+              <TurnoCard
+                key={turnoId}
+                turno={normalizarTurnoParaCard({ ...turno, id: turnoId }) as TurnoItem}
+                puedeAtender={puedeAtender}
+                onView={() => handleView(turnoId)}
+                onEdit={() => handleEdit(turnoId)}
+                onCancel={() => handleOpenCancelModal(turnoId)}
+                onDelete={() => handleDelete(turnoId)}
+                onMarkAttended={() => {
+                  if (puedeAtender) {
+                    handleAtenderTurno(turnoId);
+                  }
+                }}
+              />
+            );
+          })}
+
+          <ConfirmDeleteModal
             isOpen={idTurnoACancelar !== null}
             titulo="Confirmar Cancelación de Turno"
             mensaje="¿Estás seguro de que deseas cancelar este turno? Su estado cambiará a cancelado."
@@ -252,23 +266,29 @@ export const TurnosLista: React.FC = () => {
             onClose={() => setIdTurnoACancelar(null)}
             onConfirm={handleConfirmCancel}
           />
-
-          <ConfirmDeleteModal 
-            isOpen={idTurnoAEliminar !== null}
-            titulo="Eliminar Turno Definitivamente"
-            mensaje="¡Atención! Esta acción borrará el registro por completo de la base de datos y no se puede deshacer."
-            cargando={eliminando}
-            onClose={() => setIdTurnoAEliminar(null)}
-            onConfirm={handleConfirmDelete}
-          />
         </div>
-
       ) : (
-        <div className="card border-0 shadow-sm bg-white p-5 text-center" style={{ borderRadius: '12px' }}>
-          <p className="text-muted mb-0">No se encontraron turnos registrados en la base de datos.</p>
+        <div
+          className="card border-0 shadow-sm bg-white p-5 text-center"
+          style={{ borderRadius: '12px' }}
+        >
+          <p className="text-muted mb-0">
+            No se encontraron turnos registrados en la base de datos.
+          </p>
         </div>
       )}
-
+      {!loading && !error && (
+        <PaginationControls
+          page={page}
+          limit={limit}
+          total={total}
+          onPageChange={setPage}
+          onLimitChange={(newLimit) => {
+            setLimit(newLimit);
+            setPage(1);
+          }}
+        />
+      )}
     </div>
   );
 };

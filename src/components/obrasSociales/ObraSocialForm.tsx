@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { goBackSafe } from '../utils/navigation';
 import { BsCapsule, BsSave } from 'react-icons/bs';
 import { PageHeader } from '../../constants/PageHeader';
 import { obraSocialSchema, type ObraSocialFormValues } from './obraSocial.schema';
@@ -89,7 +90,7 @@ export const ObraSocialForm: React.FC<Props> = ({ obraSocialId, onSuccess, onCan
         titulo={isEdit ? 'Editar Obra Social' : 'Nueva Obra Social'}
         subtitulo={isEdit ? 'Modificar datos de la obra social.' : 'Registrar una nueva obra social.'}
         icon={<BsCapsule className="me-2" style={{ color: '#00ACB2' }} />}
-        onBack={onCancel || (() => navigate(-1))}
+        onBack={onCancel || (() => goBackSafe(navigate, '/obras-sociales'))}
       />
 
       <div className="card border-0 shadow-sm bg-white" style={{ borderRadius: '12px' }}>

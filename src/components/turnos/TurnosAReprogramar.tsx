@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { goBackSafe } from '../utils/navigation';
 import {
   BsExclamationTriangle,
   BsSearch,
@@ -14,6 +15,8 @@ import {
 import clientesAxios from '../../config/axios';
 import { PageHeader } from '../../constants/PageHeader';
 import { toast } from 'sonner';
+import { DEFAULT_PAGE_SIZE, parsePaginatedResponse } from '../../utils/pagination';
+import { PaginationControls } from '../common/PaginationControls';
 
 interface TelefonoObj {
   tipo?: string;
@@ -50,6 +53,9 @@ export const TurnosAReprogramar = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [busqueda, setBusqueda] = useState<string>('');
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(DEFAULT_PAGE_SIZE);
+  const [total, setTotal] = useState(0);
 
   useEffect(() => {
     let isMounted = true;
@@ -57,19 +63,18 @@ export const TurnosAReprogramar = () => {
     const fetchTurnosAReprogramar = async () => {
       try {
         // Ajusta la ruta si en tu router de excepciones o turnos le pusiste otro path
-        const response = await clientesAxios.get('/excepciones/reprogramar');
+        const response = await clientesAxios.get('/excepciones/reprogramar', {
+          params: { page, limit },
+        });
         if (isMounted) {
-          const dataApi = response.data;
-          let lista: TurnoAReprogramarItem[] = [];
-          if (Array.isArray(dataApi)) {
-            lista = dataApi;
-          } else if (dataApi && typeof dataApi === 'object') {
-            const record = dataApi as Record<string, unknown>;
-            if (Array.isArray(record.data)) {
-              lista = record.data as TurnoAReprogramarItem[];
-            }
-          }
-          setTurnos(lista);
+          const resultado = parsePaginatedResponse<TurnoAReprogramarItem>(
+            response.data,
+            page,
+            limit,
+            ['turnos', 'data']
+          );
+          setTurnos(resultado.items);
+          setTotal(resultado.total);
           setError(null);
         }
       } catch (err) {
@@ -87,7 +92,7 @@ export const TurnosAReprogramar = () => {
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [page, limit]);
 
   const formatearFecha = (fechaStr: string) => {
     if (!fechaStr) return '';
@@ -126,7 +131,7 @@ export const TurnosAReprogramar = () => {
         titulo="Turnos a Reprogramar"
         subtitulo="Pacientes afectados por bloqueos o modificaciones de horario en la agenda médica."
         icon={<BsExclamationTriangle className="me-2" style={{ color: '#00ACB2' }} />}
-        onBack={() => navigate('/turnos')}
+        onBack={() => goBackSafe(navigate, '/turnos')}
         rightContent={
           !loading && turnos.length > 0 ? (
             <span className="badge bg-warning text-dark px-3 py-2 fs-6 shadow-sm" style={{ borderRadius: '10px' }}>
@@ -148,7 +153,10 @@ export const TurnosAReprogramar = () => {
               className="form-control border-start-0 shadow-none ps-0"
               placeholder="Buscar por paciente, DNI, médico o motivo de excepción..."
               value={busqueda}
-              onChange={(e) => setBusqueda(e.target.value)}
+              onChange={(e) => {
+                setBusqueda(e.target.value);
+                setPage(1);
+              }}
               disabled={loading}
             />
           </div>
@@ -267,6 +275,18 @@ export const TurnosAReprogramar = () => {
           <h6 className="fw-bold text-dark">¡Todo al día!</h6>
           <p className="text-muted mb-0">No hay turnos pendientes de reprogramación por excepciones de agenda.</p>
         </div>
+      )}
+      {!loading && !error && (
+        <PaginationControls
+          page={page}
+          limit={limit}
+          total={total}
+          onPageChange={setPage}
+          onLimitChange={(newLimit) => {
+            setLimit(newLimit);
+            setPage(1);
+          }}
+        />
       )}
     </div>
   );

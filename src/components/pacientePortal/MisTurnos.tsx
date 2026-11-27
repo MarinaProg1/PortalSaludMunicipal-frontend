@@ -9,6 +9,8 @@ import {
   type MiTurno,
 } from './pacientePortal.schema';
 import toast from 'react-hot-toast';
+import { DEFAULT_PAGE_SIZE } from '../../utils/pagination';
+import { PaginationControls } from '../common/PaginationControls';
 
 const fechaDeTurno = (turno: MiTurno): Date => {
   const [anio, mes, dia] = (turno.fecha || '').slice(0, 10).split('-').map(Number);
@@ -66,6 +68,9 @@ export const MisTurnos: React.FC = () => {
   const [turnos, setTurnos] = useState<MiTurno[]>([]);
   const [loading, setLoading] = useState(true);
   const [verHistorial, setVerHistorial] = useState(false);
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(DEFAULT_PAGE_SIZE);
+  const [total, setTotal] = useState(0);
 
   useEffect(() => {
     let mounted = true;
@@ -73,8 +78,11 @@ export const MisTurnos: React.FC = () => {
     (async () => {
       try {
         setLoading(true);
-        const data = await pacientePortalService.misTurnos(verHistorial);
-        if (mounted) setTurnos(data);
+        const resultado = await pacientePortalService.misTurnosPaginados(verHistorial, page, limit);
+        if (mounted) {
+          setTurnos(resultado.items);
+          setTotal(resultado.total);
+        }
       } catch (e) {
         console.error(e);
         if (mounted) toast.error('No se pudieron cargar tus turnos');
@@ -86,7 +94,7 @@ export const MisTurnos: React.FC = () => {
     return () => {
       mounted = false;
     };
-  }, [verHistorial]);
+  }, [verHistorial, page, limit]);
 
   const { proximos, anteriores } = useMemo(() => {
     const ahora = new Date();
@@ -109,7 +117,7 @@ export const MisTurnos: React.FC = () => {
           <button
             className="btn text-white fw-semibold d-flex align-items-center gap-2 shadow-sm"
             style={{ backgroundColor: '#00ACB2', borderRadius: '10px', padding: '8px 16px' }}
-            onClick={() => navigate('/mis-turnos/nuevo')}
+            onClick={() => navigate('/turnos/asignar')}
           >
             <BsCalendarPlus size={18} />
             Sacar turno
@@ -127,7 +135,10 @@ export const MisTurnos: React.FC = () => {
           type="button"
           className="btn btn-outline-secondary btn-sm fw-semibold"
           style={{ borderRadius: '8px' }}
-          onClick={() => setVerHistorial((valor) => !valor)}
+          onClick={() => {
+            setVerHistorial((valor) => !valor);
+            setPage(1);
+          }}
           disabled={loading}
         >
           {verHistorial ? 'Ver solo últimos 30 días' : 'Ver historial completo'}
@@ -154,7 +165,7 @@ export const MisTurnos: React.FC = () => {
                 <button
                   className="btn btn-outline-secondary fw-semibold align-self-center d-flex align-items-center gap-2"
                   style={{ borderRadius: '10px' }}
-                  onClick={() => navigate('/mis-turnos/nuevo')}
+                  onClick={() => navigate('/turnos/asignar')}
                 >
                   <BsCalendarPlus size={18} /> Sacar un turno
                 </button>
@@ -175,6 +186,18 @@ export const MisTurnos: React.FC = () => {
             </section>
           )}
         </div>
+      )}
+      {!loading && (
+        <PaginationControls
+          page={page}
+          limit={limit}
+          total={total}
+          onPageChange={setPage}
+          onLimitChange={(newLimit) => {
+            setLimit(newLimit);
+            setPage(1);
+          }}
+        />
       )}
     </div>
   );

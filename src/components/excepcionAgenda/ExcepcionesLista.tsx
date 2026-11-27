@@ -1,11 +1,14 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { goBackSafe } from '../utils/navigation';
 import { BsPlusCircle, BsSearch, BsCalendarX, BsCalendarEvent, BsClock, BsExclamationTriangle } from 'react-icons/bs';
 import clientesAxios from '../../config/axios';
 import { PageHeader } from '../../constants/PageHeader';
 import { ConfirmDeleteModal } from '../../constants/ConfirmDeleteModal';
 import { toast } from 'sonner';
 import type { ExcepcionItem, MedicoPopulate } from './excepcion.schema';
+import { DEFAULT_PAGE_SIZE, parsePaginatedResponse } from '../../utils/pagination';
+import { PaginationControls } from '../common/PaginationControls';
 
 export const ExcepcionesLista = () => {
   const navigate = useNavigate();
@@ -13,6 +16,9 @@ export const ExcepcionesLista = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [busqueda, setBusqueda] = useState('');
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(DEFAULT_PAGE_SIZE);
+  const [total, setTotal] = useState(0);
 
   // Estados para el modal de desactivación
   const [idAEliminar, setIdAEliminar] = useState<string | null>(null);
@@ -23,17 +29,16 @@ export const ExcepcionesLista = () => {
 
     const fetchExcepciones = async () => {
       try {
-        const response = await clientesAxios.get('/excepciones');
+        const response = await clientesAxios.get('/excepciones', { params: { page, limit } });
         if (isMounted) {
-          const dataApi = response.data;
-          let lista: ExcepcionItem[] = [];
-          if (Array.isArray(dataApi)) {
-            lista = dataApi;
-          } else if (dataApi && typeof dataApi === 'object') {
-            const record = dataApi as Record<string, unknown>;
-            if (Array.isArray(record.data)) lista = record.data as ExcepcionItem[];
-          }
-          setExcepciones(lista);
+          const resultado = parsePaginatedResponse<ExcepcionItem>(
+            response.data,
+            page,
+            limit,
+            ['excepciones']
+          );
+          setExcepciones(resultado.items);
+          setTotal(resultado.total);
           setError(null);
         }
       } catch (err) {
@@ -46,7 +51,7 @@ export const ExcepcionesLista = () => {
 
     fetchExcepciones();
     return () => { isMounted = false; };
-  }, []);
+  }, [page, limit]);
 
   const handleConfirmDesactivar = async () => {
     if (!idAEliminar) return;
@@ -87,7 +92,7 @@ export const ExcepcionesLista = () => {
         titulo="Excepciones y Licencias de Agenda"
         subtitulo="Administra los días no laborables, vacaciones o modificaciones de horarios médicos."
         icon={<BsCalendarX className="me-2" style={{ color: '#00ACB2' }} />}
-        onBack={() => navigate(-1)}
+        onBack={() => goBackSafe(navigate)}
         rightContent={
           <button 
             className="btn text-white fw-semibold d-flex align-items-center justify-content-center gap-2 shadow-sm"
@@ -112,7 +117,10 @@ export const ExcepcionesLista = () => {
               className="form-control border-start-0 shadow-none ps-0" 
               placeholder="Buscar por médico, motivo o tipo de excepción..."
               value={busqueda}
-              onChange={(e) => setBusqueda(e.target.value)}
+              onChange={(e) => {
+                setBusqueda(e.target.value);
+                setPage(1);
+              }}
               disabled={loading}
             />
           </div>
@@ -191,6 +199,18 @@ export const ExcepcionesLista = () => {
         <div className="card border-0 shadow-sm bg-white p-5 text-center" style={{ borderRadius: '12px' }}>
           <p className="text-muted mb-0">No se encontraron excepciones o licencias registradas.</p>
         </div>
+      )}
+      {!loading && !error && (
+        <PaginationControls
+          page={page}
+          limit={limit}
+          total={total}
+          onPageChange={setPage}
+          onLimitChange={(newLimit) => {
+            setLimit(newLimit);
+            setPage(1);
+          }}
+        />
       )}
 
       {/* Modal de confirmación para desactivar */}

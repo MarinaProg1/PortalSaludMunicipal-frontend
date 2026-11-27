@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { goBackSafe } from '../utils/navigation';
 import {
   BsActivity,
   BsCalendarCheck,
@@ -102,31 +103,25 @@ export const AtencionPaciente: React.FC = () => {
   const { turnoId } = useParams<{ turnoId: string }>();
 
   const [turno, setTurno] = useState<TurnoAtencion | null>(null);
+  const [turnoFuturo, setTurnoFuturo] = useState(false);
   const [historial, setHistorial] = useState<HistorialClinico | null>(null);
   const [consultaActual, setConsultaActual] = useState<ConsultaMedica | null>(null);
   const [consultasPrevias, setConsultasPrevias] = useState<ConsultaMedica[]>([]);
   const [campos, setCampos] = useState<CamposConsulta>(CAMPOS_VACIOS);
 
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState<boolean>(Boolean(turnoId));
   const [error, setError] = useState<string | null>(null);
   const [guardando, setGuardando] = useState(false);
   const [generandoIA, setGenerandoIA] = useState(false);
   const [sugerencia, setSugerencia] = useState('');
 
   useEffect(() => {
-    if (!turnoId) {
-      setError('Turno no válido.');
-      setLoading(false);
-      return;
-    }
+    if (!turnoId) return;
 
     let mounted = true;
 
-    (async () => {
+    const cargarAtencion = async () => {
       try {
-        setLoading(true);
-        setError(null);
-
         const datosTurno = await atencionService.turno(turnoId);
         const pacienteId = getPacienteIdDeTurno(datosTurno);
         const idTurno = getTurnoId(datosTurno);
@@ -147,7 +142,9 @@ export const AtencionPaciente: React.FC = () => {
 
         if (!mounted) return;
 
+        setError(null);
         setTurno(datosTurno);
+        setTurnoFuturo(fechaHoraTurno(datosTurno).getTime() > Date.now());
         setHistorial(datosHistorial);
         setConsultaActual(actual);
         setConsultasPrevias(previas);
@@ -164,9 +161,13 @@ export const AtencionPaciente: React.FC = () => {
           setError(mensajeDeError(err, 'No se pudo cargar la atención del turno.'));
         }
       } finally {
-        if (mounted) setLoading(false);
+        if (mounted) {
+          setLoading(false);
+        }
       }
-    })();
+    };
+
+    void cargarAtencion();
 
     return () => {
       mounted = false;
@@ -175,7 +176,6 @@ export const AtencionPaciente: React.FC = () => {
 
   const pacienteId = turno ? getPacienteIdDeTurno(turno) : '';
   const turnoActivo = Boolean(turno && esEstadoActivo(turno.estado));
-  const turnoFuturo = turno ? fechaHoraTurno(turno).getTime() > Date.now() : false;
   const puedeCerrar = turnoActivo && !turnoFuturo;
   const telefono =
     turno && typeof turno.paciente === 'object' && turno.paciente?.telefono
@@ -242,6 +242,7 @@ export const AtencionPaciente: React.FC = () => {
       if (puedeCerrar) {
         const turnoCerrado = await atencionService.marcarAtendido(getTurnoId(turno));
         setTurno((previo) => (previo ? { ...previo, ...turnoCerrado, vencido: false } : turnoCerrado));
+        setTurnoFuturo(false);
         toast.success('Atención guardada y turno marcado como atendido.');
         navigate('/mis-pacientes/atendidos');
       } else {
@@ -255,6 +256,19 @@ export const AtencionPaciente: React.FC = () => {
     }
   };
 
+  if (!turnoId) {
+    return (
+      <div className="container-fluid px-2 px-md-4 py-4">
+        <PageHeader
+          titulo="Atención del paciente"
+          subtitulo="Turno no válido."
+          icon={<BsHeartPulse className="me-2" style={{ color: '#00ACB2' }} />}
+          onBack={() => goBackSafe(navigate)}
+        />
+      </div>
+    );
+  }
+
   if (loading) {
     return <div className="container-fluid py-4 text-muted">Cargando atención...</div>;
   }
@@ -266,7 +280,7 @@ export const AtencionPaciente: React.FC = () => {
           titulo="Atención del paciente"
           subtitulo={error || 'No se encontró el turno solicitado.'}
           icon={<BsHeartPulse className="me-2" style={{ color: '#00ACB2' }} />}
-          onBack={() => navigate(-1)}
+          onBack={() => goBackSafe(navigate)}
         />
       </div>
     );
@@ -278,7 +292,7 @@ export const AtencionPaciente: React.FC = () => {
         titulo={`Atención de ${nombrePaciente(turno)}`}
         subtitulo={`${turno.paciente && typeof turno.paciente === 'object' && turno.paciente.dni ? `DNI ${turno.paciente.dni} · ` : ''}${formatearFecha(turno.fecha)} ${turno.hora} hs · ${nombreEspecialidad(turno)}`}
         icon={<BsHeartPulse className="me-2" style={{ color: '#00ACB2' }} />}
-        onBack={() => navigate(-1)}
+        onBack={() => goBackSafe(navigate)}
         rightContent={
           <div className="d-flex align-items-center gap-2">
             {turno.vencido && (

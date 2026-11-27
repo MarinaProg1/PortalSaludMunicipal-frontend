@@ -1,10 +1,10 @@
 import { useNavigate } from 'react-router-dom';
+import { goBackSafe } from '../utils/navigation';
 import { 
   BsCalendarCheck, 
   BsCalendarDay, 
   BsCalendarMonth, 
   BsCalendarDate, 
-  BsClockHistory, 
   BsPlusCircle, 
   BsArrowRepeat
 } from 'react-icons/bs';
@@ -50,13 +50,6 @@ export const TurnosHome = () => {
       icono: <BsCalendarMonth size={28} style={{ color: '#00ACB2' }} />,
       ruta: '/horarioAtencion',
     },
-    {
-      titulo: 'Turnos Pendientes Históricos',
-      descripcion: 'Auditoría de turnos acumulados que quedaron pendientes de atenciones anteriores.',
-      icono: <BsClockHistory size={28} style={{ color: '#00ACB2' }} />,
-      ruta: '/turnos/historicos',
-    },
-    
   ];
 
   return (
@@ -65,7 +58,7 @@ export const TurnosHome = () => {
         titulo="Módulo de Turnos"
         subtitulo="Seleccione una opción para administrar la agenda médica de la salita."
         icon={<BsCalendarCheck className="me-2" style={{ color: '#00ACB2' }} />}
-        onBack={() => navigate('/')}
+        onBack={() => goBackSafe(navigate, '/')}
       />
 
       <div className="row g-3 mt-2">
